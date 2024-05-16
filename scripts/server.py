@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 
 
 userDir = os.path.expanduser('~')
-INTERPRETER, M_INTERPRETER, INCLUDE_LIST, EXCLUDE_LIST = (None, None, None, None)
+INTERPRETER, M_INTERPRETER, INCLUDE_LIST, EXCLUDE_LIST, CONVERT_LIST = (None, None, None, None, None)
 PREDICTED_SPECIES_LIST = []
 model, priv_thresh, sf_thresh = (None, None, None)
 
@@ -307,9 +307,11 @@ def load_global_model():
 
 
 def run_analysis(file):
-    global INCLUDE_LIST, EXCLUDE_LIST
+    global INCLUDE_LIST, EXCLUDE_LIST, CONVERT_LIST
     INCLUDE_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/include_species_list.txt"))
     EXCLUDE_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/exclude_species_list.txt"))
+    CONVERT_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/convert_species_list.txt"))
+    CONVERT_DICT = {row.split(';')[0]: row.split(';')[1] for row in CONVERT_LIST}
 
     conf = get_settings()
 
@@ -327,6 +329,8 @@ def run_analysis(file):
     for time_slot, entries in raw_detections.items():
         log.info('%s-%s', time_slot, entries[0])
         for entry in entries:
+            if entry[0] in CONVERT_LIST:
+                entry[0] = CONVERT_LIST[entry[0]]
             if entry[1] >= conf.getfloat('CONFIDENCE') and ((entry[0] in INCLUDE_LIST or len(INCLUDE_LIST) == 0)
                                                             and (entry[0] not in EXCLUDE_LIST or len(EXCLUDE_LIST) == 0)
                                                             and (entry[0] in PREDICTED_SPECIES_LIST
