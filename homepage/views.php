@@ -140,6 +140,7 @@ if(isset($_GET['view'])){
       <button type=\"submit\" name=\"view\" value=\"Webterm\" form=\"views\">Web Terminal</button>
       <button type=\"submit\" name=\"view\" value=\"Included\" form=\"views\">Custom Species List</button>
       <button type=\"submit\" name=\"view\" value=\"Excluded\" form=\"views\">Excluded Species List</button>
+      <button type=\"submit\" name=\"view\" value=\"Converted\" form=\"views\">Converted Species List</button>
       </form>
       </div>";
   }
