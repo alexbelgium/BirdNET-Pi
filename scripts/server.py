@@ -307,7 +307,7 @@ def load_global_model():
 
 
 def run_analysis(file):
-    global INCLUDE_LIST, EXCLUDE_LIST, CONVERT_LIST
+    global INCLUDE_LIST, EXCLUDE_LIST, CONVERT_LIST, CONVERT_DICT
     INCLUDE_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/include_species_list.txt"))
     EXCLUDE_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/exclude_species_list.txt"))
     CONVERT_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/convert_species_list.txt"))
@@ -331,10 +331,12 @@ def run_analysis(file):
         for entry in entries:
             if entry[1] >= conf.getfloat('CONFIDENCE'):
                 if entry[0] in CONVERT_DICT:
-                    entry[0] = CONVERT_DICT.get(entry[0], entry[0])
-                if (entry[0] in INCLUDE_LIST or len(INCLUDE_LIST) == 0) and \
-                    (entry[0] not in EXCLUDE_LIST or len(EXCLUDE_LIST) == 0) and \
-                    (entry[0] in PREDICTED_SPECIES_LIST or len(PREDICTED_SPECIES_LIST) == 0):
+                    converted_entry = CONVERT_DICT.get(entry[0], entry[0])
+                else :
+                    converted_entry = entry[0]
+                if (converted_entry in INCLUDE_LIST or len(INCLUDE_LIST) == 0) and \
+                    (converted_entry not in EXCLUDE_LIST or len(EXCLUDE_LIST) == 0) and \
+                    (converted_entry in PREDICTED_SPECIES_LIST or len(PREDICTED_SPECIES_LIST) == 0):
                         d = Detection(time_slot.split(';')[0], time_slot.split(';')[1], converted_entry, entry[1])
                         confident_detections.append(d)
     return confident_detections
