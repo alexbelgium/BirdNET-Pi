@@ -45,7 +45,7 @@
   <h3>Converted Species List</h3>
   <select name="species[]" id="value2" multiple size="25">
 <?php
-  $filename = '/home/pi/BirdNET-Pi/convert_species_list.txt'; // Changed the file path
+  $filename = './scripts/convert_species_list.txt'; // Changed the file path
   $eachline = file($filename, FILE_IGNORE_NEW_LINES);
   foreach($eachline as $lines){
     echo 
