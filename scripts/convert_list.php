@@ -4,6 +4,7 @@
 
 <div class="customlabels column1">
 <form action="" method="GET" id="add">
+  <input type="hidden" id="species" name="species">
   <h3>Specie to convert from :</h3>
   <select name="species1" id="species1" size="25">
   <?php
@@ -59,13 +60,15 @@
 </div>
 </div>
 
+<input type="hidden" id="hiddenSpecies" name="hiddenSpecies">
+
 <script>
     document.getElementById("add").addEventListener("submit", function(event) {
       var speciesSelect1 = document.getElementById("species1");
       var speciesSelect2 = document.getElementById("species2");
       var selectedSpecies1 = speciesSelect1.options[speciesSelect1.selectedIndex].value;
       var selectedSpecies2 = speciesSelect2.options[speciesSelect2.selectedIndex].value;
-      var species = selectedSpecies1 + ";" + selectedSpecies2;
+      document.getElementById("species").value = selectedSpecies1 + ";" + selectedSpecies2;
       if (speciesSelect1.selectedIndex < 1 || speciesSelect2.selectedIndex < 1) {
         alert("Please select a species from both lists.");
         document.querySelector('.views').style.opacity = 1;
