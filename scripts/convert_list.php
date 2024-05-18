@@ -14,11 +14,11 @@
   <?php
     error_reporting(E_ALL);
     ini_set('display_errors',1);
-    
+
     $filename = './scripts/labels.txt';
     $eachline = file($filename, FILE_IGNORE_NEW_LINES);
-    
-    foreach($eachline as $lines){echo 
+
+    foreach($eachline as $lines){echo
   "<option value=\"".$lines."\">$lines</option>";}
   ?>
   </select>
@@ -28,7 +28,7 @@
   <input type="text" id="species2Search" onkeyup="filterOptions('species2')" placeholder="Search for species...">
   <select name="species2" id="species2" size="25">
   <?php
-    foreach($eachline as $lines){echo 
+    foreach($eachline as $lines){echo
   "<option value=\"".$lines."\">$lines</option>";}
   ?>
   </select>
