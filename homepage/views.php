@@ -205,14 +205,14 @@ if(isset($_GET['view'])){
   }
   if($_GET['view'] == "Converted"){
     ensure_authenticated();
-    if(isset($_GET['species']) && isset($_GET['add'])){
-      $file = './scripts/convert_species_list.txt';
-      $str = file_get_contents("$file");
-      $str = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $str);
-      file_put_contents("$file", "$str");
-      foreach ($_GET['species'] as $selectedOption)
-        file_put_contents("./scripts/convert_species_list.txt", htmlspecialchars_decode($selectedOption, ENT_QUOTES)."\n", FILE_APPEND);
-    } elseif (isset($_GET['species']) && isset($_GET['del'])){
+	if(isset($_GET['species']) && isset($_GET['add'])){
+	  $file = './scripts/convert_species_list.txt';
+	  $str = file_get_contents("$file");
+	  $str = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $str);
+	  file_put_contents("$file", "$str");
+	  // Write $_GET['species'] to the file
+	  file_put_contents("./scripts/convert_species_list.txt", htmlspecialchars_decode($_GET['species'], ENT_QUOTES)."\n", FILE_APPEND);
+      } elseif (isset($_GET['species']) && isset($_GET['del'])){
       $file = './scripts/convert_species_list.txt';
       $str = file_get_contents("$file");
       $str = preg_replace('/^\h*\v+/m', '', $str);
