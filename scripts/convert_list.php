@@ -2,6 +2,8 @@
 <style>
 </style>
 
+<p><strong>This tool will allow to convert on-the-fly species to compensate for model errors. It SHOULD NOT BE USED except if you know what you are doing, instead the model errors should be reported to the owner. However, it is still convenient for systematic biases that are confirmed through careful listening of samples, while waiting for the models to be updated.</strong></p>
+
 <div class="customlabels column1">
 <form action="" method="GET" id="add">
   <input type="hidden" id="species" name="species">
@@ -10,11 +12,11 @@
   <?php
     error_reporting(E_ALL);
     ini_set('display_errors',1);
-    
+
     $filename = './scripts/labels.txt';
     $eachline = file($filename, FILE_IGNORE_NEW_LINES);
-    
-    foreach($eachline as $lines){echo 
+
+    foreach($eachline as $lines){echo
   "<option value=\"".$lines."\">$lines</option>";}
   ?>
   </select>
@@ -22,7 +24,7 @@
   <h3>Specie to convert to :</h3>
   <select name="species2" id="species2" size="25">
   <?php
-    foreach($eachline as $lines){echo 
+    foreach($eachline as $lines){echo
   "<option value=\"".$lines."\">$lines</option>";}
   ?>
   </select>
@@ -49,7 +51,7 @@
   $filename = './scripts/convert_species_list.txt'; // Changed the file path
   $eachline = file($filename, FILE_IGNORE_NEW_LINES);
   foreach($eachline as $lines){
-    echo 
+    echo
   "<option value=\"".$lines."\">$lines</option>";
 }?>
   </select>
@@ -75,5 +77,5 @@
         event.preventDefault();
       }
     });
-  
+
 </script>
