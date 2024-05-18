@@ -2,49 +2,75 @@
 <style>
 </style>
 
+<div class="customlabels column1">
+<form action="" method="GET" id="add">
+  <h3>Specie to convert from :</h3>
+  <select name="species1" id="species1" size="25">
+  <?php
+    error_reporting(E_ALL);
+    ini_set('display_errors',1);
+    
+    $filename = './scripts/labels.txt';
+    $eachline = file($filename, FILE_IGNORE_NEW_LINES);
+    
+    foreach($eachline as $lines){echo 
+  "<option value=\"".$lines."\">$lines</option>";}
+  ?>
+  </select>
+  <br><br> <!-- Added a space between the two tables -->
+  <h3>Specie to convert to :</h3>
+  <select name="species2" id="species2" size="25">
+  <?php
+    foreach($eachline as $lines){echo 
+  "<option value=\"".$lines."\">$lines</option>";}
+  ?>
+  </select>
+  <input type="hidden" name="add" value="add">
+</form>
+<div class="customlabels smaller">
+  <button type="submit" name="view" value="Converted" form="add">>>ADD>></button>
+</div>
+</div>
+
+<div class="customlabels column2">
+  <table><td>
+  <button type="submit" name="view" value="Converted" form="add">>>ADD>></button>
+  <br><br>
+  <button type="submit" name="view" value="Converted" form="del">REMOVE</button>
+  </td></table>
+</div>
+
+<div class="customlabels column3" style="margin-top: 0;"> <!-- Removed the blank space above the table -->
+<form action="" method="GET" id="del">
+  <h3>Converted Species List</h3>
+  <select name="species[]" id="value2" multiple size="25">
 <?php
-    $erroneous_species = file('./scripts/labels.txt', FILE_IGNORE_NEW_LINES);
-    $corrected_species = file('./scripts/labels.txt', FILE_IGNORE_NEW_LINES);
-    $conversion_table = file('./convert_species_list.txt', FILE_IGNORE_NEW_LINES);
+  $filename = '/home/pi/BirdNET-Pi/convert_species_list.txt'; // Changed the file path
+  $eachline = file($filename, FILE_IGNORE_NEW_LINES);
+  foreach($eachline as $lines){
+    echo 
+  "<option value=\"".$lines."\">$lines</option>";
+}?>
+  </select>
+  <input type="hidden" name="del" value="del">
+</form>
+<div class="customlabels smaller">
+  <button type="submit" name="view" value="Converted" form="del">REMOVE</button>
+</div>
+</div>
 
-    if (isset($_POST['add'])) {
-        // Add species to conversion table
-    } elseif (isset($_POST['restart'])) {
-        // Restart server
-    } elseif (isset($_POST['remove'])) {
-        // Remove species from conversion table
-    }
-?>
+<script>
+    document.getElementById("add").addEventListener("submit", function(event) {
+      var speciesSelect1 = document.getElementById("species1");
+      var speciesSelect2 = document.getElementById("species2");
+      if (speciesSelect1.selectedIndex < 0 || speciesSelect2.selectedIndex < 0) {
+        alert("Please select a species from both lists.");
+        event.preventDefault();
+      } else {
+        var selectedSpecies1 = speciesSelect1.options[speciesSelect1.selectedIndex].value;
+        var selectedSpecies2 = speciesSelect2.options[speciesSelect2.selectedIndex].value;
+        var newSpecies = selectedSpecies1 + ";" + selectedSpecies2;
+      }
+    });
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Species Conversion</title>
-    <script>
-        function clearSelections() {
-            // Clear selections in both tables
-        }
-    </script>
-</head>
-<body>
-    <h1>The purpose of this page is to allow the automatic conversion of one specie with another to compensate for model bias. It SHOULD NOT be used except if you really know what you are doing and have verified manually that the misidentifications are systematic. Thanks!</h1>
-
-    <table>
-        <caption>Erroneous specie</caption>
-        <!-- Populate table with erroneous species -->
-    </table>
-
-    <table>
-        <caption>Corrected specie</caption>
-        <!-- Populate table with corrected species -->
-    </table>
-
-    <button onclick="clearSelections();">Add specie to conversion table</button>
-    <button>Restart server to start conversion</button>
-
-    <table>
-        <caption>Content of convert_species_list.txt</caption>
-        <!-- Populate table with conversion table -->
-    </table>
-</body>
-</html>
+</script>
