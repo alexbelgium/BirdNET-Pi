@@ -72,13 +72,14 @@
     document.getElementById("add").addEventListener("submit", function(event) {
       var speciesSelect1 = document.getElementById("species1");
       var speciesSelect2 = document.getElementById("species2");
-      var selectedSpecies1 = speciesSelect1.options[speciesSelect1.selectedIndex].value;
-      var selectedSpecies2 = speciesSelect2.options[speciesSelect2.selectedIndex].value;
-      document.getElementById("species").value = selectedSpecies1 + ";" + selectedSpecies2;
       if (speciesSelect1.selectedIndex < 0 || speciesSelect2.selectedIndex < 0) {
         alert("Please select a species from both lists.");
         document.querySelector('.views').style.opacity = 1;
         event.preventDefault();
+      } else {
+        var selectedSpecies1 = speciesSelect1.options[speciesSelect1.selectedIndex].value;
+        var selectedSpecies2 = speciesSelect2.options[speciesSelect2.selectedIndex].value;
+        document.getElementById("species").value = selectedSpecies1 + ";" + selectedSpecies2;
       }
     });
 
