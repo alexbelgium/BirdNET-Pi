@@ -5,6 +5,7 @@ import re
 import signal
 import sys
 import threading
+import shutil
 from queue import Queue
 from subprocess import CalledProcessError
 
@@ -20,12 +21,10 @@ shutdown = False
 
 log = logging.getLogger(__name__)
 
-
 def sig_handler(sig_num, curr_stack_frame):
     global shutdown
     log.info('Caught shutdown signal %d', sig_num)
     shutdown = True
-
 
 def main():
     write_settings()
@@ -37,12 +36,12 @@ def main():
     backlog = get_wav_files()
 
     report_queue = Queue()
-    thread = threading.Thread(target=handle_reporting_queue, args=(report_queue, ))
+    thread = threading.Thread(target=handle_reporting_queue, args=(report_queue, conf))
     thread.start()
 
     log.info('backlog is %d', len(backlog))
     for file_name in backlog:
-        process_file(file_name, report_queue)
+        process_file(file_name, report_queue, conf)
         if shutdown:
             break
     log.info('backlog done')
@@ -66,21 +65,17 @@ def main():
 
         file_path = os.path.join(path, file_name)
         if file_path in backlog:
-            # if we're very lucky, the first event could be for the file in the backlog that finished
-            # while running get_wav_files()
             backlog = []
             continue
 
-        process_file(file_path, report_queue)
+        process_file(file_path, report_queue, conf)
         empty_count = 0
 
-    # we're all done
     report_queue.put(None)
     thread.join()
     report_queue.join()
 
-
-def process_file(file_name, report_queue):
+def process_file(file_name, report_queue, conf):
     try:
         if os.path.getsize(file_name) == 0:
             os.remove(file_name)
@@ -90,20 +85,14 @@ def process_file(file_name, report_queue):
             analyzing.write(file_name)
         file = ParseFileName(file_name)
         detections = run_analysis(file)
-        # we join() to make sure te reporting queue does not get behind
-        if not report_queue.empty():
-            log.warning('reporting queue not yet empty')
-        report_queue.join()
         report_queue.put((file, detections))
     except BaseException as e:
         stderr = e.stderr.decode('utf-8') if isinstance(e, CalledProcessError) else ""
         log.exception(f'Unexpected error: {stderr}', exc_info=e)
 
-
-def handle_reporting_queue(queue):
+def handle_reporting_queue(queue, conf):
     while True:
         msg = queue.get()
-        # check for signal that we are done
         if msg is None:
             break
 
@@ -118,17 +107,31 @@ def handle_reporting_queue(queue):
             apprise(file, detections)
             bird_weather(file, detections)
             heartbeat()
-            os.remove(file.file_name)
+
+            # Move the file to the 'Processed' folder
+            processed_dir = os.path.join(conf['RECS_DIR'], 'Processed')
+            if not os.path.exists(processed_dir):
+                os.makedirs(processed_dir)
+            shutil.move(file.file_name, processed_dir)
+
+            # Maintain the file count in the 'Processed' folder
+            maintain_file_count(processed_dir)
+
         except BaseException as e:
             stderr = e.stderr.decode('utf-8') if isinstance(e, CalledProcessError) else ""
             log.exception(f'Unexpected error: {stderr}', exc_info=e)
 
         queue.task_done()
 
-    # mark the 'None' signal as processed
     queue.task_done()
     log.info('handle_reporting_queue done')
 
+def maintain_file_count(directory, max_files=15):
+    files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.wav')]
+    files.sort(key=lambda x: os.path.getmtime(x))
+
+    while len(files) > max_files:
+        os.remove(files.pop(0))
 
 def setup_logging():
     logger = logging.getLogger()
@@ -139,7 +142,6 @@ def setup_logging():
     logger.setLevel(logging.INFO)
     global log
     log = logging.getLogger('birdnet_analysis')
-
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, sig_handler)
