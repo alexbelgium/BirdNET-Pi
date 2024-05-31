@@ -1,152 +1,79 @@
-import logging
 import os
-import os.path
-import re
-import signal
 import sys
-import threading
-import shutil
-from queue import Queue
-from subprocess import CalledProcessError
 
-import inotify.adapters
-from inotify.constants import IN_CLOSE_WRITE
+def read_file(file_path):
+    with open(file_path, 'r') as file:
+        return file.readlines()
 
-from server import load_global_model, run_analysis
-from utils.helpers import get_settings, ParseFileName, get_wav_files, write_settings, ANALYZING_NOW
-from utils.reporting import extract_detection, summary, write_to_file, write_to_db, apprise, bird_weather, heartbeat, \
-    update_json_file
+def write_file(file_path, content):
+    with open(file_path, 'w') as file:
+        file.writelines(content)
 
-shutdown = False
+def process_code(lines, max_files):
+    processed_lines = []
+    for line in lines:
+        # Add the import statement for shutil if it's not already there
+        if 'import os.path' in line and 'import shutil' not in lines:
+            processed_lines.append('import shutil\n')
+        processed_lines.append(line)
 
-log = logging.getLogger(__name__)
+        # Modify the process_file function to include the conf parameter
+        if 'def process_file(file_name, report_queue):' in line:
+            processed_lines[-1] = 'def process_file(file_name, report_queue, conf):\n'
 
-def sig_handler(sig_num, curr_stack_frame):
-    global shutdown
-    log.info('Caught shutdown signal %d', sig_num)
-    shutdown = True
+        # Modify the handle_reporting_queue function to include the conf parameter and the new logic
+        if 'def handle_reporting_queue(queue):' in line:
+            processed_lines[-1] = 'def handle_reporting_queue(queue, conf):\n'
+        if 'os.remove(file.file_name)' in line:
+            indent = ' ' * (len(line) - len(line.lstrip()))
+            processed_lines.append(f"{indent}# Move the file to the 'Processed' folder\n")
+            processed_lines.append(f"{indent}processed_dir = os.path.join(conf['RECS_DIR'], 'Processed')\n")
+            processed_lines.append(f"{indent}if not os.path.exists(processed_dir):\n")
+            processed_lines.append(f"{indent}    os.makedirs(processed_dir)\n")
+            processed_lines.append(f"{indent}shutil.move(file.file_name, processed_dir)\n")
+            processed_lines.append(f"{indent}\n")
+            processed_lines.append(f"{indent}# Maintain the file count in the 'Processed' folder\n")
+            processed_lines.append(f"{indent}maintain_file_count(processed_dir, max_files)\n")
+            processed_lines.append(f"{indent}\n")
+            continue  # Skip the original line that removes the file
 
-def main():
-    write_settings()
-    load_global_model()
-    conf = get_settings()
-    i = inotify.adapters.Inotify()
-    i.add_watch(os.path.join(conf['RECS_DIR'], 'StreamData'), mask=IN_CLOSE_WRITE)
+        # Add the new maintain_file_count function at the end of the file
+        if 'if __name__' in line and not any('def maintain_file_count' in l for l in processed_lines):
+            processed_lines.append('\n')
+            processed_lines.append('def maintain_file_count(directory, max_files):\n')
+            processed_lines.append('    files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith(\'.wav\')]\n')
+            processed_lines.append('    files.sort(key=lambda x: os.path.getmtime(x))\n')
+            processed_lines.append('\n')
+            processed_lines.append('    while len(files) > max_files:\n')
+            processed_lines.append('        os.remove(files.pop(0))\n')
+            processed_lines.append('\n')
 
-    backlog = get_wav_files()
+    return processed_lines
 
-    report_queue = Queue()
-    thread = threading.Thread(target=handle_reporting_queue, args=(report_queue, conf))
-    thread.start()
+# Hardcoded path to the birdnet_analysis.py file
+file_path = os.path.expanduser('~/BirdNET-Pi/scripts/birdnet_analysis.py')
 
-    log.info('backlog is %d', len(backlog))
-    for file_name in backlog:
-        process_file(file_name, report_queue, conf)
-        if shutdown:
-            break
-    log.info('backlog done')
+# Get the maximum number of processed files from the environment variable
+max_files = int(os.environ.get('Processed_Files', '15'))
 
-    empty_count = 0
-    for event in i.event_gen():
-        if shutdown:
-            break
+# If the environment variable is set to 0, exit the script
+if max_files == 0:
+    print("The 'Processed_Files' environment variable is set to 0. Exiting without making changes.")
+    sys.exit(0)
 
-        if event is None:
-            if empty_count > (conf.getint('RECORDING_LENGTH') * 2):
-                log.error('no more notifications: restarting...')
-                break
-            empty_count += 1
-            continue
+# Read the original code
+original_lines = read_file(file_path)
 
-        (_, type_names, path, file_name) = event
-        if re.search('.wav$', file_name) is None:
-            continue
-        log.debug("PATH=[%s] FILENAME=[%s] EVENT_TYPES=%s", path, file_name, type_names)
+# Process the code
+modified_lines = process_code(original_lines, max_files)
 
-        file_path = os.path.join(path, file_name)
-        if file_path in backlog:
-            backlog = []
-            continue
+# Write the modified code back to the same file
+write_file(file_path, modified_lines)
 
-        process_file(file_path, report_queue, conf)
-        empty_count = 0
+# Ensure the 'Processed' directory exists and is owned by the current user
+processed_dir = os.path.join(os.path.dirname(file_path), 'Processed')
+if not os.path.exists(processed_dir):
+    os.makedirs(processed_dir)
+os.chown(processed_dir, os.getuid(), os.getgid())
 
-    report_queue.put(None)
-    thread.join()
-    report_queue.join()
-
-def process_file(file_name, report_queue, conf):
-    try:
-        if os.path.getsize(file_name) == 0:
-            os.remove(file_name)
-            return
-        log.info('Analyzing %s', file_name)
-        with open(ANALYZING_NOW, 'w') as analyzing:
-            analyzing.write(file_name)
-        file = ParseFileName(file_name)
-        detections = run_analysis(file)
-        report_queue.put((file, detections))
-    except BaseException as e:
-        stderr = e.stderr.decode('utf-8') if isinstance(e, CalledProcessError) else ""
-        log.exception(f'Unexpected error: {stderr}', exc_info=e)
-
-def handle_reporting_queue(queue, conf):
-    while True:
-        msg = queue.get()
-        if msg is None:
-            break
-
-        file, detections = msg
-        try:
-            update_json_file(file, detections)
-            for detection in detections:
-                detection.file_name_extr = extract_detection(file, detection)
-                log.info('%s;%s', summary(file, detection), os.path.basename(detection.file_name_extr))
-                write_to_file(file, detection)
-                write_to_db(file, detection)
-            apprise(file, detections)
-            bird_weather(file, detections)
-            heartbeat()
-
-            # Move the file to the 'Processed' folder
-            processed_dir = os.path.join(conf['RECS_DIR'], 'Processed')
-            if not os.path.exists(processed_dir):
-                os.makedirs(processed_dir)
-            shutil.move(file.file_name, processed_dir)
-
-            # Maintain the file count in the 'Processed' folder
-            maintain_file_count(processed_dir)
-
-        except BaseException as e:
-            stderr = e.stderr.decode('utf-8') if isinstance(e, CalledProcessError) else ""
-            log.exception(f'Unexpected error: {stderr}', exc_info=e)
-
-        queue.task_done()
-
-    queue.task_done()
-    log.info('handle_reporting_queue done')
-
-def maintain_file_count(directory, max_files=15):
-    files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.wav')]
-    files.sort(key=lambda x: os.path.getmtime(x))
-
-    while len(files) > max_files:
-        os.remove(files.pop(0))
-
-def setup_logging():
-    logger = logging.getLogger()
-    formatter = logging.Formatter("[%(name)s][%(levelname)s] %(message)s")
-    handler = logging.StreamHandler(stream=sys.stdout)
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
-    global log
-    log = logging.getLogger('birdnet_analysis')
-
-if __name__ == '__main__':
-    signal.signal(signal.SIGINT, sig_handler)
-    signal.signal(signal.SIGTERM, sig_handler)
-
-    setup_logging()
-
-    main()
+print(f"The code has been modified and saved to {file_path}")
