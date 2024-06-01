@@ -112,7 +112,6 @@ def handle_reporting_queue(queue, conf):
             processed_dir = os.path.join(conf['RECS_DIR'], 'Processed')
             if not os.path.exists(processed_dir):
                 os.makedirs(processed_dir)
-                os.chown(processed_dir, os.getuid(), os.getgid())
             shutil.move(file.file_name, processed_dir)
 
             # Maintain the file count in the 'Processed' folder
@@ -127,9 +126,7 @@ def handle_reporting_queue(queue, conf):
     queue.task_done()
     log.info('handle_reporting_queue done')
 
-def maintain_file_count(directory, max_files=None):
-    if max_files is None:
-        max_files = int(os.getenv('Processed_Buffer', '15'))
+def maintain_file_count(directory, max_files=15):
     files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.wav')]
     files.sort(key=lambda x: os.path.getmtime(x))
 
