@@ -129,7 +129,7 @@ def handle_reporting_queue(queue, conf):
 
 def maintain_file_count(directory, max_files=None):
     if max_files is None:
-        max_files = int(os.getenv('Processed_Buffer', '0'))
+        max_files = int(os.getenv('Processed_Buffer', '15'))
     files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.wav')]
     files.sort(key=lambda x: os.path.getmtime(x))
 
