@@ -62,6 +62,7 @@ if(isset($_GET["latitude"])){
   $flickr_api_key = $_GET['flickr_api_key'];
   $flickr_filter_email = $_GET["flickr_filter_email"];
   $language = $_GET["language"];
+  $info_site = $_GET["info_site"];
   $timezone = $_GET["timezone"];
   $model = $_GET["model"];
   $sf_thresh = $_GET["sf_thresh"];
@@ -154,6 +155,7 @@ if(isset($_GET["latitude"])){
   $contents = preg_replace("/APPRISE_WEEKLY_REPORT=.*/", "APPRISE_WEEKLY_REPORT=$apprise_weekly_report", $contents);
   $contents = preg_replace("/FLICKR_API_KEY=.*/", "FLICKR_API_KEY=$flickr_api_key", $contents);
   $contents = preg_replace("/DATABASE_LANG=.*/", "DATABASE_LANG=$language", $contents);
+  $contents = preg_replace("/INFO_SITE=.*/", "INFO_SITE=$info_site", $contents);
   $contents = preg_replace("/FLICKR_FILTER_EMAIL=.*/", "FLICKR_FILTER_EMAIL=$flickr_filter_email", $contents);
   $contents = preg_replace("/APPRISE_MINIMUM_SECONDS_BETWEEN_NOTIFICATIONS_PER_SPECIES=.*/", "APPRISE_MINIMUM_SECONDS_BETWEEN_NOTIFICATIONS_PER_SPECIES=$minimum_time_limit", $contents);
   $contents = preg_replace("/MODEL=.*/", "MODEL=$model", $contents);
@@ -604,6 +606,33 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       <p>! Only modify this at initial setup !</p>
       </td></tr></table>
       <br>
+
+      <table class="settingstable"><tr><td>
+      <h2>Additional Info </h2>
+      <label for="info_site">Site to pull additional species info from: </label>
+      <select name="info_site">
+      <?php
+        $info_site = array(
+          'ALLABOUTBIRDS' => 'allaboutbirds.org',
+          "EBIRD" => "ebird.org"
+        );
+
+        // Create options for each site
+        foreach($info_site as $infoTag => $infoName){
+          $isSelected = "";
+          if($config['INFO_SITE'] == $infoTag){
+            $isSelected = 'selected="selected"';
+          }
+
+          echo "<option value='{$infoTag}' $isSelected>$infoName</option>";
+        }
+      ?>
+
+      </select>
+      <p>allaboutbirds.org default
+      <br>ebirds.org has more European species</p>
+      </td></tr></table><br>
+
       <script>
         function handleChange(checkbox) {
           // this disables the input of manual date and time if the user wants to use the internet time

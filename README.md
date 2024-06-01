@@ -93,7 +93,7 @@ Currently listening in these countries . . . that I know of . . .
 * SQLite3 Database
 * [Adminer](https://www.adminer.org/) database maintenance
 * [phpSysInfo](https://github.com/phpsysinfo/phpsysinfo)
-* [Apprise Notifications](https://github.com/caronc/apprise) supporting 70+ notification platforms
+* [Apprise Notifications](https://github.com/caronc/apprise) supporting 90+ notification platforms
 * Localization supported
 
 ## Requirements
