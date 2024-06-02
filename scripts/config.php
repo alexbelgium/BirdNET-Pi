@@ -666,6 +666,15 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       }
       ?>
       <table class="settingstable"><tr><td>
+      <h2>Processed folder management </h2>
+      <label for="processed_size">Amount of files to keep after analysis :</label>
+      <input name="processed_size" type="number" style="width:6em;" max="90" min="0" step="1" value="<?php print($config['PROCESSED_SIZE']);?>"/>
+      </td></tr><tr><td>
+      Processed is the directory where the formerly 'Analyzed' files are moved after extractions, mostly for troubleshooting purposes.<br>
+      This value defines the maximum amount of files that are kept before replacement with new files.<br>
+      </td></tr></table>
+      <br>
+      <table class="settingstable"><tr><td>
       <h2>Time and Date</h2>
       <span>If connected to the internet, retrieve time automatically?</span>
       <input type="checkbox" onchange='handleChange(this)' <?php echo $checkedvalue; ?> ><br>
@@ -697,7 +706,7 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       </td></tr></table><br>
 
       <br><br>
-        
+
       <input type="hidden" name="status" value="success">
       <input type="hidden" name="submit" value="settings">
 <div class="float">
