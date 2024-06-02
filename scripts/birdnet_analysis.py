@@ -119,11 +119,11 @@ def handle_reporting_queue(queue):
             apprise(file, detections)
             bird_weather(file, detections)
             heartbeat()
-            processed_size = get_settings().getint('PROCESSED_SIZE')
+            processed_size = int(get_settings().get('PROCESSED_SIZE')) if get_settings().get('PROCESSED_SIZE').isdigit() else 0
             if processed_size > 0:
                 move_to_processed(file.file_name, processed_size)
             else:
-	            os.remove(file.file_name)
+	        os.remove(file.file_name)
         except BaseException as e:
             stderr = e.stderr.decode('utf-8') if isinstance(e, CalledProcessError) else ""
             log.exception(f'Unexpected error: {stderr}', exc_info=e)
