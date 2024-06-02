@@ -9,7 +9,6 @@ from queue import Queue
 from subprocess import CalledProcessError
 import glob
 import time
-import pwd
 
 import inotify.adapters
 from inotify.constants import IN_CLOSE_WRITE
@@ -23,10 +22,12 @@ shutdown = False
 
 log = logging.getLogger(__name__)
 
+
 def sig_handler(sig_num, curr_stack_frame):
     global shutdown
     log.info('Caught shutdown signal %d', sig_num)
     shutdown = True
+
 
 def main():
     load_global_model()
@@ -79,6 +80,7 @@ def main():
     thread.join()
     report_queue.join()
 
+
 def process_file(file_name, report_queue):
     try:
         if os.path.getsize(file_name) == 0:
@@ -98,6 +100,7 @@ def process_file(file_name, report_queue):
         stderr = e.stderr.decode('utf-8') if isinstance(e, CalledProcessError) else ""
         log.exception(f'Unexpected error: {stderr}', exc_info=e)
 
+
 def handle_reporting_queue(queue):
     while True:
         msg = queue.get()
@@ -116,7 +119,11 @@ def handle_reporting_queue(queue):
             apprise(file, detections)
             bird_weather(file, detections)
             heartbeat()
-            move_to_processed(file.file_name)
+            processed_size = get_settings().getint('PROCESSED_SIZE')
+            if processed_size > 0:
+                move_to_processed(file.file_name, processed_size)
+            else:
+	            os.remove(file.file_name)
         except BaseException as e:
             stderr = e.stderr.decode('utf-8') if isinstance(e, CalledProcessError) else ""
             log.exception(f'Unexpected error: {stderr}', exc_info=e)
@@ -127,17 +134,12 @@ def handle_reporting_queue(queue):
     queue.task_done()
     log.info('handle_reporting_queue done')
 
-def move_to_processed(file_name):
-    conf = get_settings()
-    processed_dir = os.path.join(conf['RECS_DIR'], 'Processed')
-    os.makedirs(processed_dir, exist_ok=True)
-    user_id = pwd.getpwnam(os.getenv('USER')).pw_uid
-    os.chown(processed_dir, user_id, user_id)
+def move_to_processed(file_name, processed_size):
+    processed_dir = os.path.join(get_settings()['RECS_DIR'], 'Processed')
     os.rename(file_name, os.path.join(processed_dir, os.path.basename(file_name)))
     files = glob.glob(os.path.join(processed_dir, '*'))
     files.sort(key=os.path.getmtime)
-    buffer_size = int(os.getenv('Processed_Buffer', 30))
-    while len(files) > buffer_size:
+    while len(files) > processed_size:
         os.remove(files.pop(0))
 
 def setup_logging():
@@ -149,6 +151,7 @@ def setup_logging():
     logger.setLevel(logging.INFO)
     global log
     log = logging.getLogger('birdnet_analysis')
+
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, sig_handler)
