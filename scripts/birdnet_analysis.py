@@ -159,7 +159,6 @@ def setup_logging():
     global log
     log = logging.getLogger('birdnet_analysis')
 
-
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, sig_handler)
     signal.signal(signal.SIGTERM, sig_handler)
