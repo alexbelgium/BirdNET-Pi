@@ -13,7 +13,7 @@ set_timezone();
 <html lang="en">
 <title><?php echo $site_name; ?></title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="style.css?v=<?php echo date ('n.d.y', filemtime('style.css')); ?>">
+<link rel="stylesheet" href="<?php echo get_color_scheme(); ?>?v=<?php echo date ('n.d.y', filemtime('style.css')); ?>">
 <link rel="stylesheet" type="text/css" href="static/dialog-polyfill.css" />
 <body>
 <div class="banner">
