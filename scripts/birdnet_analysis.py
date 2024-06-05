@@ -123,7 +123,7 @@ def handle_reporting_queue(queue):
             if processed_size > 0:
                 move_to_processed(file.file_name, processed_size)
             else:
-	            os.remove(file.file_name)
+                os.remove(file.file_name)
         except BaseException as e:
             stderr = e.stderr.decode('utf-8') if isinstance(e, CalledProcessError) else ""
             log.exception(f'Unexpected error: {stderr}', exc_info=e)
@@ -134,12 +134,14 @@ def handle_reporting_queue(queue):
     queue.task_done()
     log.info('handle_reporting_queue done')
 
+
 def get_processed_size():
     try:
         processed_size = get_settings('PROCESSED_SIZE')
         return processed_size if isinstance(processed_size, int) else 0
     except (ValueError, TypeError):
         return 0
+
 
 def move_to_processed(file_name, processed_size):
     processed_dir = os.path.join(get_settings()['RECS_DIR'], 'Processed')
@@ -148,6 +150,7 @@ def move_to_processed(file_name, processed_size):
     files.sort(key=os.path.getmtime)
     while len(files) > processed_size:
         os.remove(files.pop(0))
+
 
 def setup_logging():
     logger = logging.getLogger()
