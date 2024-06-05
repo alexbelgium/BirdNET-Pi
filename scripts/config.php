@@ -640,6 +640,11 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
         }
       ?>
 
+      </select>
+      <p>allaboutbirds.org default
+      <br>ebirds.org has more European species</p>
+      </td></tr></table><br>
+
       <script>
         function handleChange(checkbox) {
           // this disables the input of manual date and time if the user wants to use the internet time
