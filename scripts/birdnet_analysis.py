@@ -136,7 +136,7 @@ def handle_reporting_queue(queue):
 
 def get_processed_size():
     try:
-        processed_size = get_settings().getint('PROCESSED_SIZE')
+        processed_size = get_settings('PROCESSED_SIZE')
         return processed_size if isinstance(processed_size, int) else 0
     except (ValueError, TypeError):
         return 0
