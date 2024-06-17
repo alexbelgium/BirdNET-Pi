@@ -7,7 +7,7 @@
   <h3>All Species Labels</h3>
   <input autocomplete="off" size="18" type="text" placeholder="Search Species..." id="whitelist_species_searchterm" name="whitelist_species_searchterm">
   <br>
-  <span>Once the desired species has been highlighted, click it and then click ADD to have it whitelisted.</span>
+  <span>Once the desired species has been highlighted, click it and then click ADD to have it whitelisted. This specie will be detected even if below the detection threshold defined in the settings.</span>
   <select name="species[]" id="species" multiple size="25">
   <?php
     error_reporting(E_ALL);
