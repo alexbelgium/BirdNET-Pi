@@ -23,21 +23,21 @@
   <input type="hidden" name="add" value="add">
 </form>
 <div class="customlabels smaller">
-  <button type="submit" name="view" value="whitelisted" form="add">>>ADD>></button>
+  <button type="submit" name="view" value="Whitelisted" form="add">>>ADD>></button>
 </div>
 </div>
 
 <div class="customlabels column2">
   <table><td>
-  <button type="submit" name="view" value="whitelisted" form="add">>>ADD>></button>
+  <button type="submit" name="view" value="Whitelisted" form="add">>>ADD>></button>
   <br><br>
-  <button type="submit" name="view" value="whitelisted" form="del">REMOVE</button>
+  <button type="submit" name="view" value="Whitelisted" form="del">REMOVE</button>
   </td></table>
 </div>
 
 <div class="customlabels column3">
 <form action="" method="GET" id="del">
-  <h3>whitelisted Species List</h3>
+  <h3>Whitelisted Species List</h3>
   <br><br><br>
   <select name="species[]" id="value2" multiple size="25">
   <option disabled value="base">Please Select</option>
@@ -52,7 +52,7 @@
   <input type="hidden" name="del" value="del">
 </form>
 <div class="customlabels smaller">
-  <button type="submit" name="view" value="whitelisted" form="del">REMOVE</button>
+  <button type="submit" name="view" value="Whitelisted" form="del">REMOVE</button>
 </div>
 </div>
 
