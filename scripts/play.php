@@ -558,9 +558,16 @@ while ($result2->fetchArray(SQLITE3_ASSOC)) {
     $num_rows++;
 }
 $result2->reset(); // reset the pointer to the beginning of the result set
+$sciname = get_sci_name($name);
+$info_url = get_info_url($sciname);
+$url = $info_url['URL'];
 echo "<table>
   <tr>
-  <th>$name</th>
+  <th>$name
+    <br>
+    <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
+    <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
+  </th>
   </tr>";
   $iter=0;
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
@@ -641,9 +648,15 @@ echo "<table>
     $statement2 = $db->prepare("SELECT * FROM detections where File_name == \"$name\" ORDER BY Date DESC, Time DESC");
     ensure_db_ok($statement2);
     $result2 = $statement2->execute();
+    $comname = str_replace("_", " ", strtok($name, '-'));
+    $sciname = get_sci_name($comname);
+    $info_url = get_info_url($sciname);
+    $url = $info_url['URL'];
     echo "<table>
       <tr>
       <th>$name</th>
+        <a href=\"<?php echo \$url;?>\" target=\"_blank\"><img style=\"height: 1em;cursor:pointer;float:unset;display:inline\" title=<?php echo \$url_title;?> src=\"images/info.png\" width=\"25\"></a>
+        <a href=\"[1](https://wikipedia.org/wiki/)<?php echo \$sciname;?>\" target=\"_blank\"><img style=\"height: 1em;cursor:pointer;float:unset;display:inline\" title=\"Wikipedia\" src=\"images/wiki.png\" width=\"25\"></a>
       </tr>";
       while($results=$result2->fetchArray(SQLITE3_ASSOC))
       {
