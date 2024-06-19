@@ -654,9 +654,10 @@ echo "<table>
     $url = $info_url['URL'];
     echo "<table>
       <tr>
-      <th>$name</th>
-        <a href=\"<?php echo \$url;?>\" target=\"_blank\"><img style=\"height: 1em;cursor:pointer;float:unset;display:inline\" title=<?php echo \$url_title;?> src=\"images/info.png\" width=\"25\"></a>
-        <a href=\"[1](https://wikipedia.org/wiki/)<?php echo \$sciname;?>\" target=\"_blank\"><img style=\"height: 1em;cursor:pointer;float:unset;display:inline\" title=\"Wikipedia\" src=\"images/wiki.png\" width=\"25\"></a>
+        <th>$name<br>
+          <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
+          <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
+        </th>
       </tr>";
       while($results=$result2->fetchArray(SQLITE3_ASSOC))
       {
