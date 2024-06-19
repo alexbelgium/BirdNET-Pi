@@ -257,6 +257,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
           </div>
             <div>
             <b><a class="a2" <?php if($_GET['kiosk'] == false){?>href="<?php echo $url;?>"<?php } else {echo "style='color:blue;'";} ?> target="top"><?php echo $todaytable['Com_Name'];?></a></b>
+            <br>
 	    <?php echo $todaytable['Sci_Name'];?>
                 <br>
                     <a href="<?php echo $url;?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title=<?php echo $url_title;?> src="images/info.png" width="25"></a>
