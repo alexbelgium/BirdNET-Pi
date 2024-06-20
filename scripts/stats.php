@@ -175,7 +175,8 @@ while($results=$result3->fetchArray(SQLITE3_ASSOC)){
   <b>Occurrences: </b>$count<br>
   <b>Max Confidence: </b>$maxconf<br>
   <b>Best Recording: </b>$date $time<br>
-  <a href=\"$url\" target=\"top\"/>$url_title</a><br>
+  <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
+  <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a><br>
   <video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster=\"$filename.png\" title=\"$filename\"><source src=\"$filename\"></video></td>
   </tr>
     </table>
