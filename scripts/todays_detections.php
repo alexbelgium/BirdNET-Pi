@@ -236,12 +236,11 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
             <?php } ?>
 
             <?php echo $todaytable['Time'];?><br>   
-          <b><a class="a2" href="<?php echo $url;?>" target="top"><?php echo $todaytable['Com_Name'];?></a>
+          <b><a class="a2" href="<?php echo $url;?>" target="top"><?php echo $todaytable['Com_Name'];?></a></b><br>
           <?php echo $todaytable['Sci_Name'];?>
-          <a href="<?php echo $url;?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title=<?php echo $url_title;?> src="images/info.png" width="25"></a>
-          <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="25"></a>
-          <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comname; ?>')" width=25 src="images/chart.svg">
-          <a target="_blank" href="index.php?filename=<?php echo $todaytable['File_Name']; ?>"><img style="height: 1em;cursor:pointer;float:unset;display:inline" class="copyimage-mobile" title="Open in new tab" width=16 src="images/copy.png"></a>
+          <a href="<?php echo $url;?>" target="_blank"><img style="cursor:pointer;float:unset;display:inline" title=<?php echo $url_title;?> src="images/info.png" width="20"></a>
+          <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style=";cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="20"></a>
+          <img style=";cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comname; ?>')" width=20 src="images/chart.svg"><br>
           <b>Confidence:</b> <?php echo round((float)round($todaytable['Confidence'],2) * 100 ) . '%';?><br></div><br>
           <video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster="<?php echo $filename.".png";?>" preload="none" title="<?php echo $filename;?>"><source preload="none" src="<?php echo $filename;?>"></video>
           </td>
