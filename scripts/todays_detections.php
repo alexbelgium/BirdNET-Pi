@@ -250,7 +250,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
           <td id="recent_detection_middle_td">
           <div>
             <div>
-            <?php if(!empty($config["FLICKR_API_KEY"]) && (isset($_GET['hard_limit']) || $_GET['kiosk'] == true) && strlen($image[2]) > 0) { ?>
+            <?php if(!empty($config["FLICKR_API_KEY"]) && (!isset($_GET['mobile'])) && (isset($_GET['hard_limit']) || $_GET['kiosk'] == true) && strlen($image[2]) > 0) { ?>
               <img style="float:left;height:75px;" onclick='setModalText(<?php echo $iterations; ?>,"<?php echo urlencode($image[2]); ?>", "<?php echo $image[3]; ?>", "<?php echo $image[4]; ?>", "<?php echo $image[1]; ?>", "<?php echo $image[5]; ?>")' src="<?php echo $image[1]; ?>" id="birdimage" class="img1">
             <?php } ?>
           </div>
