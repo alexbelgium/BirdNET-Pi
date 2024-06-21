@@ -816,6 +816,7 @@ form#views button .updatenumber {
   width:unset !important;
   max-width:50px;
   max-height:50px;
+  padding:0px;
   float:left;
 }
 
