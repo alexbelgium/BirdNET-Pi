@@ -139,7 +139,7 @@ def predictSpeciesList(lat, lon, week):
                 PREDICTED_SPECIES_LIST.append(s[1])
     if (len(WHITELIST_LIST) != 0):
         for species in WHITELIST_LIST:
-            PREDICTED_SPECIES_LIST.append(species[0])
+            PREDICTED_SPECIES_LIST.append(species)
 
 
 def loadCustomSpeciesList(path):
