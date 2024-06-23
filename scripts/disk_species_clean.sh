@@ -15,7 +15,7 @@ fi
 
 # Get unique species
 bird_names=$(
-    sqlite3 "$HOME"/BirdNET-Pi/scripts/birds.db <<EOF
+    sqlite3 -readonly "$HOME"/BirdNET-Pi/scripts/birds.db <<EOF
 .mode column
 .headers off
 SELECT DISTINCT Com_Name FROM detections;
