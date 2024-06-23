@@ -129,6 +129,17 @@ INFO_SITE="ALLABOUTBIRDS"
 
 COLOR_SCHEME="light"
 
+#------------------------------  Disk Management  ------------------------------#
+## Maximum disk size used before files starts getting removed
+
+MAX_DISK_SIZE=95
+
+## Maximum amount of files to keep for a given specie (0 = keep all)
+## Files from the last 7 days, and files protected from purge, are not taken into
+## account in this number
+
+MAX_FILES_SPECIES=0
+
 ################################################################################
 #--------------------------------  Defaults  ----------------------------------#
 ################################################################################

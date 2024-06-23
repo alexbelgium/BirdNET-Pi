@@ -63,6 +63,8 @@ if(isset($_GET["latitude"])){
   $flickr_filter_email = $_GET["flickr_filter_email"];
   $language = $_GET["language"];
   $info_site = $_GET["info_site"];
+  $max_files_species = $_GET["max_files_species"] ?? 0;
+  $max_disk_usage = $_GET["max_disk_usage"] ?? 95;
   $color_scheme = $_GET["color_scheme"];
   $timezone = $_GET["timezone"];
   $model = $_GET["model"];
@@ -170,6 +172,8 @@ if(isset($_GET["latitude"])){
   $contents = preg_replace("/DATA_MODEL_VERSION=.*/", "DATA_MODEL_VERSION=$data_model_version", $contents);
   $contents = preg_replace("/APPRISE_ONLY_NOTIFY_SPECIES_NAMES=.*/", "APPRISE_ONLY_NOTIFY_SPECIES_NAMES=\"$only_notify_species_names\"", $contents);
   $contents = preg_replace("/APPRISE_ONLY_NOTIFY_SPECIES_NAMES_2=.*/", "APPRISE_ONLY_NOTIFY_SPECIES_NAMES_2=\"$only_notify_species_names_2\"", $contents);
+  $contents = preg_replace("/MAX_FILES_SPECIES=.*/", "MAX_FILES_SPECIES=$max_files_species", $contents);
+  $contents = preg_replace("/MAX_DISK_USAGE=.*/", "MAX_DISK_USAGE=$max_disk_usage", $contents);
 
   if($site_name != $config["SITE_NAME"] || $color_scheme != $config["COLOR_SCHEME"]) {
     echo "<script>setTimeout(
@@ -663,7 +667,23 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
         }
       ?>
       </td></tr></table><br>
-        
+      
+      <table class="settingstable"><tr><td>
+      <h2>Storage management : </h2>
+      <label for="max_files_species">Amount of files to keep for each specie :</label>
+      <input name="max_files_species" type="number" style="width:6em;" min="0" step="1" value="<?php print($config['MAX_FILES_SPECIES']);?>"/>
+      </td></tr><tr><td>
+      If different than 0 (keep all), defines the maximum number of files to be kept for each species, with priority give to files with highest confidence. 
+      This value does not take into account the last 7 days (protected by default) nor the files protected of purge through the "lock" icon. 
+      The observations in sqlite, and therefore statistics are not impacted by this settings.<br>
+      <br>
+      <label for="max_disk_usage">Amount of files to keep after analysis :</label>
+      <input name="max_disk_usage" type="number" style="width:6em;" max="95" min="0" step="1" value="<?php print($config['MAX_DISK_USAGE']);?>"/>
+      </td></tr><tr><td>
+      Defines the maximum of disk size that BirdNET-Pi is allowed to use before purging files<br>
+      </td></tr></table>
+      <br>
+
       <script>
         function handleChange(checkbox) {
           // this disables the input of manual date and time if the user wants to use the internet time
