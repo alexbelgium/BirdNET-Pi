@@ -35,7 +35,7 @@ fi
 
 # Read each line from the variable and echo the species
 while read -r species; do
-    echo -n "$species"
+    echo -n "$species : "
     species_san="${species/-/=}"
     find */"$species" -type f -name "*[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.*" \
         -not -name "*.png" \
@@ -52,6 +52,8 @@ while read -r species; do
         sort -t'-' -k4,4nr -k5,5n -k1,1nr -k2,2nr -k3,3nr |
         tail -n +"$((max_files_species + 1))" |
         sed "s|$species_san|$species|g" |
-        xargs -I {} bash -c 'name={}; sudo rm "$name"; sudo rm "$name.png"' && echo " : success" || { exit 1; echo " : failed ($?)"; }
+        sed 'p; s/\(\.[^.]*\)$/\1.png/' |
+        xargs sudo rm && \
+        echo "success" || { exit 1; echo "failed ($?)"; }
 # rm to be changed to touch or echo if you want to test without deletion
 done <<<"$sanitized_names"
