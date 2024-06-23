@@ -53,7 +53,7 @@ while read -r species; do
         tail -n +"$((max_files_species + 1))" |
         sed "s|$species_san|$species|g" |
         sed 'p; s/\(\.[^.]*\)$/\1.png/' |
-        xargs sudo rm && \
-        echo "success" || { exit 1; echo "failed ($?)"; }
+        xargs sudo rm \
+        && echo "success" || { exit 1; echo "failed ($?)"; }
 # rm to be changed to touch or echo if you want to test without deletion
 done <<<"$sanitized_names"
