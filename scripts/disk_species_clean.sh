@@ -37,6 +37,8 @@ fi
 while read -r species; do
     echo -n "$species : "
     species_san="${species/-/=}"
+    # Dummy file to execute the rm using xargs even if no files are there. Best solution found for code speed
+    touch temp
     find */"$species" -type f -name "*[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.*" \
         -not -name "*.png" \
         -not -name "$(date -d "-7$dateformat" '+%Y-%m-%d')*" \
@@ -53,7 +55,7 @@ while read -r species; do
         tail -n +"$((max_files_species + 1))" |
         sed "s|$species_san|$species|g" |
         sed 'p; s/\(\.[^.]*\)$/\1.png/' |
-        xargs sudo rm \
-        && echo "success" || { exit 1; echo "failed ($?)"; }
+        awk 'BEGIN{print "temp"} {print}' |
+        xargs sudo rm && echo "success" || echo "failed ($?)"
 # rm to be changed to touch or echo if you want to test without deletion
 done <<<"$sanitized_names"
