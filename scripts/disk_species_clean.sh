@@ -34,19 +34,19 @@ while read -r species; do
     species_san="${species/-/=}"
     find */"$species" -type f -name "*[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.*" \
         -not -name "*.png" \
-        -not -name "$(date -d "-7 days" '+%Y-%m-%d')*" \
-        -not -name "$(date -d "-6 days" '+%Y-%m-%d')*" \
-        -not -name "$(date -d "-5 days" '+%Y-%m-%d')*" \
-        -not -name "$(date -d "-4 days" '+%Y-%m-%d')*" \
-        -not -name "$(date -d "-3 days" '+%Y-%m-%d')*" \
-        -not -name "$(date -d "-2 days" '+%Y-%m-%d')*" \
-        -not -name "$(date -d "-1 days" '+%Y-%m-%d')*" \
+        -not -name "$(date -d "-7" '+%Y-%m-%d')*" \
+        -not -name "$(date -d "-6" '+%Y-%m-%d')*" \
+        -not -name "$(date -d "-5" '+%Y-%m-%d')*" \
+        -not -name "$(date -d "-4" '+%Y-%m-%d')*" \
+        -not -name "$(date -d "-3" '+%Y-%m-%d')*" \
+        -not -name "$(date -d "-2" '+%Y-%m-%d')*" \
+        -not -name "$(date -d "-1" '+%Y-%m-%d')*" \
         -not -name "$(date '+%Y-%m-%d')*" |
         grep -vFf "$HOME/BirdNET-Pi/scripts/disk_check_exclude.txt" |
         sed "s|$species|$species_san|g" |
         sort -t'-' -k4,4nr -k5,5n -k1,1nr -k2,2nr -k3,3nr |
         tail -n +"$((max_files_species + 1))" |
         sed "s|$species_san|$species|g" |
-        xargs -I {} bash -c 'name={}; sudo rm ".$species/$name" && sudo rm ".$species/$name.png"' && echo " : success" || { exit 1; echo " : failed ($?)"; }
+        xargs -I {} bash -c 'name={}; sudo rm "$name"; sudo rm "$name.png"' && echo " : success" || { exit 1; echo " : failed ($?)"; }
 # rm to be changed to touch or echo if you want to test without deletion
 done <<<"$sanitized_names"
