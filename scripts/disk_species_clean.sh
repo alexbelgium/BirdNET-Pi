@@ -29,7 +29,7 @@ sanitized_names="$(echo "$bird_names" | tr ' ' '_' | tr -d "'" | grep '[[:alnum:
 sanitized_names=$(echo "$sanitized_names" | sed 's/_*$//')
 # Define how date works
 dateformat=""
-if test "$(date -d "-7 days" '+%Y-%m-%d')"; then
+if test "$(date -d "-7 days" '+%Y-%m-%d' 2>/dev/null)"; then
     dateformat=" days"
 fi
 
