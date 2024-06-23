@@ -27,6 +27,11 @@ EOF
 sanitized_names="$(echo "$bird_names" | tr ' ' '_' | tr -d "'" | grep '[[:alnum:]]')"
 # Remove trailing underscores
 sanitized_names=$(echo "$sanitized_names" | sed 's/_*$//')
+# Define how date works
+dateformat=""
+if test "$(date -d "-7 days" '+%Y-%m-%d')"; then
+    dateformat=" days"
+fi
 
 # Read each line from the variable and echo the species
 while read -r species; do
@@ -34,13 +39,13 @@ while read -r species; do
     species_san="${species/-/=}"
     find */"$species" -type f -name "*[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.*" \
         -not -name "*.png" \
-        -not -name "$(date -d "-7" '+%Y-%m-%d')*" \
-        -not -name "$(date -d "-6" '+%Y-%m-%d')*" \
-        -not -name "$(date -d "-5" '+%Y-%m-%d')*" \
-        -not -name "$(date -d "-4" '+%Y-%m-%d')*" \
-        -not -name "$(date -d "-3" '+%Y-%m-%d')*" \
-        -not -name "$(date -d "-2" '+%Y-%m-%d')*" \
-        -not -name "$(date -d "-1" '+%Y-%m-%d')*" \
+        -not -name "$(date -d "-7$dateformat" '+%Y-%m-%d')*" \
+        -not -name "$(date -d "-6$dateformat" '+%Y-%m-%d')*" \
+        -not -name "$(date -d "-5$dateformat" '+%Y-%m-%d')*" \
+        -not -name "$(date -d "-4$dateformat" '+%Y-%m-%d')*" \
+        -not -name "$(date -d "-3$dateformat" '+%Y-%m-%d')*" \
+        -not -name "$(date -d "-2$dateformat" '+%Y-%m-%d')*" \
+        -not -name "$(date -d "-1$dateformat" '+%Y-%m-%d')*" \
         -not -name "$(date '+%Y-%m-%d')*" |
         grep -vFf "$HOME/BirdNET-Pi/scripts/disk_check_exclude.txt" |
         sed "s|$species|$species_san|g" |
