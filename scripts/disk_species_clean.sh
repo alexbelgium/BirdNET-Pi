@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 # KEEP ONLY THE NUMBER OF FILES PER SPECIES DEFINED IN THE OPTIONS
 
@@ -46,6 +47,6 @@ while read -r species; do
         sort -t'-' -k4,4nr -k5,5n -k1,1nr -k2,2nr -k3,3nr |
         tail -n +"$((max_files_species + 1))" |
         sed "s|$species_san|$species|g" |
-        xargs -I {} bash -c 'name={}; rm "$name"; rm "${name/.*/}.png"' && echo " : success" || echo " : failed ($?)"
+        xargs -I {} bash -c 'name={}; sudo rm ".$species/$name" && sudo rm ".$species/$name.png"' && echo " : success" || { exit 1; echo " : failed ($?)"; }
 # rm to be changed to touch or echo if you want to test without deletion
 done <<<"$sanitized_names"
