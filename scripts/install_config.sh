@@ -130,7 +130,14 @@ INFO_SITE="ALLABOUTBIRDS"
 COLOR_SCHEME="light"
 
 #------------------------------  Disk Management  ------------------------------#
+## FULL_DISK can be set to configure how the system reacts to a full disk
+## purge = Remove the oldest day's worth of recordings
+## keep = Keep all data and 'stop_core_services.sh'
+
+FULL_DISK=purge
+
 ## Maximum disk size used before files starts getting removed
+## Number is the % of file size before purge starts
 
 MAX_DISK_SIZE=95
 
@@ -209,12 +216,6 @@ FREQSHIFT_PITCH=-1500
 ## sound card supports.
 
 CHANNELS=2
-
-## FULL_DISK can be set to configure how the system reacts to a full disk
-## purge = Remove the oldest day's worth of recordings
-## keep = Keep all data and 'stop_core_services.sh'
-
-FULL_DISK=purge
 
 ## PRIVACY_THRESHOLD can be set to enable sensitivity to Human sounds. This
 ## setting is an effort to introduce privacy into the data collection.
