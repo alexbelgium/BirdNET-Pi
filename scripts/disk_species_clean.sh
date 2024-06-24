@@ -56,6 +56,6 @@ while read -r species; do
         sed 'p; s/\(\.[^.]*\)$/\1.png/' |
         awk 'BEGIN{print "temp"} {print}' |
         xargs sudo rm && echo "success ($(find */"$species" -type f -name "*[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.*" \
-        -not -name "*.png" | wc -l) remaining" || echo "failed ($?)"
+        -not -name "*.png" | wc -l)) remaining" || echo "failed ($?)"
 # rm to be changed to touch or echo if you want to test without deletion
 done <<<"$sanitized_names"
