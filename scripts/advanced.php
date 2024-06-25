@@ -577,7 +577,7 @@ foreach($formats as $format){
       <br><br>
       <input type="hidden" name="view" value="Advanced">
 <div class="float">
-      <button type="submit" id="advancedformsubmit" onclick="if(document.getElementById('advancedform').checkValidity()){this.innerHTML = 'Updating... please wait.';this.classList.add('disabled')}" name="submit" value="advanced">
+      <button type="submit" id="advancedformsubmit" onclick="collectrtspUrls(); if(document.getElementById('advancedform').checkValidity()){this.innerHTML = 'Updating... please wait.';this.classList.add('disabled')}" name="submit" value="advanced">
 <?php
 if(isset($_GET['submit'])){
   echo '<script>alert("Settings successfully updated");</script>';
