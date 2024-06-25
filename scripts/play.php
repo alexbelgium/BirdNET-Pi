@@ -563,7 +563,7 @@ $info_url = get_info_url($sciname);
 $url = $info_url['URL'];
 echo "<table>
   <tr>
-  <th>$name<br>
+  <th>$name<br><span style=\"font-weight:normal;\"><i>$sciname</i></span><br>
     <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
     <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
   </th>
@@ -653,7 +653,7 @@ echo "<table>
     $url = $info_url['URL'];
     echo "<table>
       <tr>
-        <th>$name<br>
+        <th>$name<br><i>$sciname</i><br>
           <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
           <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
         </th>
