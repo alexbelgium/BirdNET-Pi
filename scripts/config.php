@@ -662,8 +662,8 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
           echo "<option value='{$color_scheme}' $isSelected>$color_scheme</option>";
         }
       ?>
-      </td></tr></table>
-
+      </td></tr></table><br>
+        
       <script>
         function handleChange(checkbox) {
           // this disables the input of manual date and time if the user wants to use the internet time
