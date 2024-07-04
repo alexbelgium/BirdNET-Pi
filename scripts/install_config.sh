@@ -153,8 +153,10 @@ REC_CARD=default
 ## PROCESSED is the directory where the formerly 'Analyzed' files are moved
 ## after extractions have been made from them. This includes both WAVE and
 ## BirdNET.selection.txt files.
+## PROCESSED_SIZE is the number of files kept in this directory, default is 0
 
 PROCESSED=$HOME/BirdSongs/Processed
+PROCESSED_SIZE=0
 
 ## EXTRACTED is the directory where the extracted audio selections are moved.
 

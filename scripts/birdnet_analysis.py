@@ -7,6 +7,8 @@ import sys
 import threading
 from queue import Queue
 from subprocess import CalledProcessError
+import glob
+import time
 
 import inotify.adapters
 from inotify.constants import IN_CLOSE_WRITE
@@ -117,7 +119,11 @@ def handle_reporting_queue(queue):
             apprise(file, detections)
             bird_weather(file, detections)
             heartbeat()
-            os.remove(file.file_name)
+            processed_size = get_processed_size()
+            if processed_size > 0:
+                move_to_processed(file.file_name, processed_size)
+            else:
+                os.remove(file.file_name)
         except BaseException as e:
             stderr = e.stderr.decode('utf-8') if isinstance(e, CalledProcessError) else ""
             log.exception(f'Unexpected error: {stderr}', exc_info=e)
@@ -129,6 +135,23 @@ def handle_reporting_queue(queue):
     log.info('handle_reporting_queue done')
 
 
+def get_processed_size():
+    try:
+        processed_size = get_settings('PROCESSED_SIZE')
+        return processed_size if isinstance(processed_size, int) else 0
+    except (ValueError, TypeError):
+        return 0
+
+
+def move_to_processed(file_name, processed_size):
+    processed_dir = os.path.join(get_settings()['RECS_DIR'], 'Processed')
+    os.rename(file_name, os.path.join(processed_dir, os.path.basename(file_name)))
+    files = glob.glob(os.path.join(processed_dir, '*'))
+    files.sort(key=os.path.getmtime)
+    while len(files) > processed_size:
+        os.remove(files.pop(0))
+
+
 def setup_logging():
     logger = logging.getLogger()
     formatter = logging.Formatter("[%(name)s][%(levelname)s] %(message)s")
@@ -138,7 +161,6 @@ def setup_logging():
     logger.setLevel(logging.INFO)
     global log
     log = logging.getLogger('birdnet_analysis')
-
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, sig_handler)

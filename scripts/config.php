@@ -63,6 +63,7 @@ if(isset($_GET["latitude"])){
   $flickr_filter_email = $_GET["flickr_filter_email"];
   $language = $_GET["language"];
   $info_site = $_GET["info_site"];
+  $processed_size = $_GET["processed_size"];
   $color_scheme = $_GET["color_scheme"];
   $timezone = $_GET["timezone"];
   $model = $_GET["model"];
@@ -162,6 +163,7 @@ if(isset($_GET["latitude"])){
   $contents = preg_replace("/FLICKR_API_KEY=.*/", "FLICKR_API_KEY=$flickr_api_key", $contents);
   $contents = preg_replace("/DATABASE_LANG=.*/", "DATABASE_LANG=$language", $contents);
   $contents = preg_replace("/INFO_SITE=.*/", "INFO_SITE=$info_site", $contents);
+  $contents = preg_replace("/PROCESSED_SIZE=.*/", "PROCESSED_SIZE=$processed_size", $contents);
   $contents = preg_replace("/COLOR_SCHEME=.*/", "COLOR_SCHEME=$color_scheme", $contents);  
   $contents = preg_replace("/FLICKR_FILTER_EMAIL=.*/", "FLICKR_FILTER_EMAIL=$flickr_filter_email", $contents);
   $contents = preg_replace("/APPRISE_MINIMUM_SECONDS_BETWEEN_NOTIFICATIONS_PER_SPECIES=.*/", "APPRISE_MINIMUM_SECONDS_BETWEEN_NOTIFICATIONS_PER_SPECIES=$minimum_time_limit", $contents);
@@ -621,6 +623,16 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       <br>
 
       <table class="settingstable"><tr><td>
+      <h2>Processed folder management </h2>
+      <label for="processed_size">Amount of files to keep after analysis :</label>
+      <input name="processed_size" type="number" style="width:6em;" max="90" min="0" step="1" value="<?php print($config['PROCESSED_SIZE']);?>"/>
+      </td></tr><tr><td>
+      Processed is the directory where the formerly 'Analyzed' files are moved after extractions, mostly for troubleshooting purposes.<br>
+      This value defines the maximum amount of files that are kept before replacement with new files.<br>
+      </td></tr></table>
+      <br>
+
+      <table class="settingstable"><tr><td>
       <h2>Additional Info </h2>
       <label for="info_site">Site to pull additional species info from: </label>
       <select name="info_site" class="testbtn">
@@ -689,6 +701,15 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
         $disabledvalue = "";
       }
       ?>
+      <table class="settingstable"><tr><td>
+      <h2>Processed folder management </h2>
+      <label for="processed_size">Amount of files to keep after analysis :</label>
+      <input name="processed_size" type="number" style="width:6em;" max="90" min="0" step="1" value="<?php print($config['PROCESSED_SIZE']);?>"/>
+      </td></tr><tr><td>
+      Processed is the directory where the formerly 'Analyzed' files are moved after extractions, mostly for troubleshooting purposes.<br>
+      This value defines the maximum amount of files that are kept before replacement with new files.<br>
+      </td></tr></table>
+      <br>
       <table class="settingstable"><tr><td>
       <h2>Time and Date</h2>
       <span>If connected to the internet, retrieve time automatically?</span>
