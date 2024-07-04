@@ -9,7 +9,7 @@ birdnet_conf=$my_dir/birdnet.conf
 
 # Retrieve latitude and longitude from web
 json=$(curl -s4 http://ip-api.com/json)
-if [ "$(echo "$json" | jq -r .status)" = "success" ]; then
+if [ -n "$json" ] && [ "$(echo "$json" | jq -r .status)" = "success" ]; then
   LATITUDE=$(echo "$json" | jq .lat)
   LONGITUDE=$(echo "$json" | jq .lon)
 else
@@ -45,7 +45,7 @@ LONGITUDE=$LONGITUDE
 
 MODEL=BirdNET_GLOBAL_6K_V2.4_Model_FP16
 SF_THRESH=0.03
-DATA_MODEL_VERSION=2
+DATA_MODEL_VERSION=1
 
 #---------------------  BirdWeather Station Information -----------------------#
 #_____________The variable below can be set to have your BirdNET-Pi____________#
@@ -122,6 +122,12 @@ FLICKR_FILTER_EMAIL=
 ## default ALLABOUTBIRDS, EBIRD better for eurasian locations
 
 INFO_SITE="ALLABOUTBIRDS"
+
+#-------------------------------  Color scheme  --------------------------------#
+## light or dark
+## default light
+
+COLOR_SCHEME="light"
 
 ################################################################################
 #--------------------------------  Defaults  ----------------------------------#

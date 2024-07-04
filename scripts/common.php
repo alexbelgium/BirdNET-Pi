@@ -103,6 +103,20 @@ function get_com_en_name($sci_name) {
   return $engname;
 }
 
+function get_sci_name($com_name) {
+  if (!isset($_labels)) {
+    $_labels = file(get_home() . "/BirdNET-Pi/model/labels.txt");
+  }
+  $sciname = null;
+  foreach ($_labels as $label) {
+    if (strpos($label, $com_name) !== false) {
+      $sciname = trim(explode("_", $label)[0]);
+      break;
+    }
+  }
+  return $sciname;
+}
+
 define('DB', './scripts/flickr.db');
 
 class Flickr {
@@ -267,7 +281,6 @@ function get_info_url($sciname){
   if ($config['INFO_SITE'] === 'EBIRD'){
     require 'scripts/ebird.php';
     $ebird = $ebirds[$sciname];
-    debug_log($ebird);
     $language = $config['DATABASE_LANG'];
     $url = "https://ebird.org/species/$ebird?siteLanguage=$language";
     $url_title = "eBirds";
@@ -281,4 +294,13 @@ function get_info_url($sciname){
       'TITLE' => $url_title
           );
   return $ret;
+}
+
+function get_color_scheme(){
+  $config = get_config();
+  if (strtolower($config['COLOR_SCHEME']) === 'dark'){
+    return 'static/dark-style.css';
+  } else {
+    return 'style.css';
+  }
 }

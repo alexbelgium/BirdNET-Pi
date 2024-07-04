@@ -126,7 +126,7 @@ window.onload = function(){
   };
 
   // if user agent includes iPhone or Mac use legacy mode
-  if(((window.navigator.userAgent.includes("iPhone") || window.navigator.userAgent.includes("Mac")) && !window.navigator.userAgent.includes("Chrome")) || legacy == true) {
+  if(window.navigator.userAgent.includes("iPhone") || legacy == true) {
     document.getElementById("spectrogramimage").style.display="";
     document.body.querySelector('canvas').remove();
     document.getElementById('player').remove();
@@ -413,7 +413,7 @@ h1 {
 		?>
         <div style="display:inline" id="RTSP_streams">
             <label>RTSP Stream: </label>
-            <select id="rtsp_stream_select" name="RTSP Streams">
+            <select id="rtsp_stream_select" class="testbtn" name="RTSP Streams">
 				<?php
 				//The setting representing which livestream to stream is more than the number of RTSP streams available
 				//maybe the list of streams has been modified

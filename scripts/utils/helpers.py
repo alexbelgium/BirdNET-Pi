@@ -1,10 +1,9 @@
-from configparser import ConfigParser
 import datetime
 import glob
 import os
-import stat
 import re
 import subprocess
+from configparser import ConfigParser
 from itertools import chain
 
 from tzlocal import get_localzone

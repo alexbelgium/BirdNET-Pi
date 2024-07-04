@@ -64,6 +64,7 @@ if(isset($_GET["latitude"])){
   $language = $_GET["language"];
   $info_site = $_GET["info_site"];
   $processed_size = $_GET["processed_size"];
+  $color_scheme = $_GET["color_scheme"];
   $timezone = $_GET["timezone"];
   $model = $_GET["model"];
   $sf_thresh = $_GET["sf_thresh"];
@@ -97,7 +98,12 @@ if(isset($_GET["latitude"])){
   }
 
   if(isset($timezone) && in_array($timezone, DateTimeZone::listIdentifiers())) {
+    # dpkg-reconfigure tzdata is a pain to run non-interactively, so we do it in two steps instead
+    # tzlocal.get_localzone() will fail if the Debian specific /etc/timezone is not in sync
     shell_exec("sudo timedatectl set-timezone ".$timezone);
+    if (file_exists('/etc/timezone')) {
+        shell_exec("echo ".$timezone." | sudo tee /etc/timezone > /dev/null");
+    }
     $_SESSION['my_timezone'] = $timezone;
     date_default_timezone_set($timezone);
     echo "<script>setTimeout(
@@ -158,6 +164,7 @@ if(isset($_GET["latitude"])){
   $contents = preg_replace("/DATABASE_LANG=.*/", "DATABASE_LANG=$language", $contents);
   $contents = preg_replace("/INFO_SITE=.*/", "INFO_SITE=$info_site", $contents);
   $contents = preg_replace("/PROCESSED_SIZE=.*/", "PROCESSED_SIZE=$processed_size", $contents);
+  $contents = preg_replace("/COLOR_SCHEME=.*/", "COLOR_SCHEME=$color_scheme", $contents);  
   $contents = preg_replace("/FLICKR_FILTER_EMAIL=.*/", "FLICKR_FILTER_EMAIL=$flickr_filter_email", $contents);
   $contents = preg_replace("/APPRISE_MINIMUM_SECONDS_BETWEEN_NOTIFICATIONS_PER_SPECIES=.*/", "APPRISE_MINIMUM_SECONDS_BETWEEN_NOTIFICATIONS_PER_SPECIES=$minimum_time_limit", $contents);
   $contents = preg_replace("/MODEL=.*/", "MODEL=$model", $contents);
@@ -166,7 +173,7 @@ if(isset($_GET["latitude"])){
   $contents = preg_replace("/APPRISE_ONLY_NOTIFY_SPECIES_NAMES=.*/", "APPRISE_ONLY_NOTIFY_SPECIES_NAMES=\"$only_notify_species_names\"", $contents);
   $contents = preg_replace("/APPRISE_ONLY_NOTIFY_SPECIES_NAMES_2=.*/", "APPRISE_ONLY_NOTIFY_SPECIES_NAMES_2=\"$only_notify_species_names_2\"", $contents);
 
-  if($site_name != $config["SITE_NAME"]) {
+  if($site_name != $config["SITE_NAME"] || $color_scheme != $config["COLOR_SCHEME"]) {
     echo "<script>setTimeout(
     function() {
       window.parent.document.location.reload();
@@ -220,6 +227,8 @@ if(isset($_GET['sendtest']) && $_GET['sendtest'] == "true") {
     $filename = "http://".$_SERVER['SERVER_NAME']."/"."?filename=".$filename;
   }
 
+  $friendlyfilename = "[Listen here](".$filename.")";
+
   $attach="";
   $exampleimage = "https://live.staticflickr.com/7430/27545810581_8bfa8289a3_c.jpg";
   if (strpos($body, '$flickrimage') !== false) {
@@ -234,6 +243,7 @@ if(isset($_GET['sendtest']) && $_GET['sendtest'] == "true") {
   $title = str_replace("\$confidencepct", round($confidence*100), $title);
   $title = str_replace("\$confidence", $confidence, $title);
   $title = str_replace("\$listenurl", $filename, $title);
+  $title = str_replace("\$friendlyurl", $friendlyfilename, $title);
   $title = str_replace("\$date", $date, $title);
   $title = str_replace("\$time", $time, $title);
   $title = str_replace("\$week", $week, $title);
@@ -250,6 +260,7 @@ if(isset($_GET['sendtest']) && $_GET['sendtest'] == "true") {
   $body = str_replace("\$confidencepct", round($confidence*100), $body);
   $body = str_replace("\$confidence", $confidence, $body);
   $body = str_replace("\$listenurl", $filename, $body);
+  $body = str_replace("\$friendlyurl", $friendlyfilename, $body);
   $body = str_replace("\$date", $date, $body);
   $body = str_replace("\$time", $time, $body);
   $body = str_replace("\$week", $week, $body);
@@ -315,7 +326,7 @@ function sendTestNotification(e) {
       <h2>Model</h2>
 
       <label for="model">Select a Model: </label>
-      <select id="modelsel" name="model">
+      <select id="modelsel" name="model" class="testbtn">
       <?php
       $models = array("BirdNET_GLOBAL_6K_V2.4_Model_FP16", "BirdNET_6K_GLOBAL_MODEL");
       foreach($models as $modelName){
@@ -487,7 +498,7 @@ function runProcess() {
 tgram://{bot_token}/{chat_id}
 twitter://{ConsumerKey}/{ConsumerSecret}/{AccessToken}/{AccessSecret}
 https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
-..." style="vertical-align: top" name="apprise_input" rows="5" type="text" ><?php print($apprise_config);?></textarea>
+..." style="vertical-align: top" class="testbtn" name="apprise_input" rows="5" type="text" ><?php print($apprise_config);?></textarea>
       <dl>
       <dt>$sciname</dt>
       <dd>Scientific Name</dd>
@@ -499,6 +510,8 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       <dd>Confidence Score as a percentage (eg. 0.91 => 91)</dd>
       <dt>$listenurl</dt>
       <dd>A link to the detection</dd>
+      <dt>$friendlyurl</dt>
+      <dd>A masked link to the detection. Only useful for services that support Markdown (e.g. Discord). </dd>
       <dt>$date</dt>
       <dd>Date</dd>
       <dt>$time</dt>
@@ -558,7 +571,7 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       <table class="settingstable"><tr><td>
       <h2>Localization</h2>
       <label for="language">Database Language: </label>
-      <select name="language">
+      <select name="language" class="testbtn">
       <?php
         $langs = array(
           'not-selected' => 'Not Selected',
@@ -622,7 +635,7 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       <table class="settingstable"><tr><td>
       <h2>Additional Info </h2>
       <label for="info_site">Site to pull additional species info from: </label>
-      <select name="info_site">
+      <select name="info_site" class="testbtn">
       <?php
         $info_site = array(
           'ALLABOUTBIRDS' => 'allaboutbirds.org',
@@ -645,6 +658,24 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       <br>ebirds.org has more European species</p>
       </td></tr></table><br>
 
+
+      <table class="settingstable"><tr><td>
+      <h2>Color scheme </h2>
+      <label for="color_scheme">Color scheme for the site : </label>
+      <select name="color_scheme" class="testbtn">
+      <?php
+      $scheme = array("light", "dark");
+      foreach($scheme as $color_scheme){
+          $isSelected = "";
+          if($config['COLOR_SCHEME'] == $color_scheme){
+            $isSelected = 'selected="selected"';
+          }
+
+          echo "<option value='{$color_scheme}' $isSelected>$color_scheme</option>";
+        }
+      ?>
+      </td></tr></table><br>
+        
       <script>
         function handleChange(checkbox) {
           // this disables the input of manual date and time if the user wants to use the internet time
@@ -690,7 +721,7 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       <input onclick="this.showPicker()" type="time" id="time" name="time" value="<?php echo $date->format('H:i'); ?>" <?php echo $disabledvalue; ?>><br>
       <br>
       <label for="timezone">Select a Timezone: </label>
-      <select name="timezone">
+      <select name="timezone" class="testbtn">
       <option disabled selected>
         Select a timezone
       </option>
@@ -718,10 +749,9 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       <button type="submit" id="basicformsubmit" onclick="if(document.getElementById('basicform').checkValidity()){this.innerHTML = 'Updating... please wait.';this.classList.add('disabled')}" name="view" value="Settings">
 <?php
 if(isset($_GET['status'])){
-  echo "Success!";
-} else {
-  echo "Update Settings";
+  echo '<script>alert("Settings successfully updated");</script>';
 }
+echo "Update Settings";
 ?>
       </button></div>
       </form>
