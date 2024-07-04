@@ -10,6 +10,7 @@ require_once 'scripts/common.php';
 $user = get_user();
 $home = get_home();
 $config = get_config();
+$color_scheme = get_color_scheme();
 set_timezone();
 
 if(is_authenticated() && (!isset($_SESSION['behind']) || !isset($_SESSION['behind_time']) || time() > $_SESSION['behind_time'] + 86400)) {
@@ -52,7 +53,7 @@ elseif ($config["LONGITUDE"] == "0.000") {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BirdNET-Pi DB</title>
-  <link rel="stylesheet" href="style.css?v=<?php echo date ('n.d.y', filemtime('style.css')); ?>">
+  <link rel="stylesheet" href="<?php echo $color_scheme . '?v=' . date('n.d.y', filemtime($color_scheme)); ?>">
 </head>
 <body>
 <form action="views.php" method="GET" id="views">
@@ -63,6 +64,7 @@ elseif ($config["LONGITUDE"] == "0.000") {
   <button type="submit" name="view" value="Species Stats" form="views">Best Recordings</button>
   <button type="submit" name="view" value="Streamlit" form="views">Species Stats</button>
   <button type="submit" name="view" value="Daily Charts" form="views">Daily Charts</button>
+  <button type="submit" name="view" value="Weekly Report" form="views">Weekly Report</button>
   <button type="submit" name="view" value="Recordings" form="views">Recordings</button>
   <button type="submit" name="view" value="View Log" form="views">View Log</button>
   <button type="submit" name="view" value="Tools" form="views">Tools<?php if(isset($_SESSION['behind']) && intval($_SESSION['behind']) >= 50 && ($config['SILENCE_UPDATE_INDICATOR'] != 1)){ $updatediv = ' <div class="updatenumber">'.$_SESSION["behind"].'</div>'; } else { $updatediv = ""; } echo $updatediv; ?></button>
@@ -136,11 +138,12 @@ if(isset($_GET['view'])){
       <button type=\"submit\" name=\"view\" value=\"System Controls\" form=\"views\">System Controls".$updatediv."</button>
       <button type=\"submit\" name=\"view\" value=\"Services\" form=\"views\">Services</button>
       <button type=\"submit\" name=\"view\" value=\"File\" form=\"views\">File Manager</button>
-      <a href=\"scripts/adminer.php\" target=\"_blank\"><button type=\"submit\" form=\"\">Database Maintenance</button></a>
+      <button type=\"submit\" name=\"view\" value=\"Adminer\" form=\"views\">Database Maintenance</button>
       <button type=\"submit\" name=\"view\" value=\"Webterm\" form=\"views\">Web Terminal</button>
       <button type=\"submit\" name=\"view\" value=\"Included\" form=\"views\">Custom Species List</button>
       <button type=\"submit\" name=\"view\" value=\"Excluded\" form=\"views\">Excluded Species List</button>
       <button type=\"submit\" name=\"view\" value=\"Converted\" form=\"views\">Converted Species List</button>
+      <button type=\"submit\" name=\"view\" value=\"Whitelisted\" form=\"views\">White-listed Species List</button>
       </form>
       </div>";
   }
@@ -203,6 +206,33 @@ if(isset($_GET['view'])){
     }
     include('./scripts/exclude_list.php');
   }
+  if($_GET['view'] == "Whitelisted"){
+    ensure_authenticated();
+    if(isset($_GET['species']) && isset($_GET['add'])){
+      $file = './scripts/whitelist_species_list.txt';
+      $str = file_get_contents("$file");
+      $str = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $str);
+      file_put_contents("$file", "$str");
+      foreach ($_GET['species'] as $selectedOption)
+        file_put_contents("./scripts/whitelist_species_list.txt", htmlspecialchars_decode($selectedOption, ENT_QUOTES)."\n", FILE_APPEND);
+    } elseif (isset($_GET['species']) && isset($_GET['del'])){
+      $file = './scripts/whitelist_species_list.txt';
+      $str = file_get_contents("$file");
+      $str = preg_replace('/^\h*\v+/m', '', $str);
+      file_put_contents("$file", "$str");
+      foreach($_GET['species'] as $selectedOption) {
+        $content = file_get_contents("./scripts/whitelist_species_list.txt");
+        $newcontent = str_replace($selectedOption, "", "$content");
+        $newcontent = str_replace(htmlspecialchars_decode($selectedOption, ENT_QUOTES), "", "$content");
+        file_put_contents("./scripts/whitelist_species_list.txt", "$newcontent");
+      }
+      $file = './scripts/whitelist_species_list.txt';
+      $str = file_get_contents("$file");
+      $str = preg_replace('/^\h*\v+/m', '', $str);
+      file_put_contents("$file", "$str");
+    }
+    include('./scripts/whitelist_list.php');
+  }
   if($_GET['view'] == "Converted"){
     ensure_authenticated();
 	if(isset($_GET['species']) && isset($_GET['add'])){
@@ -232,6 +262,9 @@ if(isset($_GET['view'])){
   }
   if($_GET['view'] == "File"){
     echo "<iframe src='scripts/filemanager/filemanager.php'></iframe>";
+  }
+  if($_GET['view'] == "Adminer"){
+    echo "<iframe src='scripts/adminer.php'></iframe>";
   }
   if($_GET['view'] == "Webterm"){
     ensure_authenticated('You cannot access the web terminal');

@@ -17,12 +17,11 @@ install_depends() {
   curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
   apt -qqq update && apt -qqy upgrade
   echo "icecast2 icecast2/icecast-setup boolean false" | debconf-set-selections
-  apt install -qqy caddy ftpd sqlite3 php-sqlite3 alsa-utils \
-    pulseaudio avahi-utils sox libsox-fmt-mp3 php-fpm php-curl php-xml \
-    php-zip php icecast2 swig ffmpeg wget unzip curl cmake make bc libjpeg-dev \
-    zlib1g-dev python3-dev python3-pip python3-venv lsof net-tools gcc python3-dev inotify-tools
+  apt install -qqy caddy sqlite3 php-sqlite3 php-fpm php-curl php-xml php-zip php icecast2 \
+    pulseaudio avahi-utils sox libsox-fmt-mp3 alsa-utils ffmpeg \
+    wget curl unzip bc \
+    python3-pip python3-venv lsof net-tools inotify-tools
 }
-
 
 set_hostname() {
   if [ "$(hostname)" == "raspberrypi" ];then
@@ -68,6 +67,8 @@ create_necessary_dirs() {
   sudo -u ${USER} ln -fs $my_dir/exclude_species_list.txt $my_dir/scripts
   sudo -u ${USER} ln -fs $my_dir/include_species_list.txt $my_dir/scripts
   sudo -u ${USER} ln -fs $my_dir/convert_species_list.txt $my_dir/scripts
+  sudo -u ${USER} ln -fs $my_dir/whitelist_species_list.txt $my_dir/scripts
+  sudo -u ${USER} ln -fs $my_dir/confirmed_species_list.txt $my_dir/scripts
   sudo -u ${USER} ln -fs $my_dir/homepage/* ${EXTRACTED}
   sudo -u ${USER} ln -fs $my_dir/model/labels.txt ${my_dir}/scripts
   sudo -u ${USER} ln -fs $my_dir/scripts ${EXTRACTED}

@@ -14,6 +14,17 @@ $user = get_user();
 $db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
 $db->busyTimeout(1000);
 
+$confirmedspecies_filename = $home."/BirdNET-Pi/scripts/confirmed_species_list.txt";
+if (!file_exists($confirmedspecies_filename) || filesize($confirmedspecies_filename) == 0) {
+  file_put_contents($confirmedspecies_filename, "# List of confirmed species\n");
+}
+$fp = @fopen($confirmedspecies_filename, 'r');
+if ($fp) {
+  $confirmed_species = explode("\n", fread($fp, filesize($confirmedspecies_filename)));
+} else {
+  $confirmed_species = [];
+}
+
 if(isset($_GET['deletefile'])) {
   ensure_authenticated('You must be authenticated to delete files.');
   if (preg_match('~^.*(\.\.\/).+$~', $_GET['deletefile'])) {
@@ -63,6 +74,25 @@ if(isset($_GET['excludefile'])) {
       }
     }
     file_put_contents($home."/BirdNET-Pi/scripts/disk_check_exclude.txt", $result);
+    echo "OK";
+    die();
+  }
+}
+
+if(isset($_GET['confirmspecies'])) {
+  if(isset($_GET['confirm_add'])) {
+    $myfile = fopen($home."/BirdNET-Pi/scripts/confirmed_species_list.txt", "a") or die("Unable to open file!");
+    $txt = $_GET['confirmspecies'];
+    fwrite($myfile, $txt."\n");
+    fclose($myfile);
+    echo "OK";
+    die();
+  } else {
+    $search = $_GET['confirmspecies'];
+    $lines = array_filter($confirmed_species, function($line) use ($search) {
+      return stripos($line, $search) === false;
+    });
+    file_put_contents($home."/BirdNET-Pi/scripts/confirmed_species_list.txt", implode("\n", $lines));
     echo "OK";
     die();
   }
@@ -206,6 +236,22 @@ function deleteDetection(filename,copylink=false) {
   }
 }
 
+function confirmspecies(species, type) {
+  const xhttp = new XMLHttpRequest();
+  xhttp.onload = function() {
+  if(this.responseText == "OK"){
+      location.reload();
+    }
+  }
+  if(type == "add") {
+    xhttp.open("GET", "play.php?confirmspecies="+species+"&confirm_add=true", true);
+  } else {
+    xhttp.open("GET", "play.php?confirmspecies="+species+"&confirm_del=true", true);
+  }
+  xhttp.send();
+  elem.setAttribute("src","images/spinner.gif");
+}
+
 function toggleLock(filename, type, elem) {
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
@@ -282,7 +328,7 @@ function changeDetection(filename,copylink=false) {
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
     const labels = JSON.parse(this.responseText);
-    let dropdown = '<input type="text" id="filterInput" placeholder="Type to filter..."> <button id="cancelButton">Cancel</button> <br><select id="labelDropdown" size="5" style="display: block; margin: 0 auto;"></select>';
+    let dropdown = '<input type="text" id="filterInput" placeholder="Type to filter..."> <button id="cancelButton">Cancel</button> <br><select id="labelDropdown" class="testbtn" size="5" style="display: block; margin: 0 auto;"></select>';
 
 	// Check if the modal already exists
     let modal = document.getElementById('myModal');
@@ -298,7 +344,7 @@ function changeDetection(filename,copylink=false) {
 
       // Add a title to the modal box
       let title = document.createElement('h2');
-      title.textContent = 'Please select the correct specie here:';
+      title.textContent = 'Please select the correct species here:';
       content.appendChild(title);
 
       // Add the dropdown to the content
@@ -404,10 +450,10 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
    <form action="views.php" method="GET">
       <input type="hidden" name="view" value="Recordings">
       <input type="hidden" name="<?php echo $view; ?>" value="<?php echo $_GET['date']; ?>">
-      <button <?php if(!isset($_GET['sort']) || $_GET['sort'] == "alphabetical"){ echo "style='background:#9fe29b !important;'"; }?> class="sortbutton" type="submit" name="sort" value="alphabetical">
+      <button <?php if(!isset($_GET['sort']) || $_GET['sort'] == "alphabetical"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="alphabetical">
          <img src="images/sort_abc.svg" title="Sort by alphabetical" alt="Sort by alphabetical">
       </button>
-      <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "occurrences"){ echo "style='background:#9fe29b !important;'"; }?> class="sortbutton" type="submit" name="sort" value="occurrences">
+      <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "occurrences"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="occurrences">
          <img src="images/sort_occ.svg" title="Sort by occurrences" alt="Sort by occurrences">
       </button>
    </form>
@@ -452,6 +498,12 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
           ?>
           <td class="spec">
               <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index];?></button>
+              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if (in_array(str_replace("'", "", $birds[$index]), $confirmed_species)) {
+                echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"del\")'";
+              } else {
+                echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"add\")'";
+              }
+              ?>>
           </td>
           <?php
         } else {
@@ -489,6 +541,12 @@ for ($row = 0; $row < $num_rows; $row++) {
       ?>
       <td class="spec">
           <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index];?></button>
+              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if (in_array(str_replace("'", "", $birds[$index]), $confirmed_species)) {
+                echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"del\")'";
+              } else {
+                echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"add\")'";
+              }
+              ?>>
       </td>
       <?php
     } else {
@@ -517,10 +575,10 @@ if(isset($_GET['species'])){ ?>
       <input type="hidden" name="view" value="Recordings">
       <input type="hidden" name="species" value="<?php echo $_GET['species']; ?>">
       <input type="hidden" name="sort" value="<?php echo $_GET['sort']; ?>">
-      <button <?php if(!isset($_GET['sort']) || $_GET['sort'] == "" || $_GET['sort'] == "date"){ echo "style='background:#9fe29b !important;'"; }?> class="sortbutton" type="submit" name="sort" value="date">
+      <button <?php if(!isset($_GET['sort']) || $_GET['sort'] == "" || $_GET['sort'] == "date"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="date">
          <img width=35px src="images/sort_date.svg" title="Sort by date" alt="Sort by date">
       </button>
-      <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "confidence"){ echo "style='background:#9fe29b !important;'"; }?> class="sortbutton" type="submit" name="sort" value="confidence">
+      <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "confidence"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="confidence">
          <img src="images/sort_occ.svg" title="Sort by confidence" alt="Sort by confidence">
       </button><br>
       <input style="margin-top:10px" <?php if(isset($_GET['only_excluded'])){ echo "checked"; }?> type="checkbox" name="only_excluded" onChange="submit()">
@@ -558,10 +616,21 @@ while ($result2->fetchArray(SQLITE3_ASSOC)) {
     $num_rows++;
 }
 $result2->reset(); // reset the pointer to the beginning of the result set
+$sciname = get_sci_name($name);
+$info_url = get_info_url($sciname);
+$url = $info_url['URL'];
 echo "<table>
-  <tr>
-  <th>$name</th>
-  </tr>";
+  <tr><th>$name<span style=\"font-weight:normal;\">
+  <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=";
+  if (in_array(str_replace("'", "", $birds[$index]), $confirmed_species)) {
+    echo "\"images/check.svg\" title=\"Species not confirmed\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"del\")'";
+    } else {
+    echo "\"images/question.svg\" title=\"Species confirmed\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"add\")'";
+  }
+echo "<br><br><i>$sciname</i></span><br>
+    <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
+    <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
+  </th></tr>";
   $iter=0;
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
   {
@@ -641,10 +710,23 @@ echo "<table>
     $statement2 = $db->prepare("SELECT * FROM detections where File_name == \"$name\" ORDER BY Date DESC, Time DESC");
     ensure_db_ok($statement2);
     $result2 = $statement2->execute();
+    $comname = str_replace("_", " ", strtok($name, '-'));
+    $sciname = get_sci_name($comname);
+    $info_url = get_info_url($sciname);
+    $url = $info_url['URL'];
     echo "<table>
-      <tr>
-      <th>$name</th>
-      </tr>";
+    <tr><th>".$name."
+    <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=";
+    if (in_array(str_replace("'", "", $birds[$index]), $confirmed_species)) {
+      echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"del\")'";
+    } else {
+      echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"add\")'";
+    }
+    echo "><br>
+    <i>".$sciname."</i><br>
+        <a href=\"".$url."\" target=\"_blank\"><img title=\"".$url_title."\" src=\"images/info.png\" width=\"20\"></a>
+        <a href=\"https://wikipedia.org/wiki/".$sciname."\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
+    </th></tr>";
       while($results=$result2->fetchArray(SQLITE3_ASSOC))
       {
         $comname = preg_replace('/ /', '_', $results['Com_Name']);

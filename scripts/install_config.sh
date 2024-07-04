@@ -9,7 +9,7 @@ birdnet_conf=$my_dir/birdnet.conf
 
 # Retrieve latitude and longitude from web
 json=$(curl -s4 http://ip-api.com/json)
-if [ "$(echo "$json" | jq -r .status)" = "success" ]; then
+if [ -n "$json" ] && [ "$(echo "$json" | jq -r .status)" = "success" ]; then
   LATITUDE=$(echo "$json" | jq .lat)
   LONGITUDE=$(echo "$json" | jq .lon)
 else
@@ -45,7 +45,7 @@ LONGITUDE=$LONGITUDE
 
 MODEL=BirdNET_GLOBAL_6K_V2.4_Model_FP16
 SF_THRESH=0.03
-DATA_MODEL_VERSION=2
+DATA_MODEL_VERSION=1
 
 #---------------------  BirdWeather Station Information -----------------------#
 #_____________The variable below can be set to have your BirdNET-Pi____________#
@@ -117,6 +117,18 @@ APPRISE_ONLY_NOTIFY_SPECIES_NAMES_2=""
 FLICKR_API_KEY=
 FLICKR_FILTER_EMAIL=
 
+#----------------------  Site to pull info from Images  ------------------------#
+## ALLABOUTBIRDS or EBIRD
+## default ALLABOUTBIRDS, EBIRD better for eurasian locations
+
+INFO_SITE="ALLABOUTBIRDS"
+
+#-------------------------------  Color scheme  --------------------------------#
+## light or dark
+## default light
+
+COLOR_SCHEME="light"
+
 ################################################################################
 #--------------------------------  Defaults  ----------------------------------#
 ################################################################################
@@ -141,8 +153,10 @@ REC_CARD=default
 ## PROCESSED is the directory where the formerly 'Analyzed' files are moved
 ## after extractions have been made from them. This includes both WAVE and
 ## BirdNET.selection.txt files.
+## PROCESSED_SIZE is the number of files kept in this directory, default is 0
 
 PROCESSED=$HOME/BirdSongs/Processed
+PROCESSED_SIZE=0
 
 ## EXTRACTED is the directory where the extracted audio selections are moved.
 
