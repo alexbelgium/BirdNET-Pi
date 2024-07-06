@@ -190,6 +190,8 @@ class Flickr {
       $this->get_from_flickr($sci_name);
       $image = $this->get_image_from_db($sci_name);
     }
+    $photos_url = str_replace('/people/', '/photos/', $image['author_url'].'/'.$image['id']);
+    $image['photos_url'] = $photos_url;
     return $image;
   }
 
@@ -281,7 +283,6 @@ function get_info_url($sciname){
   if ($config['INFO_SITE'] === 'EBIRD'){
     require 'scripts/ebird.php';
     $ebird = $ebirds[$sciname];
-    debug_log($ebird);
     $language = $config['DATABASE_LANG'];
     $url = "https://ebird.org/species/$ebird?siteLanguage=$language";
     $url_title = "eBirds";

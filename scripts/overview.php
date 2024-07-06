@@ -94,8 +94,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
           $image = $_SESSION['images'][$key];
         } else {
           $flickr_cache = $flickr->get_image($mostrecent['Sci_Name']);
-          $modaltext = $flickr_cache["author_url"] . "/" . $flickr_cache["id"];
-          array_push($_SESSION["images"], array($comname, $flickr_cache["image_url"], $flickr_cache["title"], $modaltext, $flickr_cache["author_url"], $flickr_cache["license_url"]));
+          array_push($_SESSION["images"], array($comname, $flickr_cache["image_url"], $flickr_cache["title"], $flickr_cache["photos_url"], $flickr_cache["author_url"], $flickr_cache["license_url"]));
           $image = $_SESSION['images'][count($_SESSION['images']) - 1];
         }
       }
@@ -432,17 +431,6 @@ function generateMiniGraph(elem, comname) {
       }
       var chartWindow = document.createElement('div');
       chartWindow.className = "chartdiv"
-      chartWindow.style.position = 'fixed';
-      chartWindow.style.top = '0%';
-      chartWindow.style.left = '50%';
-      chartWindow.style.width = window.innerWidth < 700 ? '40%' : '20%';
-      chartWindow.style.height = window.innerWidth < 700 ? '25%' : '16%';
-      chartWindow.style.backgroundColor = '#fff';
-      chartWindow.style.zIndex = '9999';
-      chartWindow.style.overflow = 'auto';
-      chartWindow.style.borderRadius = '5px';
-      chartWindow.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
-
       document.body.appendChild(chartWindow);
 
 
