@@ -11,12 +11,44 @@ $home = get_home();
 $config = get_config();
 $user = get_user();
 
-$db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
-$db->busyTimeout(1000);
+// List of functions
+//getOBSToken
+//getOBSObservation
+//getOBSSound
+//postOBS
+//updateOBS
 
-// Open observation file
-if(isset($_GET['filename'])){
-    $name = $_GET['filename'];
+function getOBSToken() {
+    $CLIENT_ID = getenv('CLIENT_ID');
+    $MAIL = getenv('MAIL');
+    $PASSWORD = getenv('PASSWORD');
+
+    $ch = curl_init();
+
+    curl_setopt($ch, CURLOPT_URL, 'https://observation.org/api/v1/oauth2/token/');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(array('client_id' => $CLIENT_ID, 'grant_type' => 'password', 'email' => $MAIL, 'password' => $PASSWORD)));
+
+    $headers = array();
+    $headers[] = 'Content-Type: application/x-www-form-urlencoded';
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+    $result = curl_exec($ch);
+    if (curl_errno($ch)) {
+        echo 'Error:' . curl_error($ch);
+    }
+    curl_close($ch);
+
+    $result_array = json_decode($result, true);
+    $OBS_TOKEN = $result_array['access_token'];
+
+    return $OBS_TOKEN;
+}
+
+function getObservationData() {
+    $db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
+    $db->busyTimeout(5000);
     $statement2 = $db->prepare("SELECT * FROM detections where File_name == \"$name\" ORDER BY Date DESC, Time DESC");
     ensure_db_ok($statement2);
     $result2 = $statement2->execute();
@@ -41,25 +73,41 @@ if(isset($_GET['filename'])){
     $server = "observation.org"
 
     // Prepare new observation data
-    $data = array(
+    $OBS_DATA = array(
         'species' => '<replace_with_species>', // replace with your species
         'date' => $date,
         'time' => $time,
         'point' => "POINT($latitude $longitude)",
         'method' => 'heard'
     );
-    // If audio file exists, add it to upload
-    $cfile = new CURLFile($filename, 'audio/mpeg', basename($filename));
-    $data['upload_sounds'] = $cfile;
-    $oauth_token = "<oauth2 token>"; // replace with your oauth2 token
-    // upload observation
+
+    return $OBS_DATA;
+}
+
+function getObservationSound() {
+    if (file_exists($filename)) {
+        $file_parts = pathinfo($filename);
+    if ($file_parts['extension'] == 'mp3' || $file_parts['extension'] == 'wav') {
+        $cfile = new CURLFile($filename, 'audio/mpeg', basename($filename));
+        $OBS_DATA['upload_sounds'] = $cfile;
+        return $OBS_DATA;
+    } else {
+        echo '<script type="text/javascript">alert("The file is not a MP3 or WAV file.");</script>';
+    }
+    } else {
+        echo '<script type="text/javascript">alert("The file does not exist.");</script>';
+    }
+}
+
+function postOBS {
+     = array('Authorization: Bearer ' . getOBSToken());
     $url = "https:" .$server . "/api/v1/observations/create/";
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-        "Authorization: Bearer " . $oauth_token,
+        $OBS_HEADERS,
         "Content-Type: multipart/form-data"
     ));
 
@@ -71,4 +119,5 @@ if(isset($_GET['filename'])){
         echo 'Response: ' . $response;
     curl_close($ch);
 }
+
 ?>
