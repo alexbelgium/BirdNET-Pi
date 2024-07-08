@@ -18,6 +18,8 @@ $user = get_user();
 //postOBS
 //updateOBS
 
+$filename = $_GET['filename'];
+
 function getOBSToken() {
     $CLIENT_ID = getenv('CLIENT_ID');
     $MAIL = getenv('MAIL');
@@ -49,7 +51,7 @@ function getOBSToken() {
 function getObservationData() {
     $db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
     $db->busyTimeout(5000);
-    $statement2 = $db->prepare("SELECT * FROM detections where File_name == \"$name\" ORDER BY Date DESC, Time DESC");
+    $statement2 = $db->prepare("SELECT * FROM detections where File_name == \"$filename\" ORDER BY Date DESC, Time DESC");
     ensure_db_ok($statement2);
     $result2 = $statement2->execute();
     while($results=$result2->fetchArray(SQLITE3_ASSOC))
@@ -70,7 +72,7 @@ function getObservationData() {
 
     // Define variables
     $OBS_UUID = "<replace_with_uuid>"; // replace with your uuid
-    $server = "observation.org"
+    $server = "observation.org";
 
     // Prepare new observation data
     $OBS_DATA = array(
@@ -100,7 +102,7 @@ function getObservationSound() {
 }
 
 function postOBS {
-     = array('Authorization: Bearer ' . getOBSToken());
+    $headers = array('Authorization: Bearer ' . getOBSToken());
     $url = "https:" .$server . "/api/v1/observations/create/";
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -119,5 +121,10 @@ function postOBS {
         echo 'Response: ' . $response;
     curl_close($ch);
 }
+
+$OBSTOKEN = getOBSToken();
+$data = getObservationData();
+$data = getObservationSound();
+postOBS();
 
 ?>
