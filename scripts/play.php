@@ -90,6 +90,15 @@ if(isset($_GET['changefile']) && isset($_GET['newname'])) {
   die();
 }
 
+
+	// add observations_uploaded_list.txt lines into an array for grepping
+        $fp = @fopen($home."/BirdNET-Pi/scripts/observations_uploaded_list.txt", 'r');
+        if ($fp) {
+          $disk_check_exclude_arr = explode("\n", fread($fp, filesize($home."/BirdNET-Pi/scripts/disk_check_exclude.txt")));
+        } else {
+          $disk_check_exclude_arr = [];
+        }
+
 $shifted_path = $home."/BirdSongs/Extracted/By_Date/shifted/";
 
 if(isset($_GET['shiftfile'])) {
@@ -278,6 +287,31 @@ function toggleShiftFreq(filename, shiftAction, elem) {
   elem.setAttribute("src","images/spinner.gif");
 }
 
+
+function uploadfile(filename, type) {
+  const xhttp = new XMLHttpRequest();
+  xhttp.onload = function() {
+    if(this.responseText == "OK"){
+      if(type == "update") {
+        elem.setAttribute("src","images/uploaded.svg");
+        elem.setAttribute("title", "This file is already uploaded.");
+        elem.setAttribute("onclick", ");
+      } else {
+        elem.setAttribute("src","images/toupload.svg");
+        elem.setAttribute("title", "This file will be uploaded to your defined site in the settings.");
+        elem.setAttribute("onclick", elem.getAttribute("onclick").replace("upload","update"));
+      }
+    }
+  }
+  if(type == "update") {
+    xhttp.open("GET", "play.php?uploadfile="+filename+"&uuid="+filename+", true);
+  } else {
+    xhttp.open("GET", "play.php?uploadfile="+filename+", true);  
+  }
+  xhttp.send();
+  elem.setAttribute("src","images/spinner.gif");
+}
+	
 function changeDetection(filename,copylink=false) {
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
