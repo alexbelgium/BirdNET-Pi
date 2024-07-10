@@ -142,6 +142,7 @@ function postOBS($OBSTOKEN, $OBS_DATA) {
         echo 'Error: ' . curl_error($ch);
     else
         echo 'Response: ' . $response;
+    // need to write uuid & observation site to file
     curl_close($ch);
 }
 
