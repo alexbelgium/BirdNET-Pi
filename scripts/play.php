@@ -654,7 +654,7 @@ echo "<table>
   	    $uploadicon = "images/upload_ok.svg";
 	    $upload = $upload_mapping[$filenamebase];
             $uploadtitle = "https://" . $upload['website'] . "/observation/" . $upload['uuid'];
-            $uploadurl = "window.open('https://" . $upload['website'] . "/observation/" . $upload['uuid'] . "', '_blank');";
+            $uploadurl = "window.open('https://".$upload['website']."/observation/".$upload['uuid']."',\"_blank\");";
 	  } else {
 	    $uploadicon = "images/upload.svg";
 	    $uploadtitle = "Please click here to upload file to observation site.";
@@ -662,7 +662,7 @@ echo "<table>
 	    $uploadurl = "uploadfile(\"".$filenamebase."\",\"".$uploadtype."\", this)";
           }
 	}
-	    
+
       echo "<tr>
   <td class=\"relative\"> 
 <img style='cursor:pointer;left:15px' onclick=".$uploadurl." class=\"copyimage\" width=25 title=\"".$uploadtitle."\" src=\"".$uploadicon."\"> 
@@ -735,7 +735,7 @@ echo "<table>
   	    $uploadicon = "images/upload_ok.svg";
 	    $upload = $upload_mapping[$filenamebase];
             $uploadtitle = "https://" . $upload['website'] . "/observation/" . $upload['uuid'];
-            $uploadurl = "window.open('https://" . $upload['website'] . "/observation/" . $upload['uuid'] . "', '_blank');";
+            $uploadurl = "window.open('https://".$upload['website']."/observation/".$upload['uuid']."',\"_blank\");";
 	  } else {
 	    $uploadicon = "images/upload.svg";
 	    $uploadtitle = "Please click here to upload file to observation site.";
