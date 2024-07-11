@@ -704,9 +704,9 @@ echo "<table>
         $filename_formatted = $date."/".$comname."/".$results['File_Name'];
 
         // add uploaded_observations_list.txt lines into an array for grepping
-        $fp = @fopen($home."/BirdNET-Pi/scripts/uploaded_observations_list.txt.txt", 'r');
+        $fp = @fopen($home."/BirdNET-Pi/scripts/uploaded_observations_list.txt", 'r');
         if ($fp) {
-          $uploaded_observations_arr = explode("\n", fread($fp, filesize($home."/BirdNET-Pi/scripts/uploaded_observations_list.txt.txt")));
+          $uploaded_observations_arr = explode("\n", fread($fp, filesize($home."/BirdNET-Pi/scripts/uploaded_observations_list.txt")));
         } else {
           $uploaded_observations = [];
         }
