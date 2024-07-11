@@ -287,15 +287,14 @@ function toggleShiftFreq(filename, shiftAction, elem) {
   elem.setAttribute("src","images/spinner.gif");
 }
 
-
-function uploadfile(filename, type) {
+function uploadfile(filename, type, elem) {
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
     if(this.responseText == "OK"){
       if(type == "update") {
         elem.setAttribute("src","images/uploaded.svg");
         elem.setAttribute("title", "This file is already uploaded.");
-        elem.setAttribute("onclick", ");
+        elem.setAttribute("onclick", "yourFunction()");
       } else {
         elem.setAttribute("src","images/toupload.svg");
         elem.setAttribute("title", "This file will be uploaded to your defined site in the settings.");
@@ -304,14 +303,14 @@ function uploadfile(filename, type) {
     }
   }
   if(type == "update") {
-    xhttp.open("GET", "play.php?uploadfile="+filename+"&uuid="+filename+", true);
+    xhttp.open("GET", "upload_observation.php?uploadfile="+filename+"&uuid="+uuid, true);
   } else {
-    xhttp.open("GET", "play.php?uploadfile="+filename+", true);  
+    xhttp.open("GET", "upload_observation.php?uploadfile="+filename, true);  
   }
   xhttp.send();
   elem.setAttribute("src","images/spinner.gif");
 }
-	
+
 function changeDetection(filename,copylink=false) {
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
@@ -655,6 +654,8 @@ echo "<table>
 
       echo "<tr>
   <td class=\"relative\"> 
+
+<img style='cursor:pointer;left:45px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Delete Detection'> 
 
 <img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Delete Detection'> 
 <img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
