@@ -617,6 +617,17 @@ echo "<table>
       $imageelem = "<a href=\"$filename\"><img src=\"$filename_png\"></a>";
     }
 
+    if (!empty($config["UPLOADSITE_SITE"])) {
+      if(!in_array($filename_formatted, $disk_check_exclude_arr)) {
+        $imageicon = "images/upload.svg";
+        $title = "Please click here to upload file to observation site.";
+        $type = "upload";
+      } else {
+        $imageicon = "images/upload_ok.svg";
+        $title = "This file is already uploaded to observation site.";
+        $type = "update";
+    }
+	  
     if($config["FULL_DISK"] == "purge") {
       if(!in_array($filename_formatted, $disk_check_exclude_arr)) {
         $imageicon = "images/unlock.svg";
@@ -692,6 +703,26 @@ echo "<table>
         $confidence = round((float)round($results['Confidence'],2) * 100 ) . '%';
         $filename_formatted = $date."/".$comname."/".$results['File_Name'];
 
+        // add uploaded_observations_list.txt lines into an array for grepping
+        $fp = @fopen($home."/BirdNET-Pi/scripts/uploaded_observations_list.txt.txt", 'r');
+        if ($fp) {
+          $uploaded_observations_arr = explode("\n", fread($fp, filesize($home."/BirdNET-Pi/scripts/uploaded_observations_list.txt.txt")));
+        } else {
+          $uploaded_observations = [];
+        }
+	      
+	if (!empty($config["UPLOADSITE_SITE"])) {
+	  if(!in_array($filename_formatted, $disk_check_exclude_arr)) {
+	    $uploadicon = "images/upload.svg";
+	    $uploadtitle = "Please click here to upload file to observation site.";
+            $uploadtype = "upload";
+	  } else {
+  	    $uploadicon = "images/upload_ok.svg";
+            $uploadtitle = "This file is already uploaded to observation site.";
+            $uploadtype = "update";
+          }
+	}
+
         // add disk_check_exclude.txt lines into an array for grepping
         $fp = @fopen($home."/BirdNET-Pi/scripts/disk_check_exclude.txt", 'r');
         if ($fp) {
@@ -725,6 +756,7 @@ echo "<table>
           echo "<tr>
       <td class=\"relative\"> 
 
+<img style='cursor:pointer;right:145px' onclick='uploadfile(\"".$filename_formatted."\",\"".$uploadtype."\", this)' class=\"copyimage\" width=25 title=\"".$uploadtitle."\" src=\"".$uploadicon."\"> 
 <img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'> 
 <img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
 <img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
