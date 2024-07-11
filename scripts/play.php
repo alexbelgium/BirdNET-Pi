@@ -665,7 +665,7 @@ echo "<table>
 	    
       echo "<tr>
   <td class=\"relative\"> 
-<img style='cursor:pointer;right:145px' onclick=".$uploadurl." class=\"copyimage\" width=25 title=\"".$uploadtitle."\" src=\"".$uploadicon."\"> 
+<img style='cursor:pointer;left:15px' onclick=".$uploadurl." class=\"copyimage\" width=25 title=\"".$uploadtitle."\" src=\"".$uploadicon."\"> 
 <img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Delete Detection'> 
 <img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
 <img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
@@ -718,29 +718,29 @@ echo "<table>
         $fp = @fopen($home."/BirdNET-Pi/scripts/uploaded_observations_list.txt", 'r');
         if ($fp) {
           while (($line = fgets($fp)) !== false) {
-              $uploadfields = explode(';', $line);
-              $uploadfile = trim($uploadfields[2]);
-              $upload_mapping[$uploadfile] = [
-                  'uuid' => trim($uploadfields[0]),
-                  'website' => trim($uploadfields[1]),
-              ];
+              $parts = explode(';', trim($line));
+              if (count($parts) === 3) {
+                  list($uploaduuid, $uploadsite, $uploadfile) = $parts;
+                  $upload_mapping[$uploadfile] = ['uuid' => $uploaduuid, 'website' => $uploadsite];
+              }
           }
           fclose($fp);
 	} else {
           $upload_mapping = [];
         }
-	      
+
 	if (!empty($config["UPLOADSITE_SITE"])) {
-	  if(isset($upload_mapping[$filename_formatted])) {
+	  $filenamebase = $results['File_Name'];
+	  if(isset($upload_mapping[$filenamebase])) {
   	    $uploadicon = "images/upload_ok.svg";
-            $uploadtitle = "This file is already uploaded to the observation site.";
-	    $result = $filename_mapping[$filename];
-            $uploadurl = "window.open('https://" . $result['website'] . "/observation/" . $result['uuid'] . "', '_blank');";
+	    $upload = $upload_mapping[$filenamebase];
+            $uploadtitle = "https://" . $upload['website'] . "/observation/" . $upload['uuid'];
+            $uploadurl = "window.open('https://" . $upload['website'] . "/observation/" . $upload['uuid'] . "', '_blank');";
 	  } else {
 	    $uploadicon = "images/upload.svg";
 	    $uploadtitle = "Please click here to upload file to observation site.";
             $uploadtype = "upload";
-	    $uploadurl = "uploadfile(\"".$filename_formatted."\",\"".$uploadtype."\", this)";
+	    $uploadurl = "uploadfile(\"".$filenamebase."\",\"".$uploadtype."\", this)";
           }
 	}
 
@@ -777,7 +777,7 @@ echo "<table>
           echo "<tr>
       <td class=\"relative\"> 
 
-<img style='cursor:pointer;right:145px' onclick=".$uploadurl." class=\"copyimage\" width=25 title=\"".$uploadtitle."\" src=\"".$uploadicon."\"> 
+<img style='cursor:pointer;left:15px' onclick=".$uploadurl." class=\"copyimage\" width=25 title=\"".$uploadtitle."\" src=\"".$uploadicon."\"> 
 <img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'> 
 <img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
 <img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
