@@ -537,9 +537,9 @@ function runProcess() {
       <br>This feature however should only be used on ponctual basis with manually verified observations.</p>
       <br>
       <label for="uploadsite_user" id="uploadsite_user_label" style="display:none;">Username: </label>
-      <input name="uploadsite_user" type="text" id="uploadsite_user" value="<?php print($config['UPLOADSITE_USER']);?>" style="display:none;" /><br>
+      <input name="uploadsite_user" type="text" id="uploadsite_user" value="<?php print($config['UPLOADSITE_USER']);?>" style="display:none;" />
       <label for="uploadsite_pass" id="uploadsite_pass_label" style="display:none;">Password: </label>
-      <input name="uploadsite_pass" type="text" id="uploadsite_pass" value="<?php print($config['UPLOADSITE_PASS']);?>" style="display:none;" /><br>
+      <input name="uploadsite_pass" type="text" id="uploadsite_pass" value="<?php print($config['UPLOADSITE_PASS']);?>" style="display:none;" />
     </td></tr></table><br>
 
       <table class="settingstable" style="width:100%"><tr><td>
