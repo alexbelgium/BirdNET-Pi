@@ -90,15 +90,6 @@ if(isset($_GET['changefile']) && isset($_GET['newname'])) {
   die();
 }
 
-
-	// add uploaded_observations_list lines into an array for grepping
-        $fp = @fopen($home."/BirdNET-Pi/scripts/uploaded_observations_list", 'r');
-        if ($fp) {
-          $disk_check_exclude_arr = explode("\n", fread($fp, filesize($home."/BirdNET-Pi/scripts/disk_check_exclude.txt")));
-        } else {
-          $disk_check_exclude_arr = [];
-        }
-
 $shifted_path = $home."/BirdSongs/Extracted/By_Date/shifted/";
 
 if(isset($_GET['shiftfile'])) {
