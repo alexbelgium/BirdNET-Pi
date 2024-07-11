@@ -91,8 +91,8 @@ if(isset($_GET['changefile']) && isset($_GET['newname'])) {
 }
 
 
-	// add observations_uploaded_list.txt lines into an array for grepping
-        $fp = @fopen($home."/BirdNET-Pi/scripts/observations_uploaded_list.txt", 'r');
+	// add uploaded_observations_list lines into an array for grepping
+        $fp = @fopen($home."/BirdNET-Pi/scripts/uploaded_observations_list", 'r');
         if ($fp) {
           $disk_check_exclude_arr = explode("\n", fread($fp, filesize($home."/BirdNET-Pi/scripts/disk_check_exclude.txt")));
         } else {
