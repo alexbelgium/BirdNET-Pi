@@ -282,18 +282,12 @@ function uploadfile(filename, type, elem) {
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
     if(this.responseText == "OK"){
-      if(type == "upload") {
-        elem.setAttribute("src","images/upload_ok.svg");
-        elem.setAttribute("title", "This file will be uploaded to your defined site in the settings.");
-        elem.setAttribute("onclick", elem.getAttribute("onclick").replace("upload","update"));
-      }
+      elem.setAttribute("src","images/upload_ok.svg");
+      elem.setAttribute("title", "This file will be uploaded to your defined site in the settings.");
+      elem.setAttribute("onclick", elem.getAttribute("onclick").replace("upload","update"));
     }
   }
-  if(type == "update") {
-    xhttp.open("GET", "upload_observation.php?uploadfile="+filename+"&uuid="+uuid, true);
-  } else {
-    xhttp.open("GET", "upload_observation.php?uploadfile="+filename, true);  
-  }
+  xhttp.open("GET", "upload_observation.php?uploadfile="+filename, true);  
   xhttp.send();
   elem.setAttribute("src","images/spinner.gif");
 }
@@ -616,17 +610,6 @@ echo "<table>
     } else {
       $imageelem = "<a href=\"$filename\"><img src=\"$filename_png\"></a>";
     }
-
-    if (!empty($config["UPLOADSITE_SITE"])) {
-      if(!in_array($filename_formatted, $disk_check_exclude_arr)) {
-        $imageicon = "images/upload.svg";
-        $title = "Please click here to upload file to observation site.";
-        $type = "upload";
-      } else {
-        $imageicon = "images/upload_ok.svg";
-        $title = "This file is already uploaded to observation site.";
-        $type = "update";
-    }
 	  
     if($config["FULL_DISK"] == "purge") {
       if(!in_array($filename_formatted, $disk_check_exclude_arr)) {
@@ -724,12 +707,12 @@ echo "<table>
   	    $uploadicon = "images/upload_ok.svg";
             $uploadtitle = "This file is already uploaded to the observation site.";
 	    $result = $filename_mapping[$filename];
-	    $uploadurl = "window.open(\'https://' . $result['website'] . "/observation/" . $result['uuid'], \'_blank\');"
+            $uploadurl = "window.open('https://" . $result['website'] . "/observation/" . $result['uuid'] . "', '_blank');";
 	  } else {
 	    $uploadicon = "images/upload.svg";
 	    $uploadtitle = "Please click here to upload file to observation site.";
             $uploadtype = "upload";
-	    $uploadurl = "onclick='uploadfile(\"".$filename_formatted."\",\"".$uploadtype."\", this)'";
+	    $uploadurl = "uploadfile(\"".$filename_formatted."\",\"".$uploadtype."\", this)";
           }
 	}
 
