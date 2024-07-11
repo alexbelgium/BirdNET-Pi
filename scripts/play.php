@@ -282,12 +282,8 @@ function uploadfile(filename, type, elem) {
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
     if(this.responseText == "OK"){
-      if(type == "update") {
-        elem.setAttribute("src","images/uploaded.svg");
-        elem.setAttribute("title", "This file is already uploaded.");
-        elem.setAttribute("onclick", "yourFunction()");
-      } else {
-        elem.setAttribute("src","images/toupload.svg");
+      if(type == "upload") {
+        elem.setAttribute("src","images/upload_ok.svg");
         elem.setAttribute("title", "This file will be uploaded to your defined site in the settings.");
         elem.setAttribute("onclick", elem.getAttribute("onclick").replace("upload","update"));
       }
