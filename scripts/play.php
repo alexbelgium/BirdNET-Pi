@@ -683,8 +683,8 @@ echo "<table>
 	  if(isset($upload_mapping[$filenamebase])) {
   	    $uploadicon = "images/upload_ok.svg";
 	    $upload = $upload_mapping[$filenamebase];
-            $uploadtitle = "https://" . $upload['website'] . "/observation/" . $upload['uuid'];
-            $uploadurl = "window.open('https://".$upload['website']."/observation/".$upload['uuid']."',\"_blank\");";
+	    $uploadtitle = getOBSURL($upload['website'], $upload['uuid']);
+            $uploadurl = "window.open('$uploadtitle',\"_blank\");";
 	  } else {
 	    $uploadicon = "images/upload.svg";
 	    $uploadtitle = "Please click here to upload file to observation site.";
