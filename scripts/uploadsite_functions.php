@@ -118,14 +118,22 @@ function getObservationData($filename) {
 
 // Save to file
 function postfile($OBS_ID, $UPLOADSITE_SITE, $filename) {
-    global $home; // Assuming $home is defined somewhere in your script
+    global $home;
     $file_path = $home . '/BirdNET-Pi/scripts/uploaded_observations_list.txt';
     if (!file_exists($file_path)) {
         $header = "uuid;uploadsite;filename\n";
-        file_put_contents($file_path, $header);
+        $result = file_put_contents($file_path, $header);
+        if ($result === false) {
+            echo "Failed to create or write to file: $file_path";
+            return false;
+        }
     }
     $data = "$OBS_ID;$UPLOADSITE_SITE;$filename\n";
-    file_put_contents($file_path, $data, FILE_APPEND);
+    $result = file_put_contents($file_path, $data, FILE_APPEND);
+    if ($result === false) {
+        echo "Failed to append data to file: $file_path";
+        return false;
+    }
     return true;
 }
 
