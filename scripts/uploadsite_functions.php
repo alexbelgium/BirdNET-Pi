@@ -111,10 +111,10 @@ function getObservationData() {
         $cfile = new CURLFile($filename, 'audio/mpeg', basename($filename));
         $OBS_DATA['upload_sounds'] = $cfile;
     } else {
-        echo '<script type="text/javascript">alert("The file is not a MP3 or WAV file.");</script>';
+        echo 'Warning : audio file is not a MP3 or WAV file, it will not be added';
     }
     } else {
-        echo '<script type="text/javascript">alert("The file does not exist.");</script>';
+        echo 'Warning : audio file does not exist';
     }
 
     // Return json value
