@@ -92,17 +92,19 @@ if(isset($_GET['changefile']) && isset($_GET['newname'])) {
 }
 
 # All functions are in uploadsite_functions.php
-if(isset($_GET['uploadfile'])) {
+if(isset($_GET['uploadfile']) && isset($_GET['uploadsite'])) {
     ensure_authenticated('You must be authentificated before uploading observations');
     $filename = urldecode($_GET['uploadfile']);
-    if (file_exists($filename)) {
-      $basename = basename($filename);
-      $OBSTOKEN = getOBSToken();
-      $OBS_DATA = getObservationData($basename);
-      postOBS($OBSTOKEN,$OBS_DATA);
+    $website = urldecode($_GET['uploadsite']);
+    $OBSTOKEN = getOBSToken($website);
+    $OBS_DATA = getObservationData($filename);
+    $OBS_RES = postOBS($website,$OBSTOKEN,$OBS_DATA);
+    if ( $OBS_RES == "OK" ) {
+      echo "OK";
     } else {
-      echo "The file $filename does not exist";
+      echo "Error : " . $OBS_RES . "<br>";
     }
+    die();
 }
 
 $shifted_path = $home."/BirdSongs/Extracted/By_Date/shifted/";
@@ -293,18 +295,23 @@ function toggleShiftFreq(filename, shiftAction, elem) {
   elem.setAttribute("src","images/spinner.gif");
 }
 
-function uploadfile(filename, type, elem) {
-  const xhttp = new XMLHttpRequest();
-  xhttp.onload = function() {
-    if(this.responseText == "OK"){
-      elem.setAttribute("src","images/upload_ok.svg");
-      elem.setAttribute("title", "This file will be uploaded to your defined site in the settings.");
-      elem.setAttribute("onclick", elem.getAttribute("onclick").replace("upload","update"));
-    }
+function uploadfile(filename, type, site) {
+  if (confirm("Are you sure you want to upload this observation to " + site + "?") == true) {
+    const xhttp2 = new XMLHttpRequest();
+    xhttp2.onload = function() {
+      if(this.responseText == "OK"){
+        alert("Successfully uploaded");
+        elem.setAttribute("src","images/upload_ok.svg");
+        elem.setAttribute("onclick", elem.getAttribute("onclick").replace("upload","update"));
+        location.reload();
+      } else {
+        alert(this.responseText);
+      }
+    };
+    xhttp2.open("GET", "play.php?uploadfile="+filename+"&uploadsite="+site, true);
+    xhttp2.send();  
+    elem.setAttribute("src","images/spinner.gif");
   }
-  xhttp.open("GET", "upload_detection.php?uploadfile="+filename, true);  
-  xhttp.send();
-  elem.setAttribute("src","images/spinner.gif");
 }
 
 function changeDetection(filename,copylink=false) {
@@ -755,7 +762,7 @@ echo "<table>
 	    $uploadicon = "images/upload.svg";
 	    $uploadtitle = "Please click here to upload file to observation site.";
             $uploadtype = "upload";
-	    $uploadurl = "uploadfile(\"".$filenamebase."\",\"".$uploadtype."\", this)";
+	    $uploadurl = "uploadfile(\"".$filenamebase."\",\"".$uploadtype."\",".$upload['website'].")";
           }
 	}
 
