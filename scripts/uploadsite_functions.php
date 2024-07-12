@@ -60,6 +60,45 @@ function getOBSToken($UPLOADSITE_SITE) {
     return null;
 }
 
+function fetchSpeciesId($sciname, $comname) {
+    // Define the API URLs
+    $urlSciname = "https://observation.org/api/v1/species/search/?q=" . urlencode($sciname);
+
+    // Function to perform the cURL request
+    function performCurlRequest($url) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Accept-Language: en'));
+        $response = curl_exec($ch);
+        curl_close($ch);
+        return $response;
+    }
+
+    // Perform the first search with scientific name
+    $response = performCurlRequest($urlSciname);
+    $data = json_decode($response, true);
+
+    // Check if the response contains data
+    if (!empty($data)) {
+        return $data[0]['id'];
+    }
+
+    // If no data, perform the second search with common name
+    $comname =  get_com_en_name($sciname);
+    $urlComname = "https://observation.org/api/v1/species/search/?q=" . urlencode($comname);
+    $response = performCurlRequest($urlComname);
+    $data = json_decode($response, true);
+
+    // Check if the response contains data
+    if (!empty($data)) {
+        return $data[0]['id'];
+    }
+
+    // Return null if no data found
+    return null;
+}
+
 // Prepare the observation data
 function getObservationData($filename) {
     global $home;
@@ -75,6 +114,7 @@ function getObservationData($filename) {
     
     while ($results = $result2->fetchArray(SQLITE3_ASSOC)) {
         $comname = $results['Com_Name'];
+        $sciname = $results['Sci_Name'];
         $filename = $results['File_Name'];
         $date = $results['Date'];
         $time = $results['Time'];
@@ -89,8 +129,9 @@ function getObservationData($filename) {
     }
 
     // Prepare new observation data
+    $OBS_ID = fetchSpeciesId($sciname, $comname);
     $OBS_DATA = array(
-        'species' => '<replace_with_species>', // needed from observation.org dev
+        'species' => $OBS_ID,
         'date' => $date,
         'time' => $time,
         'point' => "POINT($latitude $longitude)",
