@@ -7,6 +7,7 @@ $_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 error_reporting(E_ERROR);
 ini_set('display_errors',1);
 require_once 'scripts/common.php';
+require_once 'scripts/uploadsite_functions.php';
 $home = get_home();
 $config = get_config();
 $user = get_user();
@@ -88,6 +89,20 @@ if(isset($_GET['changefile']) && isset($_GET['newname'])) {
     echo "Error : " . implode(", ", $output) . "<br>";
   }
   die();
+}
+
+# All functions are in uploadsite_functions.php
+if(isset($_GET['uploadfile'])) {
+    ensure_authenticated('You must be authentificated before uploading observations');
+    $filename = urldecode($_GET['uploadfile']);
+    if (file_exists($filename)) {
+      $basename = basename($filename);
+      $OBSTOKEN = getOBSToken();
+      $OBS_DATA = getObservationData();
+      postOBS($OBSTOKEN,$OBS_DATA);
+    } else {
+      echo "The file $filename does not exist";
+    }
 }
 
 $shifted_path = $home."/BirdSongs/Extracted/By_Date/shifted/";
@@ -287,7 +302,7 @@ function uploadfile(filename, type, elem) {
       elem.setAttribute("onclick", elem.getAttribute("onclick").replace("upload","update"));
     }
   }
-  xhttp.open("GET", "upload_observation.php?uploadfile="+filename, true);  
+  xhttp.open("GET", "upload_detection.php?uploadfile="+filename, true);  
   xhttp.send();
   elem.setAttribute("src","images/spinner.gif");
 }
