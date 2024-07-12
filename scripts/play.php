@@ -96,10 +96,11 @@ if(isset($_GET['uploadfile']) && isset($_GET['uploadsite'])) {
     ensure_authenticated('You must be authentificated before uploading observations');
     $filename = urldecode($_GET['uploadfile']);
     $website = urldecode($_GET['uploadsite']);
+    $uploadnotes = urldecode($_GET['uploadnotes']);
     # Fetch token
     $OBSTOKEN = getOBSToken($website);
     if (!empty($OBSTOKEN)) {
-      $OBS_RES = postOBS($website,$OBSTOKEN,$filename);
+      $OBS_RES = postOBS($website,$OBSTOKEN,$filename,$uploadnotes);
       if ( $OBS_RES == "OK" ) {
         echo "OK";
       } else {
@@ -300,21 +301,28 @@ function toggleShiftFreq(filename, shiftAction, elem) {
 }
 
 function uploadfile(filename, type, site) {
-  if (confirm("Are you sure you want to upload this observation to \"" + site + "\"?") == true) {
+  var encodedText = "";
+  if (confirm("Are you sure you want to upload this observation to \"" + site + "\"?")) {
+    if (confirm("Do you want to add a note to the upload?")) {
+      var userInput = prompt("Enter additional notes:");
+      if (userInput !== null) {
+        encodedText = encodeURIComponent(userInput);
+      }
+    }
     const xhttp2 = new XMLHttpRequest();
     xhttp2.onload = function() {
-      if(this.responseText == "OK"){
+      if (this.responseText === "OK") {
         alert("Successfully uploaded");
-        elem.setAttribute("src","images/upload_ok.svg");
-        elem.setAttribute("onclick", elem.getAttribute("onclick").replace("upload","update"));
+        elem.setAttribute("src", "images/upload_ok.svg");
+        elem.setAttribute("onclick", elem.getAttribute("onclick").replace("upload", "update"));
         location.reload();
       } else {
         alert(this.responseText);
       }
     };
-    xhttp2.open("GET", "play.php?uploadfile="+filename+"&uploadsite="+site, true);
-    xhttp2.send();  
-    elem.setAttribute("src","images/spinner.gif");
+    xhttp2.open("GET", "play.php?uploadfile=" + filename + "&uploadsite=" + site + "&uploadnotes=" + encodedText, true);
+    xhttp2.send();
+    elem.setAttribute("src", "images/spinner.gif");
   }
 }
 
