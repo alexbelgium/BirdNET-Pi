@@ -7,7 +7,6 @@ $_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 error_reporting(E_ERROR);
 ini_set('display_errors', 1);
 require_once 'scripts/common.php';
-require_once 'functions.php'; // Assuming this file contains the get_home function
 
 $config = get_config();
 $home = get_home();
