@@ -81,7 +81,7 @@ function getObservationData($filename) {
     while($results=$result2->fetchArray(SQLITE3_ASSOC))
     {
         //$sciname = $results['Sci_Name'];
-        //$comname = $results['Com_Name'];
+        $comname = $results['Com_Name'];
         //$confidence = $results['Confidence'];
         $filename = $results['File_Name'];
         $date = $results['Date'];
@@ -104,16 +104,18 @@ function getObservationData($filename) {
     );
 
     // Add sound if relevant
-    if (file_exists($filename)) {
-        $file_parts = pathinfo($filename);
+    $comname = preg_replace('/ /', '_', $comname);
+    $filepath = get_home()."/BirdSongs/Extracted/By_Date/".$date."/".$comname."/".$filename;
+    if (file_exists($filepath)) {
+        $file_parts = pathinfo($filepath);
     if ($file_parts['extension'] == 'mp3' || $file_parts['extension'] == 'wav') {
-        $cfile = new CURLFile($filename, 'audio/mpeg', basename($filename));
+        $cfile = new CURLFile($filepath, 'audio/mpeg', basename($filepath));
         $OBS_DATA['upload_sounds'] = $cfile;
     } else {
         echo 'Warning : audio file is not a MP3 or WAV file, it will not be added';
     }
     } else {
-        echo 'Warning : audio file does not exist';
+        echo 'Warning : audio file does not exist'.$filepath;
     }
 
     // Return json value
