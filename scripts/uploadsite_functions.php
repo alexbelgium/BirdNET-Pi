@@ -15,6 +15,8 @@ $CLIENT_ID = 'birdnet-pi';
 $UPLOADSITE_USER = $config['UPLOADSITE_USER'];
 $UPLOADSITE_PASS = $config['UPLOADSITE_PASS'];
 $UPLOADSITE_SITE = $config['UPLOADSITE_SITE'];
+$cmd="cd ".$home."/BirdNET-Pi && sudo -u ".$user." git rev-list --max-count=1 HEAD";
+$curr_hash = shell_exec($cmd);
 $observationorgsites = ["observation.org", "waarneming.nl", "waarnemingen.be", "observations.be"];
 
 // Get the url corresponding to the already uploaded observation
@@ -30,7 +32,7 @@ function getOBSURL($UPLOADSITE_SITE, $UUID) {
 
 // Fetch the token
 function getOBSToken($UPLOADSITE_SITE) {
-    global $CLIENT_ID, $UPLOADSITE_USER, $UPLOADSITE_PASS, $observationorgsites;
+    global $CLIENT_ID, $UPLOADSITE_USER, $UPLOADSITE_PASS, $observationorgsites, $curr_hash;
     if (in_array($UPLOADSITE_SITE, $observationorgsites)) {
         $ch = curl_init();
 
@@ -41,6 +43,7 @@ function getOBSToken($UPLOADSITE_SITE) {
 
         $headers = array();
         $headers[] = 'Content-Type: application/x-www-form-urlencoded';
+        $headers[] = 'User-Agent: BirdNet-Pi/' . $curr_hash;
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
         $result = curl_exec($ch);
@@ -115,7 +118,7 @@ function getObservationData($filename) {
 
 // Post the observation data
 function postOBS($UPLOADSITE_SITE, $OBSTOKEN, $filename, $uploadnotes) {
-    global $observationorgsites;
+    global $observationorgsites, $curr_hash;
 
     // Fetch observation data
     $OBS_DATA = getObservationData($filename);
@@ -133,7 +136,10 @@ function postOBS($UPLOADSITE_SITE, $OBSTOKEN, $filename, $uploadnotes) {
 
     if (in_array($UPLOADSITE_SITE, $observationorgsites)) {
         // Prepare headers
-        $headers = array('Authorization: Bearer ' . $OBSTOKEN);
+        $headers = array(
+            'Authorization: Bearer ' . $OBSTOKEN,
+            'User-Agent: BirdNet-Pi/' . $curr_hash
+        );
         $url = "https://" . $UPLOADSITE_SITE . "/api/v1/observations/create/";
 
         // Initialize cURL
