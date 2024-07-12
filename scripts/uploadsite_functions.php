@@ -4,19 +4,16 @@
 $_GET   = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING);
 $_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
-//error_reporting(E_ERROR);
-error_reporting(E_ALL);
+error_reporting(E_ERROR);
 ini_set('display_errors',1);
 require_once 'scripts/common.php';
 //$home = get_home();
 $config = get_config();
 $user = get_user();
 $CLIENT_ID = 'birdnet-pi';
-$OBS_EMAIL = $config['OBS_EMAIL'];
-$OBS_PASS= $config['OBS_PASSWORD'];
-$OBS_SITE = $config['OBS_SITE'];
-$filename = filter_input(INPUT_GET, 'filename', FILTER_SANITIZE_STRING);
-$uuid = filter_input(INPUT_GET, 'uuid', FILTER_SANITIZE_STRING);
+$UPLOADSITE_USER = $config['UPLOADSITE_USER'];
+$UPLOADSITE_PASS= $config['UPLOADSITE_PASS'];
+$UPLOADSITE_SITE = $config['UPLOADSITE_SITE'];
 
 // List of functions
 //getOBSToken
@@ -44,18 +41,18 @@ $uuid = filter_input(INPUT_GET, 'uuid', FILTER_SANITIZE_STRING);
 //    return '';
 //}
     
-function getOBSToken($OBS_SITE) {
-    global $CLIENT_ID, $OBS_EMAIL, $OBS_PASS;
+function getOBSToken($UPLOADSITE_SITE) {
+    global $CLIENT_ID, $UPLOADSITE_USER, $UPLOADSITE_PASS;
 
     // If uploading to observation.org websites, prepare for other types of upload sites
     $observationorgsites = ["observation.org", "waarneming.nl", "waarnemingen.be", "observations.be"];
-    if (in_array($OBS_SITE, $observationorgsites)) {
+    if (in_array($UPLOADSITE_SITE, $observationorgsites)) {
         $ch = curl_init();
     
-        curl_setopt($ch, CURLOPT_URL, 'https://' . $OBS_SITE . '/api/v1/oauth2/token/');
+        curl_setopt($ch, CURLOPT_URL, 'https://' . $UPLOADSITE_SITE . '/api/v1/oauth2/token/');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(array('client_id' => $CLIENT_ID, 'grant_type' => 'password', 'email' => $OBS_EMAIL, 'password' => $OBS_PASS)));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(array('client_id' => $CLIENT_ID, 'grant_type' => 'password', 'email' => $UPLOADSITE_USER, 'password' => $UPLOADSITE_PASS)));
     
         $headers = array();
         $headers[] = 'Content-Type: application/x-www-form-urlencoded';
