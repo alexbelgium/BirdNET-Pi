@@ -798,7 +798,7 @@ echo "<table>
         $shiftImageIcon = "images/unshift.svg";
         $shiftTitle = "This file has been shifted down in frequency."; 
         $shiftAction = "unshift";
-  $filename = $filename_shifted;
+  	$filename = $filename_shifted;
       } else {
         $shiftImageIcon = "images/shift.svg";
         $shiftTitle = "This file is not shifted in frequency.";
@@ -808,7 +808,7 @@ echo "<table>
           echo "<tr>
       <td class=\"relative\"> 
 
-<img style='cursor:pointer;left:15px' onclick=".$uploadurl." class=\"copyimage\" width=25 title=\"".$uploadtitle."\" src=\"".$uploadicon."\"> 
+<img style='cursor:pointer;left:15px' onclick=".$uploadurl." class=\"copyimage\" width=35 title=\"".$uploadtitle."\" src=\"".$uploadicon."\"> 
 <img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'> 
 <img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
 <img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
