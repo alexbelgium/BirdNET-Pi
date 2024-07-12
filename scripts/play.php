@@ -99,11 +99,7 @@ if(isset($_GET['uploadfile']) && isset($_GET['uploadsite'])) {
     # Fetch token
     $OBSTOKEN = getOBSToken($website);
     if (!empty($OBSTOKEN)) {
-      # Fetch data
-      $OBS_DATA = getObservationData($filename);
-      // Are you sure ? ShowOBS_DATA
-      # Write data, get new uuid
-      $OBS_RES = postOBS($website,$OBSTOKEN,$OBS_DATA);
+      $OBS_RES = postOBS($website,$OBSTOKEN,$filename);
       if ( $OBS_RES == "OK" ) {
         echo "OK";
       } else {
