@@ -96,13 +96,20 @@ if(isset($_GET['uploadfile']) && isset($_GET['uploadsite'])) {
     ensure_authenticated('You must be authentificated before uploading observations');
     $filename = urldecode($_GET['uploadfile']);
     $website = urldecode($_GET['uploadsite']);
+    # Fetch token
     $OBSTOKEN = getOBSToken($website);
-    $OBS_DATA = getObservationData($filename);
-    $OBS_RES = postOBS($website,$OBSTOKEN,$OBS_DATA);
-    if ( $OBS_RES == "OK" ) {
-      echo "OK";
+    if (!empty($OBSTOKEN)) {
+      # Fetch data
+      $OBS_DATA = getObservationData($filename);
+      # Write data, get new uuid
+      $OBS_RES = postOBS($website,$OBSTOKEN,$OBS_DATA);
+      if ( $OBS_RES == "OK" ) {
+        echo "OK";
+      } else {
+        echo "Error : cannot fetch observation data";
+      }
     } else {
-      echo "Error : " . $OBS_RES . "<br>";
+      echo "Error : cannot fetch token";
     }
     die();
 }

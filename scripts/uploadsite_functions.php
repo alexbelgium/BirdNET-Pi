@@ -44,31 +44,34 @@ $uuid = filter_input(INPUT_GET, 'uuid', FILTER_SANITIZE_STRING);
 //    return '';
 //}
     
-function getOBSToken($filename) {
-    global $filename;
-    global $OBS_SITE, $CLIENT_ID, $OBS_EMAIL, $OBS_PASS;
-    
-    $ch = curl_init();
-    
-    curl_setopt($ch, CURLOPT_URL, 'https://' . $OBS_SITE . '/api/v1/oauth2/token/');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(array('client_id' => $CLIENT_ID, 'grant_type' => 'password', 'email' => $OBS_EMAIL, 'password' => $OBS_PASS)));
+function getOBSToken($OBS_SITE) {
+    global $CLIENT_ID, $OBS_EMAIL, $OBS_PASS;
 
-    $headers = array();
-    $headers[] = 'Content-Type: application/x-www-form-urlencoded';
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-    $result = curl_exec($ch);
-    if (curl_errno($ch)) {
-        echo 'Error:' . curl_error($ch);
+    // If uploading to observation.org websites, prepare for other types of upload sites
+    $observationorgsites = ["observation.org", "waarneming.nl", "waarnemingen.be", "observations.be"];
+    if (in_array($OBS_SITE, $observationorgsites)) {
+        $ch = curl_init();
+    
+        curl_setopt($ch, CURLOPT_URL, 'https://' . $OBS_SITE . '/api/v1/oauth2/token/');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query(array('client_id' => $CLIENT_ID, 'grant_type' => 'password', 'email' => $OBS_EMAIL, 'password' => $OBS_PASS)));
+    
+        $headers = array();
+        $headers[] = 'Content-Type: application/x-www-form-urlencoded';
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    
+        $result = curl_exec($ch);
+        if (curl_errno($ch)) {
+            echo 'Error:' . curl_error($ch);
+        }
+        curl_close($ch);
+    
+        $result_array = json_decode($result, true);
+        $OBS_TOKEN = $result_array['access_token'];
+    
+        return $OBS_TOKEN;
     }
-    curl_close($ch);
-
-    $result_array = json_decode($result, true);
-    $OBS_TOKEN = $result_array['access_token'];
-
-    return $OBS_TOKEN;
 }
 
 function getObservationData() {
@@ -104,11 +107,7 @@ function getObservationData() {
         'method' => 'heard'
     );
 
-    return $OBS_DATA;
-}
-
-function getObservationSound($OBS_DATA) {
-    global $filename;
+    // Add sound if relevant
     if (file_exists($filename)) {
         $file_parts = pathinfo($filename);
     if ($file_parts['extension'] == 'mp3' || $file_parts['extension'] == 'wav') {
@@ -120,6 +119,8 @@ function getObservationSound($OBS_DATA) {
     } else {
         echo '<script type="text/javascript">alert("The file does not exist.");</script>';
     }
+
+    // Return json value
     return $OBS_DATA;
 }
 
@@ -145,7 +146,5 @@ function postOBS($OBSTOKEN, $OBS_DATA) {
     // need to write uuid & observation site to file
     curl_close($ch);
 }
-
-
 
 ?>
