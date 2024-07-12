@@ -114,7 +114,7 @@ function getObservationData($filename) {
 }
 
 // Post the observation data
-function postOBS($UPLOADSITE_SITE, $OBSTOKEN, $filename) {
+function postOBS($UPLOADSITE_SITE, $OBSTOKEN, $filename, $uploadnotes) {
     global $observationorgsites;
 
     // Fetch observation data
@@ -124,6 +124,11 @@ function postOBS($UPLOADSITE_SITE, $OBSTOKEN, $filename) {
     if (!$OBS_DATA) {
         echo 'Error: Observation data is missing or invalid.';
         return;
+    }
+
+    // Append notes
+    if (!empty($uploadnotes)) {
+        $OBS_DATA[] = array('notes' => $uploadnotes);
     }
 
     if (in_array($UPLOADSITE_SITE, $observationorgsites)) {
