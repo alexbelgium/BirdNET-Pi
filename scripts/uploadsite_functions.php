@@ -116,9 +116,22 @@ function getObservationData($filename) {
     return $OBS_DATA;
 }
 
+// Save to file
+function postfile($OBS_ID, $UPLOADSITE_SITE, $filename) {
+    global $home; // Assuming $home is defined somewhere in your script
+    $file_path = $home . '/BirdNET-Pi/scripts/uploaded_observations_list.txt';
+    if (!file_exists($file_path)) {
+        $header = "uuid;uploadsite;filename\n";
+        file_put_contents($file_path, $header);
+    }
+    $data = "$OBS_ID;$UPLOADSITE_SITE;$filename\n";
+    file_put_contents($file_path, $data, FILE_APPEND);
+    return true;
+}
+
 // Post the observation data
 function postOBS($UPLOADSITE_SITE, $OBSTOKEN, $filename, $uploadnotes) {
-    global $observationorgsites, $curr_hash;
+    global $observationorgsites, $version;
 
     // Fetch observation data
     $OBS_DATA = getObservationData($filename);
@@ -138,7 +151,7 @@ function postOBS($UPLOADSITE_SITE, $OBSTOKEN, $filename, $uploadnotes) {
         // Prepare headers
         $headers = array(
             'Authorization: Bearer ' . $OBSTOKEN,
-            'User-Agent: BirdNet-Pi/' . $curr_hash
+            'User-Agent: BirdNet-Pi/' . $version
         );
         $url = "https://" . $UPLOADSITE_SITE . "/api/v1/observations/create/";
 
@@ -151,12 +164,34 @@ function postOBS($UPLOADSITE_SITE, $OBSTOKEN, $filename, $uploadnotes) {
 
         // Execute cURL request
         $response = curl_exec($ch);
+        $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
         // Check for errors
         if ($response === false) {
             echo 'Error: ' . curl_error($ch);
         } else {
-            echo 'Response: ' . $response;
+            // Decode the JSON response
+            $json_response = json_decode($response, true);
+
+            // Determine message based on HTTP status code
+            if ($http_status == 201) {
+                echo 'OK : upload successful';
+            } elseif ($http_status == 200) {
+                echo 'OK : update successful';
+            } else {
+                echo 'Error: ' . $http_status . ' - ' . $json_response['error'];
+            }
+    
+            // Extract ID if available
+            $OBS_ID = isset($json_response['id']) ? $json_response['id'] : null;
+            // Save to file
+            postfile($OBS_ID,$UPLOADSITE_SITE,$filename);
+            $posted = postfile($OBS_ID, $UPLOADSITE_SITE, $filename);
+            if ($posted) {
+                echo "Data posted successfully.";
+            } else {
+                echo "Failed to post data.";
+            }
         }
 
         // Close cURL
