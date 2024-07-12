@@ -40,7 +40,18 @@ $UPLOADSITE_SITE = $config['UPLOADSITE_SITE'];
 //    fclose($file);
 //    return '';
 //}
-    
+
+function getOBSURL($UPLOADSITE_SITE, $UUID) {
+    // If uploading to observation.org websites, prepare for other types of upload sites
+    $observationorgsites = ["observation.org", "waarneming.nl", "waarnemingen.be", "observations.be"];
+    if (in_array($UPLOADSITE_SITE, $observationorgsites)) {
+        $OBS_URL = "https://" . $UPLOADSITE_SITE . "/observation/" . $UUID;
+    } elseif ($UPLOADSITE_SITE == "inaturalist.org") {
+        $OBS_URL = "https://www.inaturalist.org/observations/" . $UUID;
+    }
+    return $OBS_URL;
+}
+
 function getOBSToken($UPLOADSITE_SITE) {
     global $CLIENT_ID, $UPLOADSITE_USER, $UPLOADSITE_PASS;
 
