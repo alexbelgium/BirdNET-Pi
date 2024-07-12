@@ -576,8 +576,38 @@ if(isset($_GET['species'])){ ?>
    </form>
 </div>
 <?php
-  // add disk_check_exclude.txt lines into an array for grepping
-  $fp = @fopen($home."/BirdNET-Pi/scripts/disk_check_exclude.txt", 'r'); 
+// add uploaded_observations_list.txt lines into an array for grepping
+$fp = @fopen($home . "/BirdNET-Pi/scripts/uploaded_observations_list.txt", 'r');
+if ($fp) {
+  while (($line = fgets($fp)) !== false) {
+    $parts = explode(';', trim($line));
+    if (count($parts) === 3) {
+      list($uploaduuid, $uploadsite, $uploadfile) = $parts;
+      $upload_mapping[$uploadfile] = ['uuid' => $uploaduuid, 'website' => $uploadsite];
+    }
+  }
+  fclose($fp);
+} else {
+  $upload_mapping = [];
+}
+
+$uploadsite = $config["UPLOADSITE_SITE"];
+if (!empty($uploadsite)) {
+  $filenamebase = $results['File_Name'];
+  if (isset($upload_mapping[$filenamebase])) {
+    $uploadicon = "images/upload_ok.svg";
+    $upload = $upload_mapping[$filenamebase];
+    $uploadtitle = "https://" . $upload['website'] . "/observation/" . $upload['uuid'];
+    $uploadurl = "window.open('https://" . $upload['website'] . "/observation/" . $upload['uuid'] . "',\"_blank\");";
+  } else {
+    $uploadicon = "images/upload.svg";
+    $uploadtitle = "Please click here to upload file to " . $uploadsite;
+    $uploadtype = "upload";
+    $uploadurl = "uploadfile(\"" . $filenamebase . "\",\"" . $uploadtype . "\",\"" . $uploadsite . "\")";
+  }
+}
+// add disk_check_exclude.txt lines into an array for grepping
+$fp = @fopen($home."/BirdNET-Pi/scripts/disk_check_exclude.txt", 'r'); 
 if ($fp) {
   $disk_check_exclude_arr = explode("\n", fread($fp, filesize($home."/BirdNET-Pi/scripts/disk_check_exclude.txt")));
 } else {
@@ -666,36 +696,6 @@ echo "<table>
         $shiftTitle = "This file is not shifted in frequency.";
         $shiftAction = "shift";
       }
-
-        // add uploaded_observations_list.txt lines into an array for grepping
-        $fp = @fopen($home."/BirdNET-Pi/scripts/uploaded_observations_list.txt", 'r');
-        if ($fp) {
-          while (($line = fgets($fp)) !== false) {
-              $parts = explode(';', trim($line));
-              if (count($parts) === 3) {
-                  list($uploaduuid, $uploadsite, $uploadfile) = $parts;
-                  $upload_mapping[$uploadfile] = ['uuid' => $uploaduuid, 'website' => $uploadsite];
-              }
-          }
-          fclose($fp);
-	} else {
-          $upload_mapping = [];
-        }
-
-	if (!empty($config["UPLOADSITE_SITE"])) {
-	  $filenamebase = $results['File_Name'];
-	  if(isset($upload_mapping[$filenamebase])) {
-  	    $uploadicon = "images/upload_ok.svg";
-	    $upload = $upload_mapping[$filenamebase];
-	    $uploadtitle = getOBSURL($upload['website'], $upload['uuid']);
-            $uploadurl = "window.open('$uploadtitle',\"_blank\");";
-	  } else {
-	    $uploadicon = "images/upload.svg";
-	    $uploadtitle = "Please click here to upload file to observation site.";
-            $uploadtype = "upload";
-	    $uploadurl = "uploadfile(\"".$filenamebase."\",\"".$uploadtype."\", this)";
-          }
-	}
 
       echo "<tr>
   <td class=\"relative\"> 
