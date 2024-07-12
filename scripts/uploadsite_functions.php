@@ -128,7 +128,7 @@ function postOBS($UPLOADSITE_SITE, $OBSTOKEN, $filename, $uploadnotes) {
 
     // Append notes
     if (!empty($uploadnotes)) {
-        $OBS_DATA[] = array('notes' => $uploadnotes);
+        $OBS_DATA['notes'] = $uploadnotes;
     }
 
     if (in_array($UPLOADSITE_SITE, $observationorgsites)) {
