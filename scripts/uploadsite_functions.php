@@ -25,7 +25,7 @@ function getOBSURL($UPLOADSITE_SITE, $UUID) {
     } elseif ($UPLOADSITE_SITE == "inaturalist.org") {
         return "https://www.inaturalist.org/observations/" . $UUID;
     }
-    return null; // Return null if no matching site is found
+    return null;
 }
 
 // Fetch the token
