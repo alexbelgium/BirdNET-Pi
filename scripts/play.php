@@ -101,6 +101,7 @@ if(isset($_GET['uploadfile']) && isset($_GET['uploadsite'])) {
     if (!empty($OBSTOKEN)) {
       # Fetch data
       $OBS_DATA = getObservationData($filename);
+      // Are you sure ? ShowOBS_DATA
       # Write data, get new uuid
       $OBS_RES = postOBS($website,$OBSTOKEN,$OBS_DATA);
       if ( $OBS_RES == "OK" ) {
@@ -110,7 +111,7 @@ if(isset($_GET['uploadfile']) && isset($_GET['uploadsite'])) {
       }
     } else {
       echo "Error : cannot fetch token";
-    }
+    }	
     die();
 }
 
