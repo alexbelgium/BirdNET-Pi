@@ -71,7 +71,7 @@ function getOBSToken($UPLOADSITE_SITE) {
     }
 }
 
-function getObservationData(filename) {
+function getObservationData($filename) {
     $db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
     $db->busyTimeout(5000);
     $statement2 = $db->prepare('SELECT * FROM detections WHERE File_name = :filename ORDER BY Date DESC, Time DESC');
@@ -110,7 +110,7 @@ function getObservationData(filename) {
         $cfile = new CURLFile($filename, 'audio/mpeg', basename($filename));
         $OBS_DATA['upload_sounds'] = $cfile;
     } else {
-        echo 'Warning : audio file is not a MP3 or WAV file, it will not be added ' . $filename;
+        echo 'Warning : audio file is not a MP3 or WAV file, it will not be added';
     }
     } else {
         echo 'Warning : audio file does not exist';
