@@ -303,7 +303,7 @@ function toggleShiftFreq(filename, shiftAction, elem) {
 }
 
 function uploadfile(filename, type, site) {
-  if (confirm("Are you sure you want to upload this observation to " + site + "?") == true) {
+  if (confirm("Are you sure you want to upload this observation to \"" + site + "\"?") == true) {
     const xhttp2 = new XMLHttpRequest();
     xhttp2.onload = function() {
       if(this.responseText == "OK"){
@@ -758,7 +758,8 @@ echo "<table>
           $upload_mapping = [];
         }
 
-	if (!empty($config["UPLOADSITE_SITE"])) {
+	$uploadsite = $config["UPLOADSITE_SITE"];
+	if (!empty($uploadsite)) {
 	  $filenamebase = $results['File_Name'];
 	  if(isset($upload_mapping[$filenamebase])) {
   	    $uploadicon = "images/upload_ok.svg";
@@ -767,9 +768,9 @@ echo "<table>
             $uploadurl = "window.open('https://".$upload['website']."/observation/".$upload['uuid']."',\"_blank\");";
 	  } else {
 	    $uploadicon = "images/upload.svg";
-	    $uploadtitle = "Please click here to upload file to observation site.";
+	    $uploadtitle = "Please click here to upload file to " . $uploadsite;
             $uploadtype = "upload";
-	    $uploadurl = "uploadfile(\"".$filenamebase."\",\"".$uploadtype."\",".$upload['website'].")";
+	    $uploadurl = "uploadfile(\"".$filenamebase."\",\"".$uploadtype."\",\"".$uploadsite."\")";
           }
 	}
 
