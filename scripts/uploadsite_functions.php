@@ -43,7 +43,7 @@ $uuid = filter_input(INPUT_GET, 'uuid', FILTER_SANITIZE_STRING);
 //    fclose($file);
 //    return '';
 //}
-
+    
 function getOBSToken($filename) {
     global $filename;
     global $OBS_SITE, $CLIENT_ID, $OBS_EMAIL, $OBS_PASS;
@@ -146,13 +146,6 @@ function postOBS($OBSTOKEN, $OBS_DATA) {
     curl_close($ch);
 }
 
-# Generate token
-$OBSTOKEN = getOBSToken();
-# Get data from species
-$OBS_DATA = getObservationData();
-# Append sound if relevant
-$OBS_DATA = getObservationSound($OBS_DATA);
-# Post observation
-postOBS($OBSTOKEN,$OBS_DATA);
+
 
 ?>
