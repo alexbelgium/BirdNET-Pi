@@ -98,7 +98,7 @@ if(isset($_GET['uploadfile'])) {
     if (file_exists($filename)) {
       $basename = basename($filename);
       $OBSTOKEN = getOBSToken();
-      $OBS_DATA = getObservationData();
+      $OBS_DATA = getObservationData($basename);
       postOBS($OBSTOKEN,$OBS_DATA);
     } else {
       echo "The file $filename does not exist";
