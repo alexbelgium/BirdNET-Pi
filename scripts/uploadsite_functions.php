@@ -114,24 +114,41 @@ function getObservationData($filename) {
 }
 
 // Post the observation data
-function postOBS($UPLOADSITE_SITE, $OBSTOKEN, $OBS_DATA) {
+function postOBS($UPLOADSITE_SITE, $OBSTOKEN, $filename) {
     global $observationorgsites;
+
+    // Fetch observation data
+    $OBS_DATA = getObservationData($filename);
+
+    // Check if OBS_DATA is not empty or null
+    if (!$OBS_DATA) {
+        echo 'Error: Observation data is missing or invalid.';
+        return;
+    }
+
     if (in_array($UPLOADSITE_SITE, $observationorgsites)) {
+        // Prepare headers
         $headers = array('Authorization: Bearer ' . $OBSTOKEN);
         $url = "https://" . $UPLOADSITE_SITE . "/api/v1/observations/create/";
+
+        // Initialize cURL
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $OBS_DATA);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array_merge($headers, array("Content-Type: multipart/form-data")));
 
+        // Execute cURL request
         $response = curl_exec($ch);
 
-        if ($response === false)
+        // Check for errors
+        if ($response === false) {
             echo 'Error: ' . curl_error($ch);
-        else
+        } else {
             echo 'Response: ' . $response;
-        // need to write uuid & observation site to file
+        }
+
+        // Close cURL
         curl_close($ch);
     }
 }
