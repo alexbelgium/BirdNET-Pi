@@ -60,7 +60,7 @@ function getOBSToken($UPLOADSITE_SITE) {
     return null;
 }
 
-function fetchSpeciesId($sciname, $comname) {
+function getSpeciesId($sciname, $comname) {
     // Define the API URLs
     $urlSciname = "https://observation.org/api/v1/species/search/?q=" . urlencode($sciname);
 
@@ -128,8 +128,14 @@ function getObservationData($filename) {
         return null;
     }
 
-    // Prepare new observation data
+    // Get observation ID
     $OBS_ID = fetchSpeciesId($sciname, $comname);
+    if (strpos($OBS_ID, "Error:") === 0) {
+        echo "Error: cannot fetch Species ID with message: " . $OBS_ID;
+        return null;
+    }
+
+    // Prepare new observation data
     $OBS_DATA = array(
         'species' => $OBS_ID,
         'date' => $date,
