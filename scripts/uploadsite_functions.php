@@ -204,8 +204,15 @@ function postfile($OBS_ID, $UPLOADSITE_SITE, $filename) {
 }
 
 // Fetch all existing observations and allocated to birdnet-pi observations
-function getOBSUploaded($UPLOADSITE_SITE) {
-    global $CLIENT_ID, $UPLOADSITE_USER, $observationorgsites;
+function getOBSUploaded($UPLOADSITE_SITE,$UPLOADSITE_USER) {
+    global $CLIENT_ID, $observationorgsites;
+
+    // Check if both input variables are provided
+    if (empty($UPLOADSITE_SITE) || empty($UPLOADSITE_USER)) {
+        echo "Error: Both site and user must be specified. Have you clicked on the save button in the settings ?\n";
+        return;
+    }
+
     if (in_array($UPLOADSITE_SITE, $observationorgsites)) {
         $url = "https://observation.org/api/v1/user/$UPLOADSITE_USER/observations/";
         $ch = curl_init();
