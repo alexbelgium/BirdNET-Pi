@@ -726,7 +726,7 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
             type: "POST",
             url: "scripts/uploaded_functions.php",
             data: {
-                action: "syncObservations",
+                action: "getOBSUploaded",
                 site: site,
                 user: user
             },
