@@ -288,6 +288,8 @@ if(isset($_GET['sendtest']) && $_GET['sendtest'] == "true") {
 // have to get the config again after we change the variables, so the UI reflects the changes too
 $config = get_config($force_reload=true);
 ?>
+<!-- Include jQuery library -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   </style>
@@ -541,8 +543,11 @@ function runProcess() {
       <input name="uploadsite_user" type="text" id="uploadsite_user" value="<?php print($config['UPLOADSITE_USER']);?>" style="display:none;" />
       <label for="uploadsite_pass" id="uploadsite_pass_label" style="display:none;">Password: </label>
       <input name="uploadsite_pass" type="text" id="uploadsite_pass" value="<?php print($config['UPLOADSITE_PASS']);?>" style="display:none;" />
-      <button type="button" style="display:none;" id="uploadsite_sync" onclick="getOBSUploaded('<?php echo $uploadsite_site; ?>', '<?php echo $uploadsite_user; ?>')">Sync observations already uploaded to local database</button>
-    </td></tr></table><br>
+      <form action="scripts/uploadsite_functions.php" method="POST">
+        <input name="action" type="hidden" value="getOBSUploaded" />
+        <button type="submit" id="uploadsite_sync" style="display:none;">Sync observations already uploaded to local database</button>
+      </form>
+      </td></tr></table><br>
 
       <table class="settingstable" style="width:100%"><tr><td>
       <h2>Notifications</h2>
@@ -721,23 +726,6 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       </td></tr></table><br>
         
       <script>
-    function getOBSUploaded(site, user) {
-        $.ajax({
-            type: "POST",
-            url: "scripts/uploaded_functions.php",
-            data: {
-                action: "getOBSUploaded",
-                site: site,
-                user: user
-            },
-            success: function(response) {
-                console.log("Response from server:", response);
-            },
-            error: function(xhr, status, error) {
-                console.error("Error calling getOBSUploaded(): " + error);
-            }
-        });
-    }
 
         function handleChange(checkbox) {
           // this disables the input of manual date and time if the user wants to use the internet time
