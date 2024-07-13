@@ -79,24 +79,24 @@ function fetchSpeciesId($sciname, $comname) {
     $response = performCurlRequest($urlSciname);
     $data = json_decode($response, true);
 
-    // Check if the response contains data
-    if (!empty($data)) {
+    // Check if the response contains data and has exactly one match
+    if (!empty($data) && count($data) === 1) {
         return $data[0]['id'];
     }
 
-    // If no data, perform the second search with common name
-    $comname =  get_com_en_name($sciname);
+    // If no data or more than one match, perform the second search with common name
+    $comname = get_com_en_name($sciname);
     $urlComname = "https://observation.org/api/v1/species/search/?q=" . urlencode($comname);
     $response = performCurlRequest($urlComname);
     $data = json_decode($response, true);
 
-    // Check if the response contains data
-    if (!empty($data)) {
+    // Check if the response contains data and has exactly one match
+    if (!empty($data) && count($data) === 1) {
         return $data[0]['id'];
     }
 
-    // Return null if no data found
-    return null;
+    // Return an error message if no data or more than one match found in either search
+    return "Error: No unique match found for either scientific name or common name.";
 }
 
 // Prepare the observation data
