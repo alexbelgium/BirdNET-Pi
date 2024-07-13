@@ -168,6 +168,8 @@ function getObservationData($filename) {
 function postfile($OBS_ID, $UPLOADSITE_SITE, $filename) {
     global $home;
     $file_path = $home . '/BirdNET-Pi/scripts/uploaded_observations_list.txt';
+
+    // Check if the file exists
     if (!file_exists($file_path)) {
         $header = "uuid;uploadsite;filename\n";
         $result = file_put_contents($file_path, $header);
@@ -176,13 +178,58 @@ function postfile($OBS_ID, $UPLOADSITE_SITE, $filename) {
             return false;
         }
     }
+
+    // Check if the filename already exists in the file
+    $existing_content = file_get_contents($file_path);
+    if (strpos($existing_content, $filename) !== false) {
+        echo "File '$filename' already exists in the list.\n";
+        return true; // No need to add duplicate content
+    }
+
+    // Verify that all fields have data
+    if (empty($OBS_ID) || empty($UPLOADSITE_SITE) || empty($filename)) {
+        echo "Invalid data: OBS_ID, UPLOADSITE_SITE, or filename is empty.\n";
+        return false;
+    }
+
+    // Append the new data
     $data = "$OBS_ID;$UPLOADSITE_SITE;$filename\n";
     $result = file_put_contents($file_path, $data, FILE_APPEND);
     if ($result === false) {
         echo "Failed to append data to file: $file_path";
         return false;
     }
+
     return true;
+}
+
+// Fetch all existing observations and allocated to birdnet-pi observations
+function getOBSUploaded($UPLOADSITE_SITE) {
+    global $CLIENT_ID, $UPLOADSITE_USER, $observationorgsites;
+    if (in_array($UPLOADSITE_SITE, $observationorgsites)) {
+        $url = "https://observation.org/api/v1/user/$UPLOADSITE_USER/observations/";
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $output = curl_exec($ch);
+        curl_close($ch);
+        $data = json_decode($output, true);
+
+        if (isset($data['results']) && is_array($data['results'])) {
+            foreach ($data['results'] as $observation) {
+                if (isset($observation['external_reference']) && !empty($observation['external_reference'])) {
+                    if (strpos($observation['external_reference'], 'birdnet') !== false) {
+                        postfile($observation['id'], $UPLOADSITE_SITE, $filename);
+                    }
+                }
+            }
+            echo "All observations in $UPLOADSITE_SITE were synced to the local database.\n";
+        } else {
+            echo "No uploaded observations found in $UPLOADSITE_SITE for user $UPLOADSITE_USER.\n";
+        }
+    } else {
+        echo "Invalid site: $UPLOADSITE_SITE\n";
+    }
 }
 
 // Post the observation data
