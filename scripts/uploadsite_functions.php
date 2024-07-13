@@ -230,9 +230,9 @@ function postOBS($UPLOADSITE_SITE, $OBSTOKEN, $filename, $uploadnotes) {
 
             // Determine message based on HTTP status code
             if ($http_status == 201) {
-                echo 'OK : upload successful';
+                echo 'OK : upload successful to '.$json_response['permalink'];
             } elseif ($http_status == 200) {
-                echo 'OK : update successful';
+                echo 'OK : update successful '.$json_response['permalink'];
             } else {
                 echo 'Error: ' . $http_status . ' - ' . $json_response['error'];
             }
