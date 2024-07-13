@@ -141,6 +141,7 @@ function getObservationData($filename) {
         'date' => $date,
         'time' => $time,
         'point' => "POINT($latitude $longitude)",
+        'external_reference' => $filename,
         'method' => 'heard'
     );
 
