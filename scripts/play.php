@@ -10,6 +10,7 @@ require_once 'scripts/common.php';
 $home = get_home();
 $config = get_config();
 $user = get_user();
+$confirmspecies_enabled = $config["CONFIRM_SPECIES"];
 
 $db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
 $db->busyTimeout(1000);
@@ -498,11 +499,11 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
           ?>
           <td class="spec">
               <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index];?></button>
-              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if (in_array(str_replace("'", "", $birds[$index]), $confirmed_species)) {
+              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == true) { if (in_array(str_replace("'", "", $birds[$index]), $confirmed_species)) {
                 echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"del\")'";
               } else {
                 echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"add\")'";
-              }
+              }}
               ?>>
           </td>
           <?php
@@ -541,11 +542,11 @@ for ($row = 0; $row < $num_rows; $row++) {
       ?>
       <td class="spec">
           <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index];?></button>
-              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if (in_array(str_replace("'", "", $birds[$index]), $confirmed_species)) {
+              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == true) { if (in_array(str_replace("'", "", $birds[$index]), $confirmed_species)) {
                 echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"del\")'";
               } else {
                 echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"add\")'";
-              }
+              }}
               ?>>
       </td>
       <?php
@@ -622,11 +623,11 @@ $url = $info_url['URL'];
 echo "<table>
   <tr><th>$name<span style=\"font-weight:normal;\">
   <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=";
-  if (in_array(str_replace("'", "", $name), $confirmed_species)) {
+  if ($confirmspecies_enabled == true) { if (in_array(str_replace("'", "", $name), $confirmed_species)) {
     echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $name)."\",\"del\")'";
     } else {
     echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $name)."\",\"add\")'";
-    };
+    };};
 echo "><br><br><i>$sciname</i></span><br>
     <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
     <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
@@ -717,11 +718,11 @@ echo "><br><br><i>$sciname</i></span><br>
     echo "<table>
     <tr><th>".$name."
     <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=";
-    if (in_array(str_replace("'", "", $name), $confirmed_species)) {
+    if ($confirmspecies_enabled == true) { if (in_array(str_replace("'", "", $name), $confirmed_species)) {
       echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $name)."\",\"del\")'";
       } else {
       echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $name)."\",\"add\")'";
-      };
+      };};
     echo "><br>
     <i>".$sciname."</i><br>
         <a href=\"".$url."\" target=\"_blank\"><img title=\"".$url_title."\" src=\"images/info.png\" width=\"20\"></a>
