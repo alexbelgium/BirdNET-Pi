@@ -147,7 +147,6 @@ if(isset($_GET["latitude"])){
     }
   }
 
-
   $contents = file_get_contents("/etc/birdnet/birdnet.conf");
   $contents = preg_replace("/SITE_NAME=.*/", "SITE_NAME=\"$site_name\"", $contents);
   $contents = preg_replace("/LATITUDE=.*/", "LATITUDE=$latitude", $contents);
@@ -176,6 +175,10 @@ if(isset($_GET["latitude"])){
     function() {
       window.parent.document.location.reload();
     }, 1000);</script>";
+
+    shell_exec("sudo systemctl restart chart_viewer.service");
+    // the sleep allows for the service to restart and image to be generated
+    sleep(5);
   }
 
   $fh = fopen("/etc/birdnet/birdnet.conf", "w");
@@ -341,9 +344,9 @@ function sendTestNotification(e) {
       <span <?php if($config['MODEL'] == "BirdNET_6K_GLOBAL_MODEL") { ?>style="display: none"<?php } ?> id="soft">
       <input type="checkbox" name="data_model_version" <?php if($config['DATA_MODEL_VERSION'] == 2) { echo "checked"; };?> >
       <label for="data_model_version">Species range model V2.4 - V2</label>  [ <a target="_blank" href="https://github.com/kahst/BirdNET-Analyzer/discussions/234">Info here</a> ]<br>
-      <label for="sf_thresh">Species Occurence Frequency Threshold [0.0005, 0.99]: </label>
+      <label for="sf_thresh">Species Occurrence Frequency Threshold [0.0005, 0.99]: </label>
       <input name="sf_thresh" type="number" style="width:5em;" max="0.99" min="0.0005" step="any" value="<?php print($config['SF_THRESH']);?>"/> <span onclick="document.getElementById('sfhelp').style.display='unset'" style="text-decoration:underline;cursor:pointer">[more info]</span><br>
-      <p id="sfhelp" style='display:none'>This value is used by the model to constrain the list of possible species that it will try to detect, given the minimum occurence frequency. A 0.03 threshold means that for a species to be included in this list, it needs to, on average, be seen on at least 3% of historically submitted eBird checklists for your given lat/lon/current week of year. So, the lower the threshold, the rarer the species it will include.<br><img style='width:75%;padding-top:5px;padding-bottom:5px' alt="BirdNET-Pi new model detection flowchart" title="BirdNET-Pi new model detection flowchart" src="https://i.imgur.com/8YEAuSA.jpeg">
+      <p id="sfhelp" style='display:none'>This value is used by the model to constrain the list of possible species that it will try to detect, given the minimum occurrence frequency. A 0.03 threshold means that for a species to be included in this list, it needs to, on average, be seen on at least 3% of historically submitted eBird checklists for your given lat/lon/current week of year. So, the lower the threshold, the rarer the species it will include.<br><img style='width:75%;padding-top:5px;padding-bottom:5px' alt="BirdNET-Pi new model detection flowchart" title="BirdNET-Pi new model detection flowchart" src="https://i.imgur.com/8YEAuSA.jpeg">
         <br>If you'd like to tinker with this threshold value and see which species make it onto the list, <?php if($config['MODEL'] == "BirdNET_6K_GLOBAL_MODEL"){ ?>please click "Update Settings" at the very bottom of this page to install the appropriate label file, then come back here and you'll be able to use the Species List Tester.<?php } else { ?>you can use this tool: <button type="button" class="testbtn" id="openModal">Species List Tester</button><?php } ?></p>
       </span>
 
@@ -649,6 +652,7 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
 
       <table class="settingstable"><tr><td>
       <h2>Color scheme </h2>
+      Note: when changing themes the daily chart may need a page refresh before updating.<br><br>
       <label for="color_scheme">Color scheme for the site : </label>
       <select name="color_scheme" class="testbtn">
       <?php
