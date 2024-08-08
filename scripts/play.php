@@ -499,7 +499,7 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
           ?>
           <td class="spec">
               <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index];?></button>
-              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == true) { if (in_array(str_replace("'", "", $birds[$index]), $confirmed_species)) {
+              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $birds[$index]), $confirmed_species)) {
                 echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"del\")'";
               } else {
                 echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"add\")'";
@@ -542,7 +542,7 @@ for ($row = 0; $row < $num_rows; $row++) {
       ?>
       <td class="spec">
           <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index];?></button>
-              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == true) { if (in_array(str_replace("'", "", $birds[$index]), $confirmed_species)) {
+              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $birds[$index]), $confirmed_species)) {
                 echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"del\")'";
               } else {
                 echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"add\")'";
@@ -623,7 +623,7 @@ $url = $info_url['URL'];
 echo "<table>
   <tr><th>$name<span style=\"font-weight:normal;\">
   <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=";
-  if ($confirmspecies_enabled == true) { if (in_array(str_replace("'", "", $name), $confirmed_species)) {
+  if ($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $name), $confirmed_species)) {
     echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $name)."\",\"del\")'";
     } else {
     echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $name)."\",\"add\")'";
@@ -718,7 +718,7 @@ echo "><br><br><i>$sciname</i></span><br>
     echo "<table>
     <tr><th>".$name."
     <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=";
-    if ($confirmspecies_enabled == true) { if (in_array(str_replace("'", "", $name), $confirmed_species)) {
+    if ($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $name), $confirmed_species)) {
       echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $name)."\",\"del\")'";
       } else {
       echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $name)."\",\"add\")'";
