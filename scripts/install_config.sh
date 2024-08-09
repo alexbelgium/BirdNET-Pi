@@ -226,12 +226,6 @@ FREQSHIFT_PITCH=-1500
 
 CHANNELS=2
 
-## FULL_DISK can be set to configure how the system reacts to a full disk
-## purge = Remove the oldest day's worth of recordings
-## keep = Keep all data and 'stop_core_services.sh'
-
-FULL_DISK=purge
-
 ## PRIVACY_THRESHOLD can be set to enable sensitivity to Human sounds. This
 ## setting is an effort to introduce privacy into the data collection.
 ## The PRIVACY_THRESHOLD value represents a percentage of the entire species

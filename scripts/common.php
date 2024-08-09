@@ -175,6 +175,7 @@ class Flickr {
     $image = $this->get_image_from_db($sci_name);
     if ($image !== false && in_array($image['id'], $this->blacklisted_ids)) {
       $image = false;
+      $this->delete_image_from_db($sci_name);
     }
     if ($image !== false) {
       $now = new DateTime();
@@ -193,6 +194,12 @@ class Flickr {
     $photos_url = str_replace('/people/', '/photos/', $image['author_url'].'/'.$image['id']);
     $image['photos_url'] = $photos_url;
     return $image;
+  }
+
+  private function delete_image_from_db($sci_name) {
+    $statement0 = $this->db->prepare('DELETE FROM images WHERE sci_name == :sci_name');
+    $statement0->bindValue(':sci_name', $sci_name);
+    $statement0->execute();
   }
 
   private function get_image_from_db($sci_name) {
@@ -228,6 +235,8 @@ class Flickr {
         break;
       }
     }
+
+    if ($photo === null) return;
 
     $license_url = "https://api.flickr.com/services/rest/?method=flickr.photos.getInfo&api_key=" . $this->flickr_api_key . "&photo_id=" . $photo["id"] . "&format=json&nojsoncallback=1";
     $license_response = file_get_contents($license_url);
