@@ -498,13 +498,13 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
         if ($index < count($birds)) {
           ?>
           <td class="spec">
-              <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index];?></button>
+              <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index];?>
               <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $birds[$index]), $confirmed_species)) {
                 echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"del\")'";
               } else {
                 echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"add\")'";
               }}
-              ?>>
+              ?>></button>
           </td>
           <?php
         } else {
@@ -541,13 +541,13 @@ for ($row = 0; $row < $num_rows; $row++) {
     if ($index < count($birds)) {
       ?>
       <td class="spec">
-          <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index];?></button>
+          <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index];?>
               <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $birds[$index]), $confirmed_species)) {
                 echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"del\")'";
               } else {
                 echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"add\")'";
               }}
-              ?>>
+              ?>></button>
       </td>
       <?php
     } else {
