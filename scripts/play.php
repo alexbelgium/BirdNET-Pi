@@ -628,7 +628,7 @@ echo "<table>
     } else {
     echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $name)."\",\"add\")'";
     };};
-echo "><br><br><i>$sciname</i></span><br>
+echo "><br><i>$sciname</i></span><br>
     <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
     <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
   </th></tr>";
