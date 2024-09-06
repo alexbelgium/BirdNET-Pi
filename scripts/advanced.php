@@ -205,12 +205,14 @@ if (isset($_GET["max_files_species"])) {
     $contents = preg_replace("/CONFIRM_SPECIES=.*/", "CONFIRM_SPECIES=0", $contents);
   }
 
-  if(isset($_GET["detection_confirmed"])) {
-    if(strcmp($DETECTION_CONFIRMED,$config['DETECTION_CONFIRMED']) !== 0) {
-      $contents = preg_replace("/DETECTION_CONFIRMED=.*/", "DETECTION_CONFIRMED=$detection_confirmed", $contents);
+  if(isset($_GET["confidence_confirmed"])) {
+    if (strpos($contents, 'CONFIDENCE_CONFIRMED') === false) {
+        $contents .= "\nCONFIDENCE_CONFIRMED=";
     }
-  } else {
-    $contents = preg_replace("/DETECTION_CONFIRMED=.*/", "DETECTION_CONFIRMED=", $contents);
+    $confidence_confirmed = $_GET["confidence_confirmed"];
+    if(strcmp($confidence_confirmed,$config['CONFIDENCE_CONFIRMED']) !== 0) {
+      $contents = preg_replace("/CONFIDENCE_CONFIRMED=.*/", "CONFIDENCE_CONFIRMED=$confidence_confirmed", $contents);
+    }
   }
 
   if(isset($_GET["custom_image"])) {
