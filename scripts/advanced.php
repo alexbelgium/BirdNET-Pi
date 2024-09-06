@@ -206,8 +206,7 @@ if (isset($_GET["max_files_species"])) {
   }
 
   if(isset($_GET["detection_confirmed"])) {
-    $confirm_species = 1;
-    if(strcmp($CONFIRM_SPECIES,$config['DETECTION_CONFIRMED']) !== 0) {
+    if(strcmp($DETECTION_CONFIRMED,$config['DETECTION_CONFIRMED']) !== 0) {
       $contents = preg_replace("/DETECTION_CONFIRMED=.*/", "DETECTION_CONFIRMED=$detection_confirmed", $contents);
     }
   } else {
