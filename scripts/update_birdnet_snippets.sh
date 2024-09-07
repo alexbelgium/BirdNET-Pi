@@ -95,13 +95,13 @@ if ! grep -E '^COLOR_SCHEME=' /etc/birdnet/birdnet.conf &>/dev/null;then
 fi
 
 if ! grep -E '^MAX_FILES_SPECIES=' /etc/birdnet/birdnet.conf &>/dev/null;then
-  echo "MAX_FILES_SPECIES=\"0\"" >> /etc/birdnet/birdnet.conf
+  echo "MAX_FILES_SPECIES=0" >> /etc/birdnet/birdnet.conf
 fi
 
 if ! grep -E '^CONFIRM_SPECIES=' /etc/birdnet/birdnet.conf &>/dev/null;then
   echo "## CONFIRM_SPECIES adds an icon next to species in the Recordings tab to keep track which species are manually confirmed" >> /etc/birdnet/birdnet.conf 
   echo "## It generates a confirmed_species_list.txt file, and allows to better visualize species that could be false positives" >> /etc/birdnet/birdnet.conf
-  echo "CONFIRM_SPECIES=\"0\"" >> /etc/birdnet/birdnet.conf
+  echo "CONFIRM_SPECIES=0" >> /etc/birdnet/birdnet.conf
 fi
 
 if ! grep -E '^CONFIDENCE_CONFIRMED' /etc/birdnet/birdnet.conf &>/dev/null;then
