@@ -329,10 +329,12 @@ def run_analysis(file):
                                       conf.getfloat('SENSITIVITY'), conf.getfloat('OVERLAP'))
     confident_detections = []
     default_confidence = conf.getfloat('CONFIDENCE')
-    try:
-        confirmed_confidence = conf.getfloat('CONFIDENCE_CONFIRMED')
-    except KeyError:
-        confirmed_confidence = default_confidence
+    confirmed_confidence = default_confidence
+    if get_settings().getint('CONFIRM_SPECIES') == 1:
+        try:
+            confirmed_confidence = conf.getfloat('CONFIDENCE_CONFIRMED')
+        except KeyError:
+            pass
 
     for time_slot, entries in raw_detections.items():
         log.info('%s-%s', time_slot, entries[0])
