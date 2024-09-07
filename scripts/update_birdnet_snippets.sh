@@ -104,10 +104,10 @@ if ! grep -E '^CONFIRM_SPECIES=' /etc/birdnet/birdnet.conf &>/dev/null;then
   echo "CONFIRM_SPECIES=\"0\"" >> /etc/birdnet/birdnet.conf
 fi
 
-if ! grep -E '^DETECTION_CONFIRMED' /etc/birdnet/birdnet.conf &>/dev/null;then
+if ! grep -E '^CONFIDENCE_CONFIRMED' /etc/birdnet/birdnet.conf &>/dev/null;then
   echo "## CONFIDENCE_CONFIRMED allows a specific confidence level to be applied for species in the confirmed_species_list.txt file" >> /etc/birdnet/birdnet.conf 
   echo "## It is only applied when CONFIRM_SPECIES=1. Keep blank to disable" >> /etc/birdnet/birdnet.conf 
-  echo "DETECTION_CONFIRMED=" >> /etc/birdnet/birdnet.conf
+  echo "CONFIDENCE_CONFIRMED=" >> /etc/birdnet/birdnet.conf
 fi
 
 [ -d $RECS_DIR/StreamData ] || sudo_with_user mkdir -p $RECS_DIR/StreamData
