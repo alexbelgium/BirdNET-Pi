@@ -168,9 +168,9 @@ if(isset($_GET['bydate'])){
   session_start();
   $_SESSION['date'] = $date;
   if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
-    $statement = $db->prepare("SELECT DISTINCT(Com_Name) FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY COUNT(*) DESC");
+    $statement = $db->prepare("SELECT DISTINCT(Com_Name), Sci_Name FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY COUNT(Com_Name) DESC");
   } else {
-    $statement = $db->prepare("SELECT DISTINCT(Com_Name) FROM detections WHERE Date == \"$date\" ORDER BY Com_Name");
+    $statement = $db->prepare("SELECT DISTINCT(Com_Name), Sci_Name FROM detections WHERE Date == \"$date\" ORDER BY Com_Name");
   }
   ensure_db_ok($statement);
   $result = $statement->execute();
