@@ -179,10 +179,10 @@ if(isset($_GET['bydate'])){
   #By Species
 } elseif(isset($_GET['byspecies'])) {
   if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
-    $statement = $db->prepare('SELECT DISTINCT(Com_Name) FROM detections GROUP BY Com_Name ORDER BY COUNT(*) DESC');
+    $statement = $db->prepare('SELECT Com_Name, Sci_Name FROM detections GROUP BY Com_Name, Sci_Name ORDER BY Com_Name DESC');
   } else {
-    $statement = $db->prepare('SELECT DISTINCT(Com_Name) FROM detections ORDER BY Com_Name ASC');
-  } 
+    $statement = $db->prepare('SELECT Com_Name, Sci_Name FROM detections GROUP BY Com_Name, Sci_Name ORDER BY Com_Name ASC');
+  }
   session_start();
   ensure_db_ok($statement);
   $result = $statement->execute();
@@ -476,10 +476,12 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
           #By Species
   } elseif($view == "byspecies") {
     $birds = array();
+    $birds_sciname_name = array();
     while($results=$result->fetchArray(SQLITE3_ASSOC))
     {
       $name = $results['Com_Name'];
       $birds[] = $name;
+      $birds_sciname_name[] = $results['Sci_Name'] . "_" . $name;
     }
 
     if(count($birds) > 45) {
@@ -499,10 +501,10 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
           ?>
           <td class="spec">
               <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index];?>
-              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $birds[$index]), $confirmed_species)) {
-                echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"del\")'";
+              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $birds_sciname_name[$index]), $confirmed_species)) {
+                echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"del\")'";
               } else {
-                echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds[$index])."\",\"add\")'";
+                echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"add\")'";
               }}
               ?>></button>
           </td>
@@ -618,15 +620,16 @@ while ($result2->fetchArray(SQLITE3_ASSOC)) {
 }
 $result2->reset(); // reset the pointer to the beginning of the result set
 $sciname = get_sci_name($name);
+$sciname_name = $sciname . '_' . $name;
 $info_url = get_info_url($sciname);
 $url = $info_url['URL'];
 echo "<table>
   <tr><th>$name<span style=\"font-weight:normal;\">
   <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=";
-  if ($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $name), $confirmed_species)) {
-    echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $name)."\",\"del\")'";
+  if ($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $sciname_name), $confirmed_species)) {
+    echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"del\")'";
     } else {
-    echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $name)."\",\"add\")'";
+    echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"add\")'";
     };};
 echo "><br><i>$sciname</i></span><br>
     <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
@@ -713,15 +716,16 @@ echo "><br><i>$sciname</i></span><br>
     $result2 = $statement2->execute();
     $comname = str_replace("_", " ", strtok($name, '-'));
     $sciname = get_sci_name($comname);
+    $sciname_name = $sciname . '_' . $comname;
     $info_url = get_info_url($sciname);
     $url = $info_url['URL'];
     echo "<table>
     <tr><th>".$name."
     <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=";
-    if ($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $name), $confirmed_species)) {
-      echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $name)."\",\"del\")'";
+    if ($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $sciname_name), $confirmed_species)) {
+      echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"del\")'";
       } else {
-      echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $name)."\",\"add\")'";
+      echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"add\")'";
       };};
     echo "><br>
     <i>".$sciname."</i><br>
