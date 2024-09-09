@@ -334,7 +334,7 @@ def run_analysis(file):
         try:
             confirmed_confidence = conf.getfloat('CONFIDENCE_CONFIRMED')
         except KeyError:
-            pass
+            log.info('CONFIDENCE_CONFIRMED key not found, using default_confidence %s for confirmed_confidence', confirmed_confidence)
 
     for time_slot, entries in raw_detections.items():
         log.info('%s-%s', time_slot, entries[0])
