@@ -179,9 +179,9 @@ if(isset($_GET['bydate'])){
   #By Species
 } elseif(isset($_GET['byspecies'])) {
   if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
-    $statement = $db->prepare('SELECT Com_Name, Sci_Name FROM detections GROUP BY Com_Name ORDER BY Com_Name DESC');
+    $statement = $db->prepare('SELECT DISTINCT(Com_Name), Sci_Name FROM detections ORDER BY Com_Name DESC');
   } else {
-    $statement = $db->prepare('SELECT Com_Name, Sci_Name FROM detections GROUP BY Com_Name ORDER BY Com_Name ASC');
+    $statement = $db->prepare('SELECT DISTINCT(Com_Name), Sci_Name FROM detections ORDER BY Com_Name ASC');
   }
   session_start();
   ensure_db_ok($statement);
