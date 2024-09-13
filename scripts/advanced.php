@@ -205,16 +205,6 @@ if (isset($_GET["max_files_species"])) {
     $contents = preg_replace("/CONFIRM_SPECIES=.*/", "CONFIRM_SPECIES=0", $contents);
   }
 
-  if(isset($_GET["confidence_confirmed"])) {
-    if (strpos($contents, 'CONFIDENCE_CONFIRMED') === false) {
-        $contents .= "\nCONFIDENCE_CONFIRMED=";
-    }
-    $confidence_confirmed = $_GET["confidence_confirmed"];
-    if(strcmp($confidence_confirmed,$config['CONFIDENCE_CONFIRMED']) !== 0) {
-      $contents = preg_replace("/CONFIDENCE_CONFIRMED=.*/", "CONFIDENCE_CONFIRMED=$confidence_confirmed", $contents);
-    }
-  }
-
   if(isset($_GET["custom_image"])) {
     $custom_image = $_GET["custom_image"];
     if(strcmp($custom_image,$config['CUSTOM_IMAGE']) !== 0) {
@@ -459,13 +449,7 @@ foreach($formats as $format){
       <h2>Option : Confirmed Species</h2>
       <label for="confirm_species">Confirmation of species: </label>
       <input type="checkbox" name="confirm_species" <?php if($newconfig['CONFIRM_SPECIES'] == 1) { echo "checked"; };?> >
-      <p>This allows to visually mark species that were manually confirmed as existing in the area. A new question mark appears next to species names in the Recordings page. Clicking it changes the icon to a checkmark, and add the species to the file confirmed_species_list.txt.</p>
-      <p>
-        <label for="confidence_confirmed">Minimum Confidence for confirmed species: </label>
-        <input name="confidence_confirmed" type="number" style="width:4em;" min="0.01" max="0.99" step="0.01" value="<?php print($newconfig['CONFIDENCE_CONFIRMED']);?>" required/><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;Min=0.01, Max=0.99 ; if CONFIRM_SPECIES is set, allows to specify a different confidence level (usually reduced) for species in its list. This allows better sensitivity for local species without decreasing the global threshold of detectability.
-      </p>
-
+      <p>This allows to visually mark species that were manually confirmed as existing in the area. A new question mark appears next to species names in the Recordings page. Clicking it changes the icon to a checkmark, and add the species to the file confirmed_species_list.txt</p>
       </td></tr></table><br>
 
       <table class="settingstable"><tr><td>

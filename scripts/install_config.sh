@@ -275,11 +275,6 @@ CUSTOM_IMAGE_TITLE=""
 
 CONFIRM_SPECIES=0
 
-## CONFIDENCE_CONFIRMED allows a specific confidence level to be applied for species in the confirmed_species_list.txt file
-## It is only applied when CONFIRM_SPECIES=1. Keep blank to disable
-
-CONFIDENCE_CONFIRMED=
-
 ## These are just for debugging
 LAST_RUN=
 THIS_RUN=

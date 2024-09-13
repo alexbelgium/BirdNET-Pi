@@ -313,7 +313,6 @@ def run_analysis(file):
     global INCLUDE_LIST, EXCLUDE_LIST
     INCLUDE_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/include_species_list.txt"))
     EXCLUDE_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/exclude_species_list.txt"))
-    CONFIRMED_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/confirmed_species_list.txt"))
 
     conf = get_settings()
 
@@ -328,19 +327,10 @@ def run_analysis(file):
     raw_detections = analyzeAudioData(audio_data, conf.getfloat('LATITUDE'), conf.getfloat('LONGITUDE'), file.week,
                                       conf.getfloat('SENSITIVITY'), conf.getfloat('OVERLAP'))
     confident_detections = []
-    default_confidence = conf.getfloat('CONFIDENCE')
-    confirmed_confidence = default_confidence
-    if get_settings().getint('CONFIRM_SPECIES') == 1:
-        try:
-            confirmed_confidence = conf.getfloat('CONFIDENCE_CONFIRMED')
-        except KeyError:
-            log.info('CONFIDENCE_CONFIRMED key not found, using default_confidence %s for confirmed_confidence', confirmed_confidence)
-
     for time_slot, entries in raw_detections.items():
         log.info('%s-%s', time_slot, entries[0])
         for entry in entries:
-            confidence = confirmed_confidence if entry[0] in CONFIRMED_LIST else default_confidence
-            if entry[1] >= confidence and ((entry[0] in INCLUDE_LIST or len(INCLUDE_LIST) == 0)
+            if entry[1] >= conf.getfloat('CONFIDENCE') and ((entry[0] in INCLUDE_LIST or len(INCLUDE_LIST) == 0)
                                                             and (entry[0] not in EXCLUDE_LIST or len(EXCLUDE_LIST) == 0)
                                                             and (entry[0] in PREDICTED_SPECIES_LIST
                                                                  or len(PREDICTED_SPECIES_LIST) == 0)):
