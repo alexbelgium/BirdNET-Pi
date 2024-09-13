@@ -241,6 +241,19 @@ def predict(sample, sensitivity):
     return p_sorted[:human_cutoff]
 
 
+def calculate_snr(signal):
+    signal_power = np.mean(signal**2)
+    noise = signal - np.mean(signal)
+    noise_power = np.mean(noise**2)
+    snr = 10 * np.log10(signal_power / noise_power)
+    return snr
+
+
+def calculate_average_loudness(signal):
+    rms = np.sqrt(np.mean(signal**2))
+    return rms
+
+
 def analyzeAudioData(chunks, lat, lon, week, sens, overlap,):
     global INTERPRETER
 
@@ -259,6 +272,11 @@ def analyzeAudioData(chunks, lat, lon, week, sens, overlap,):
     # Parse every chunk
     pred_start = 0.0
     for c in chunks:
+
+        # Calculate SNR and loudness for the chunk
+        snr = calculate_snr(c)
+        loudness = calculate_average_loudness(c)
+        log.info(f"Chunk SNR: {snr:.2f}, Loudness: {loudness:.2f}")
 
         # Prepare as input signal
         sig = np.expand_dims(c, 0)
