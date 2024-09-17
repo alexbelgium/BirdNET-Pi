@@ -294,10 +294,18 @@ def analyzeAudioData(chunks, lat, lon, week, sens, overlap,):
         # If human detected set all detections to human to make sure voices are not saved
         if HUMAN_DETECTED is True:
             p = [('Human_Human', 0.0)] * 10
-
+        
         detections[str(pred_start) + ';' + str(pred_end)] = p
 
         pred_start = pred_end - overlap
+
+        # Calculate SNR and average loudness for the current chunk
+        snr = calculate_snr(c)
+        average_loudness = calculate_average_loudness(c)
+
+        # Append SNR and loudness to the predictions list (p)
+        p.append(('SNR', snr))
+        p.append(('Average Loudness', average_loudness))
 
     log.info('DONE! Time %.2f SECONDS', time.time() - start)
     return detections
@@ -344,11 +352,15 @@ def run_analysis(file):
     confident_detections = []
     for time_slot, entries in raw_detections.items():
         log.info('%s-%s', time_slot, entries[0])
+        snr = None
+        avg_loudness = None
         for entry in entries:
             if entry[1] >= conf.getfloat('CONFIDENCE') and ((entry[0] in INCLUDE_LIST or len(INCLUDE_LIST) == 0)
                                                             and (entry[0] not in EXCLUDE_LIST or len(EXCLUDE_LIST) == 0)
                                                             and (entry[0] in PREDICTED_SPECIES_LIST
                                                                  or len(PREDICTED_SPECIES_LIST) == 0)):
-                d = Detection(time_slot.split(';')[0], time_slot.split(';')[1], entry[0], entry[1], calculate_snr(audio_data), calculate_average_loudness(audio_data))
+                snr = entries[-2][1]  # SNR
+                avg_loudness = entries[-1][1]  # Average Loudness
+                d = Detection(time_slot.split(';')[0], time_slot.split(';')[1], entry[0], entry[1], snr, avg_loudness)
                 confident_detections.append(d)
     return confident_detections
