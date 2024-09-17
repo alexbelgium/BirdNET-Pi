@@ -250,7 +250,6 @@ if (get_included_files()[0] === __FILE__) {
     showDialog();
   }
   </script>
-<h3>Number of Detections</h3>
 <div class="overview-stats">
 </div>
 <div class="right-column">
