@@ -178,8 +178,8 @@ $totalspeciestally = $result6->fetchArray(SQLITE3_ASSOC);
   <th>Total</th>
   <th>Today</th>
   <th>Last Hour</th>
-  <th>Unique Species Today</th>
-  <th>Unique Species Total</th>
+  <th>Species Today</th>
+  <th>Species Total</th>
       </tr>
       <tr>
       <td><?php echo $totalcount['COUNT(*)'];?></td>
