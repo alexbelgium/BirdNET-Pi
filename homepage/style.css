@@ -268,7 +268,6 @@ button:hover {
 
 .right-column {
   flex: 90%;
-  margin-right: 10%;
 }
 
 .stats td {
@@ -491,7 +490,7 @@ button:hover {
     overflow-x: hidden;
   }
   .overview .right-column .chart img {
-    margin-left: 5%;
+    margin-left: auto;
     margin-right: auto;
     margin-top: 10px;
   }
