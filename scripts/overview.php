@@ -178,15 +178,15 @@ $totalspeciestally = $result6->fetchArray(SQLITE3_ASSOC);
   <th>Total</th>
   <th>Today</th>
   <th>Last Hour</th>
-  <th>Species Today</th>
   <th>Species Total</th>
+  <th>Species Today</th>
       </tr>
       <tr>
       <td><?php echo $totalcount['COUNT(*)'];?></td>
       <td><form action="" method="GET"><input type="hidden" name="view" value="Todays Detections"><?php echo $todaycount['COUNT(*)'];?></td></form>
       <td><?php echo $hourcount['COUNT(*)'];?></td>
-      <td><form action="" method="GET"><input type="hidden" name="view" value="Recordings"><button type="submit" name="date" value="<?php echo date('Y-m-d');?>"><?php echo $speciestally['COUNT(DISTINCT(Com_Name))'];?></button></td></form>
       <td><form action="" method="GET"><button type="submit" name="view" value="Species Stats"><?php echo $totalspeciestally['COUNT(DISTINCT(Com_Name))'];?></button></td></form>
+      <td><form action="" method="GET"><input type="hidden" name="view" value="Recordings"><button type="submit" name="date" value="<?php echo date('Y-m-d');?>"><?php echo $speciestally['COUNT(DISTINCT(Com_Name))'];?></button></td></form>
   </tr>
   </table>
 
