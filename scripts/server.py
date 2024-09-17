@@ -242,6 +242,7 @@ def predict(sample, sensitivity):
 
 
 def calculate_snr(signal):
+    signal = np.array(signal)
     signal_power = np.mean(signal**2)
     noise = signal - np.mean(signal)
     noise_power = np.mean(noise**2)
@@ -250,6 +251,7 @@ def calculate_snr(signal):
 
 
 def calculate_average_loudness(signal):
+    signal = np.array(signal)
     rms = np.sqrt(np.mean(signal**2))
     return rms
 
