@@ -9,6 +9,7 @@ import librosa
 import numpy as np
 
 from utils.helpers import get_settings, Detection
+from scipy.signal import butter, sosfilt
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 os.environ['CUDA_VISIBLE_DEVICES'] = ''
@@ -241,12 +242,20 @@ def predict(sample, sensitivity):
     return p_sorted[:human_cutoff]
 
 
-def calculate_snr(signal):
-    signal = np.array(signal)
-    signal_power = np.mean(signal**2)
-    noise = signal - np.mean(signal)
-    noise_power = np.mean(noise**2)
-    snr = 10 * np.log10(signal_power / noise_power)
+def calculate_snr(audio_signal, sample_rate=48000, low_freq_cutoff=150):
+    # 1. Compute the overall signal power
+    signal_power = np.mean(audio_signal**2)
+    # 2. Estimate the noise by filtering frequencies below the cutoff (e.g., 150 Hz)
+    sos = butter(10, low_freq_cutoff, 'low', fs=48000, output='sos')
+    low_freq_noise = sosfilt(sos, audio_signal)
+    low_freq_noise_power = np.mean(low_freq_noise**2)
+    # 3. Also estimate noise from quieter sections of the signal (e.g., bottom 30%)
+    sorted_signal = np.sort(np.abs(audio_signal))
+    quiet_section_noise_power = np.mean(sorted_signal[:int(0.3 * len(sorted_signal))]**2)
+    # 4. Combine both noise estimates (weighted average)
+    combined_noise_power = (low_freq_noise_power + quiet_section_noise_power) / 2
+    # 5. SNR calculation
+    snr = 10 * np.log10(signal_power / combined_noise_power)
     return round(snr, 6)
 
 
