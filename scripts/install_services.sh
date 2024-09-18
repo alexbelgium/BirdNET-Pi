@@ -92,7 +92,7 @@ generate_BirdDB() {
     sudo -u ${USER} touch $my_dir/BirdDB.txt
     echo "Date;Time;Sci_Name;Com_Name;Confidence;Lat;Lon;Cutoff;Week;Sens;Overlap;SNR" | sudo -u ${USER} tee -a $my_dir/BirdDB.txt
   elif ! grep Date $my_dir/BirdDB.txt;then
-    sudo -u ${USER} sed -i '1 i\Date;Time;Sci_Name;Com_Name;Confidence;Lat;Lon;Cutoff;Week;Sens;Overlap;SNR;Loudness' $my_dir/BirdDB.txt
+    sudo -u ${USER} sed -i '1 i\Date;Time;Sci_Name;Com_Name;Confidence;Lat;Lon;Cutoff;Week;Sens;Overlap;SNR' $my_dir/BirdDB.txt
   fi
   chown $USER:$USER ${my_dir}/BirdDB.txt && chmod g+rw ${my_dir}/BirdDB.txt
 }
