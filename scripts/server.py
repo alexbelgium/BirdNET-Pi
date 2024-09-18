@@ -302,9 +302,6 @@ def analyzeAudioData(chunks, lat, lon, week, sens, overlap,):
 
         pred_start = pred_end - overlap
 
-        # Calculate and append SNR to the predictions list (p)
-        p.append(('SNR', calculate_snr(c)))
-
     log.info('DONE! Time %.2f SECONDS', time.time() - start)
     return detections
 
@@ -348,6 +345,7 @@ def run_analysis(file):
     raw_detections = analyzeAudioData(audio_data, conf.getfloat('LATITUDE'), conf.getfloat('LONGITUDE'), file.week,
                                       conf.getfloat('SENSITIVITY'), conf.getfloat('OVERLAP'))
     confident_detections = []
+    global_snr = calculate_snr(np.concatenate(audio_data))
     for time_slot, entries in raw_detections.items():
         log.info('%s-%s', time_slot, entries[0])
         for entry in entries:
@@ -355,6 +353,6 @@ def run_analysis(file):
                                                             and (entry[0] not in EXCLUDE_LIST or len(EXCLUDE_LIST) == 0)
                                                             and (entry[0] in PREDICTED_SPECIES_LIST
                                                                  or len(PREDICTED_SPECIES_LIST) == 0)):
-                d = Detection(time_slot.split(';')[0], time_slot.split(';')[1], entry[0], entry[1], entries[-1][1])
+                d = Detection(time_slot.split(';')[0], time_slot.split(';')[1], entry[0], entry[1], global_snr)
                 confident_detections.append(d)
     return confident_detections
