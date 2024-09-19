@@ -42,7 +42,7 @@ def get_settings(settings_path='/etc/birdnet/birdnet.conf', force_reload=False):
 
 
 class Detection:
-    def __init__(self, start_time, stop_time, species, confidence, snr, loudness):
+    def __init__(self, start_time, stop_time, species, confidence, snr):
         self.start = float(start_time)
         self.stop = float(stop_time)
         self.confidence = round(float(confidence), 4)
