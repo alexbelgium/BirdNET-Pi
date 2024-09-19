@@ -242,20 +242,22 @@ def predict(sample, sensitivity):
     return p_sorted[:human_cutoff]
 
 
-def calculate_snr(audio_signal, sample_rate=48000, low_freq_cutoff=150, percentile=30):
-    # 1. Compute the overall signal power
-    signal_power = np.mean(audio_signal**2)
-    # 2. Estimate the noise by filtering frequencies below the cutoff
-    sos = butter(4, low_freq_cutoff, 'low', fs=sample_rate, output='sos')
-    low_freq_noise = sosfilt(sos, audio_signal)
-    low_freq_noise_power = np.mean(low_freq_noise**2)
-    # 3. Also estimate noise from quieter sections of the signal
-    quiet_threshold = np.percentile(np.abs(audio_signal), percentile)
-    quiet_section_noise_power = np.mean(audio_signal[audio_signal < quiet_threshold]**2)
-    # 4. Combine both noise estimates (weighted average)
-    combined_noise_power = (low_freq_noise_power + quiet_section_noise_power) / 2
-    # 5. SNR calculation
-    snr = 10 * np.log10(signal_power / combined_noise_power)
+def calculate_snr(audio_signal, sample_rate=48000, birdsong_low_freq=250, birdsong_high_freq=10000, percentile=20):
+    # 1. Apply a bandpass filter to focus on the birdsong range (250 Hz to 10 kHz)
+    sos = butter(4, [birdsong_low_freq, birdsong_high_freq], btype='bandpass', fs=sample_rate, output='sos')
+    filtered_signal = sosfilt(sos, audio_signal)
+    # 2. Compute the overall power of the filtered signal (focus on birdsong)
+    signal_power = np.mean(filtered_signal**2)
+    # 3. Estimate the noise power by identifying quieter sections of the signal (below the 20th percentile)
+    quiet_threshold = np.percentile(np.abs(filtered_signal), percentile)
+    quiet_section_noise = filtered_signal[np.abs(filtered_signal) < quiet_threshold]
+    # Ensure there's enough quiet data to compute the noise power
+    if len(quiet_section_noise) > 0:
+        noise_power = np.mean(quiet_section_noise**2)
+    else:
+        noise_power = 0.001  # Small value to avoid division by zero
+    # 4. SNR calculation
+    snr = 10 * np.log10(signal_power / noise_power)
     return round(snr, 6)
 
 
@@ -302,6 +304,9 @@ def analyzeAudioData(chunks, lat, lon, week, sens, overlap,):
 
         pred_start = pred_end - overlap
 
+        # Calculate and append SNR to the predictions list (p)
+        p.append(('SNR', calculate_snr(c)))
+
     log.info('DONE! Time %.2f SECONDS', time.time() - start)
     return detections
 
@@ -345,7 +350,6 @@ def run_analysis(file):
     raw_detections = analyzeAudioData(audio_data, conf.getfloat('LATITUDE'), conf.getfloat('LONGITUDE'), file.week,
                                       conf.getfloat('SENSITIVITY'), conf.getfloat('OVERLAP'))
     confident_detections = []
-    global_snr = calculate_snr(np.concatenate(audio_data))
     for time_slot, entries in raw_detections.items():
         log.info('%s-%s', time_slot, entries[0])
         for entry in entries:
@@ -353,6 +357,6 @@ def run_analysis(file):
                                                             and (entry[0] not in EXCLUDE_LIST or len(EXCLUDE_LIST) == 0)
                                                             and (entry[0] in PREDICTED_SPECIES_LIST
                                                                  or len(PREDICTED_SPECIES_LIST) == 0)):
-                d = Detection(time_slot.split(';')[0], time_slot.split(';')[1], entry[0], entry[1], global_snr)
+                d = Detection(time_slot.split(';')[0], time_slot.split(';')[1], entry[0], entry[1], entries[-1][1])
                 confident_detections.append(d)
     return confident_detections
