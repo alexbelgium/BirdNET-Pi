@@ -214,7 +214,7 @@ function getOBSUploaded($UPLOADSITE_SITE,$UPLOADSITE_USER) {
     }
 
     if (in_array($UPLOADSITE_SITE, $observationorgsites)) {
-        $url = "https://observation.org/api/v1/user/$UPLOADSITE_USER/observations/";
+        $url = "https://$UPLOADSITE_SITE/api/v1/user/$UPLOADSITE_USER/observations/";
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
