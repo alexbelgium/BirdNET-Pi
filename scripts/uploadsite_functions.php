@@ -129,7 +129,7 @@ function getObservationData($filename) {
     }
 
     // Get observation ID
-    $OBS_ID = fetchSpeciesId($sciname, $comname);
+    $OBS_ID = getSpeciesId($sciname, $comname);
     if (strpos($OBS_ID, "Error:") === 0) {
         echo "Error: cannot fetch Species ID with message: " . $OBS_ID;
         return null;
