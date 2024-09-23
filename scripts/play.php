@@ -138,6 +138,8 @@ if(isset($_GET['bydate'])){
   $_SESSION['date'] = $date;
   if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
     $statement = $db->prepare("SELECT DISTINCT(Com_Name) FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY COUNT(*) DESC");
+  } elseif(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
+    $statement = $db->prepare("SELECT DISTINCT(Com_Name), MAX(Confidence) as MaxConfidence FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY MaxConfidence DESC");
   } else {
     $statement = $db->prepare("SELECT DISTINCT(Com_Name) FROM detections WHERE Date == \"$date\" ORDER BY Com_Name");
   }
@@ -149,6 +151,8 @@ if(isset($_GET['bydate'])){
 } elseif(isset($_GET['byspecies'])) {
   if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
     $statement = $db->prepare('SELECT DISTINCT(Com_Name) FROM detections GROUP BY Com_Name ORDER BY COUNT(*) DESC');
+  } elseif(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
+    $statement = $db->prepare('SELECT DISTINCT(Com_Name), MAX(Confidence) as MaxConfidence FROM detections GROUP BY Com_Name ORDER BY MaxConfidence DESC');
   } else {
     $statement = $db->prepare('SELECT DISTINCT(Com_Name) FROM detections ORDER BY Com_Name ASC');
   } 
@@ -404,11 +408,20 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
    <form action="views.php" method="GET">
       <input type="hidden" name="view" value="Recordings">
       <input type="hidden" name="<?php echo $view; ?>" value="<?php echo $_GET['date']; ?>">
+      
+      <!-- Alphabetical sort button -->
       <button <?php if(!isset($_GET['sort']) || $_GET['sort'] == "alphabetical"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="alphabetical">
          <img src="images/sort_abc.svg" title="Sort by alphabetical" alt="Sort by alphabetical">
       </button>
+      
+      <!-- Occurrences sort button -->
       <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "occurrences"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="occurrences">
          <img src="images/sort_occ.svg" title="Sort by occurrences" alt="Sort by occurrences">
+      </button>
+
+      <!-- Max Confidence sort button -->
+      <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "confidence"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="confidence">
+         <img src="images/sort_conf.svg" title="Sort by max confidence" alt="Sort by max confidence">
       </button>
    </form>
 </div>
