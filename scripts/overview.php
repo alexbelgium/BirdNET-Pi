@@ -151,7 +151,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
   die();
 }
 
-if(isset($_GET['ajax_left_chart']) && $_GET['ajax_left_chart'] == "true") {
+if(isset($_GET['ajax_center_chart']) && $_GET['ajax_center_chart'] == "true") {
 
 $statement = $db->prepare('SELECT COUNT(*) FROM detections');
 ensure_db_ok($statement);
@@ -174,31 +174,22 @@ $result6 = $statement6->execute();
 $totalspeciestally = $result6->fetchArray(SQLITE3_ASSOC);
   
 ?>
-<table>
-  <tr>
-    <th>Total</th>
-    <td><?php echo $totalcount['COUNT(*)'];?></td>
+  <table><tr>
+  <th>Total</th>
+  <th>Today</th>
+  <th>Last Hour</th>
+  <th>Species Total</th>
+  <th>Species Today</th>
+      </tr>
+      <tr>
+      <td><?php echo $totalcount['COUNT(*)'];?></td>
+      <td><form action="" method="GET"><input type="hidden" name="view" value="Todays Detections"><?php echo $todaycount['COUNT(*)'];?></td></form>
+      <td><?php echo $hourcount['COUNT(*)'];?></td>
+      <td><form action="" method="GET"><button type="submit" name="view" value="Species Stats"><?php echo $totalspeciestally['COUNT(DISTINCT(Com_Name))'];?></button></td></form>
+      <td><form action="" method="GET"><input type="hidden" name="view" value="Recordings"><button type="submit" name="date" value="<?php echo date('Y-m-d');?>"><?php echo $speciestally['COUNT(DISTINCT(Com_Name))'];?></button></td></form>
   </tr>
-  <tr>
-    <th>Today</th>
-    <td><form action="" method="GET"><button type="submit" name="view" value="Todays Detections"><?php echo $todaycount['COUNT(*)'];?></button></td>
-    </form>
-  </tr>
-  <tr>
-    <th>Last Hour</th>
-    <td><?php echo $hourcount['COUNT(*)'];?></td>
-  </tr>
-  <tr>
-    <th>Species Detected Today</th>
-    <td><form action="" method="GET"><input type="hidden" name="view" value="Recordings"><button type="submit" name="date" value="<?php echo date('Y-m-d');?>"><?php echo $speciestally['COUNT(DISTINCT(Com_Name))'];?></button></td>
-    </form>
-  </tr>
-  <tr>
-    <th>Total Number of Species</th>
-    <td><form action="" method="GET"><button type="submit" name="view" value="Species Stats"><?php echo $totalspeciestally['COUNT(DISTINCT(Com_Name))'];?></button></td>
-    </form>
-  </tr>
-</table>
+  </table>
+
 <?php
 die();
 }
@@ -258,9 +249,8 @@ if (get_included_files()[0] === __FILE__) {
     last_photo_link = text;
     showDialog();
   }
-  </script>  
+  </script>
 <div class="overview-stats">
-<div class="left-column">
 </div>
 <div class="right-column">
 <div class="chart">
@@ -295,7 +285,6 @@ echo "<img id=\"spectrogramimage\" src=\"spectrogram.png?nocache=$time\">";
 
 </div>
 </div>
-</div>
 <script>
 // we're passing a unique ID of the currently displayed detection to our script, which checks the database to see if the newest detection entry is that ID, or not. If the IDs don't match, it must mean we have a new detection and it's loaded onto the page
 function loadDetectionIfNewExists(previous_detection_identifier=undefined) {
@@ -306,7 +295,7 @@ function loadDetectionIfNewExists(previous_detection_identifier=undefined) {
       document.getElementById("most_recent_detection").innerHTML = this.responseText;
 
       // only going to load left chart & 5 most recents if there's a new detection
-      loadLeftChart();
+      loadCenterChart();
       loadFiveMostRecentDetections();
       refreshTopTen();
     }
@@ -314,14 +303,14 @@ function loadDetectionIfNewExists(previous_detection_identifier=undefined) {
   xhttp.open("GET", "overview.php?ajax_detections=true&previous_detection_identifier="+previous_detection_identifier, true);
   xhttp.send();
 }
-function loadLeftChart() {
+function loadCenterChart() {
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
     if(this.responseText.length > 0 && !this.responseText.includes("Database is busy")) {
-      document.getElementsByClassName("left-column")[0].innerHTML = this.responseText;
+      document.getElementsByClassName("overview-stats")[0].innerHTML = this.responseText;
     }
   }
-  xhttp.open("GET", "overview.php?ajax_left_chart=true", true);
+  xhttp.open("GET", "overview.php?ajax_center_chart=true", true);
   xhttp.send();
 }
 function refreshTopTen() {
