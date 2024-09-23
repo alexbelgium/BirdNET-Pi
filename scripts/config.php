@@ -47,6 +47,19 @@ if(isset($_GET['restart_php']) && $_GET['restart_php'] == "true") {
   die();
 }
 
+# Perform sync with uploadsites
+if isset($_GET['getOBSUploaded']) {
+    $uploadsite_site = $_GET['uploadsite_site'] ?? '';
+    $uploadsite_user = $_GET['uploadsite_user'] ?? '';
+    if (!empty($uploadsite_site) && !empty($uploadsite_user)) {
+        getOBSUploaded($uploadsite_site, $uploadsite_user);
+        echo "Observations have been synced successfully.";
+    } else {
+        echo "Upload site or user information is missing.";
+    }
+    die();
+}
+
 # Basic Settings
 if(isset($_GET["latitude"])){
   $latitude = $_GET["latitude"];
@@ -546,9 +559,11 @@ function runProcess() {
       <input name="uploadsite_user" type="text" id="uploadsite_user" value="<?php print($config['UPLOADSITE_USER']);?>" style="display:none;" />
       <label for="uploadsite_pass" id="uploadsite_pass_label" style="display:none;">Password: </label>
       <input name="uploadsite_pass" type="text" id="uploadsite_pass" value="<?php print($config['UPLOADSITE_PASS']);?>" style="display:none;" />
-      <form action="scripts/uploadsite_functions.php" method="POST">
-        <input name="action" type="hidden" value="getOBSUploaded" />
-        <button type="submit" id="uploadsite_sync" style="display:none;">Sync observations already uploaded to local database</button>
+      <form action="scripts/config.php" method="GET">
+          <input type="hidden" name="getOBSUploaded" value="true" />
+          <input name="uploadsite_site" type="text" placeholder="Enter upload site" required />
+          <input name="uploadsite_user" type="text" placeholder="Enter upload user" required />
+          <button type="submit" id="uploadsite_sync" style="display:block;">Sync observations already uploaded to local database</button>
       </form>
       </td></tr></table><br>
 
