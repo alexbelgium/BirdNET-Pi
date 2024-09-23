@@ -48,7 +48,7 @@ if(isset($_GET['restart_php']) && $_GET['restart_php'] == "true") {
 }
 
 # Perform sync with uploadsites
-if isset($_GET['getOBSUploaded']) {
+if (isset($_GET['getOBSUploaded']) && $_GET['getOBSUploaded'] == "true") {
     $uploadsite_site = $_GET['uploadsite_site'] ?? '';
     $uploadsite_user = $_GET['uploadsite_user'] ?? '';
     if (!empty($uploadsite_site) && !empty($uploadsite_user)) {
