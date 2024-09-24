@@ -170,7 +170,7 @@ if(isset($_GET['bydate'])){
   if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
     $statement = $db->prepare("SELECT DISTINCT(Com_Name), Sci_Name FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY COUNT(Com_Name) DESC");
   } elseif(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement = $db->prepare("SELECT DISTINCT(Com_Name), MAX(Confidence) as MaxConfidence FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY MaxConfidence DESC");
+    $statement = $db->prepare("SELECT Com_Name, MAX(Confidence) as MaxConfidence FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY MaxConfidence DESC");
   } else {
     $statement = $db->prepare("SELECT DISTINCT(Com_Name), Sci_Name FROM detections WHERE Date == \"$date\" ORDER BY Com_Name");
   }
@@ -183,7 +183,7 @@ if(isset($_GET['bydate'])){
   if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
     $statement = $db->prepare('SELECT DISTINCT(Com_Name), Sci_Name FROM detections GROUP BY Com_Name ORDER BY COUNT(Com_Name) DESC');
   } elseif(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement = $db->prepare('SELECT DISTINCT(Com_Name), MAX(Confidence) as MaxConfidence FROM detections GROUP BY Com_Name ORDER BY MaxConfidence DESC');
+    $statement = $db->prepare('SELECT Com_Name, MAX(Confidence) as MaxConfidence FROM detections GROUP BY Com_Name ORDER BY MaxConfidence DESC');
   } else {
     $statement = $db->prepare('SELECT DISTINCT(Com_Name), Sci_Name FROM detections ORDER BY Com_Name ASC');
   }
@@ -487,8 +487,13 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
     while($results=$result->fetchArray(SQLITE3_ASSOC))
     {
       $name = $results['Com_Name'];
-      $birds[] = $name;
-      $birds_sciname_name[] = $results['Sci_Name'] . "_" . $name;
+      // Only append confidence if the sorting is by confidence
+      if ($_GET['sort'] == "confidence") {
+          $confidence = round($results['MaxConfidence'] * 100) . '%';
+          $birds[] = $name . " (" . $confidence . ")";
+      } else {
+          $birds[] = $name;
+      }
     }
 
     if(count($birds) > 45) {
@@ -531,7 +536,13 @@ while($results=$result->fetchArray(SQLITE3_ASSOC))
   $name = $results['Com_Name'];
   $dir_name = str_replace("'", '', $name);
   if(realpath($home."/BirdSongs/Extracted/By_Date/".$date."/".str_replace(" ", "_", $dir_name)) !== false){
-    $birds[] = $name;
+      // Only append confidence if the sorting is by confidence
+      if ($_GET['sort'] == "confidence") {
+          $confidence = round($results['MaxConfidence'] * 100) . '%';
+          $birds[] = $name . " (" . $confidence . ")";
+      } else {
+          $birds[] = $name;
+      }
     $birds_sciname_name[] = $results['Sci_Name'] . "_" . $name;
   }
 }
