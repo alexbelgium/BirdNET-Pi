@@ -484,6 +484,7 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
   } elseif($view == "byspecies") {
     $birds = array();
     $birds_sciname_name = array();
+    $confidence = array();
     while($results=$result->fetchArray(SQLITE3_ASSOC))
     {
       $name = $results['Com_Name'];
@@ -528,6 +529,7 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
   } elseif($view == "date") {
     $birds = array();
     $birds_sciname_name = array();
+    $confidence = array();
 while($results=$result->fetchArray(SQLITE3_ASSOC))
 {
   $name = $results['Com_Name'];
