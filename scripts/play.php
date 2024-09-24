@@ -439,7 +439,13 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
     while($results=$result->fetchArray(SQLITE3_ASSOC))
     {
       $name = $results['Com_Name'];
-      $birds[] = $name;
+      // Only append confidence if the sorting is by confidence
+      if ($_GET['sort'] == "confidence") {
+          $confidence = round($results['MaxConfidence'] * 100) . '%';
+          $birds[] = $name . " (" . $confidence . ")";
+      } else {
+          $birds[] = $name;
+      }
     }
 
     if(count($birds) > 45) {
@@ -475,7 +481,13 @@ while($results=$result->fetchArray(SQLITE3_ASSOC))
   $name = $results['Com_Name'];
   $dir_name = str_replace("'", '', $name);
   if(realpath($home."/BirdSongs/Extracted/By_Date/".$date."/".str_replace(" ", "_", $dir_name)) !== false){
-    $birds[] = $name;
+      // Only append confidence if the sorting is by confidence
+      if ($_GET['sort'] == "confidence") {
+          $confidence = round($results['MaxConfidence'] * 100) . '%';
+          $birds[] = $name . " (" . $confidence . ")";
+      } else {
+          $birds[] = $name;
+      }
   }
 }
 
