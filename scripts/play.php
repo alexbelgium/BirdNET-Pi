@@ -489,6 +489,7 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
     {
       $name = $results['Com_Name'];
       $birds[] = $name;
+      $birds_sciname_name[] = $results['Sci_Name'] . "_" . $name;
       if ($_GET['sort'] == "confidence") {
 	  $confidence[] = ' (' . round($results['MaxConfidence'] * 100) . '%)';
       }
@@ -536,10 +537,10 @@ while($results=$result->fetchArray(SQLITE3_ASSOC))
   $dir_name = str_replace("'", '', $name);
   if(realpath($home."/BirdSongs/Extracted/By_Date/".$date."/".str_replace(" ", "_", $dir_name)) !== false){
       $birds[] = $name;
+      $birds_sciname_name[] = $results['Sci_Name'] . "_" . $name;
       if ($_GET['sort'] == "confidence") {
 	  $confidence[] = ' (' . round($results['MaxConfidence'] * 100) . '%)';
       }
-    $birds_sciname_name[] = $results['Sci_Name'] . "_" . $name;
   }
 }
 
