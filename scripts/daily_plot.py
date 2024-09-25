@@ -123,12 +123,9 @@ def create_daily_plot(chart_name, chart_suptitle, df_birds, now):
     plt.subplots_adjust(left=0.02, right=0.98, top=(1 - 2*row_space), bottom=(0 + 2*row_space), wspace=0, hspace=0)
     plt.suptitle(chart_suptitle, y=0.99)
     # Bird name column (labels goes from confidence columns)
-    axs[0].clear()  # Make sure the axis is clear to avoid overlapping text
     axs[0].set_xlim(0, 1)
     axs[0].set_ylim(0, len(df_confidences.index))
     axs[0].axis('off')
-    axs[0].set(xlabel=None, ylabel=None) 
-    axs[0].set_xlabel('updated at\n'+now.strftime("%Y-%m-%d %H:%M:%S"), labelpad=7, loc='left')
     # Confidence column
     hm_confi = my_heatmap(axs[1], df_confidences, cmap_confi, norm_confi, annotfmt=".0%")
     hm_confi.tick_params(bottom=True, left=False, labelbottom=True, labeltop=set_toplabels, labelleft=True, labelrotation=0)
