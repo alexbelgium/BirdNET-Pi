@@ -126,7 +126,7 @@ def create_daily_plot(chart_name, chart_suptitle, df_birds, now):
     axs[0].clear()  # Make sure the axis is clear to avoid overlapping text
     axs[0].set_xlim(0, 1)
     axs[0].set_ylim(0, len(df_confidences.index))
-#    axs[0].axis('off')
+    axs[0].axis('off')
     axs[0].set(xlabel=None, ylabel=None) 
     axs[0].set_xlabel('updated at\n'+now.strftime("%Y-%m-%d %H:%M:%S"), labelpad=7, loc='left')
     # Confidence column
