@@ -59,7 +59,7 @@ def clr_plot_facecolor():
         return 'darkgrey'
     else:
         return 'none' 
-        
+
 def clr_current_ticklabel():
     # Update colors according to color scheme
     if get_settings()['COLOR_SCHEME'] == "dark":
@@ -110,8 +110,12 @@ def create_daily_plot(chart_name, chart_suptitle, df_birds, now):
     #=== Set up plot and all subplots ========================================== 
     set_toplabels = False                                                       # Not yet done: when true size of table has to be changed
     # Color palletes
-    cmap_confi = 'Greys'  # Changed from PiYG to Greys
-    cmap_count = 'Greys'  # Changed from Blues to Greys
+    if get_settings()['COLOR_SCHEME'] == "dark":
+        cmap_confi = 'Greys'
+        cmap_count = 'Greys'
+    else:
+        cmap_confi = 'PiYG'
+        cmap_count = 'Blues'
     norm_confi = TwoSlopeNorm(vmin=0.25, vmax=1.25, vcenter=0.75)               # Fake min and max due to nice colors
     norm_count = LogNorm(vmin=1, vmax=total_recordings)                         # Color mapping/normalization must be reinitialised
     # Plot dimensions (in inches at default 100dpi or as percentage)
