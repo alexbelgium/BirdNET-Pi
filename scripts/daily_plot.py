@@ -80,8 +80,8 @@ def get_daily_plot_data(conn, now):
     db_today  = pd.read_sql_query("SELECT " + sql_fields + " FROM detections WHERE Date = DATE('now')", conn)
     # prepare suptitle  
     avg_daily_detections = round(int(db_entire.Detections[0])/int(db_entire.Days[0]))
-    plot_suptitle  = "Hourly overview updated at " + now.strftime("%Y-%m-%d %H:%M:%S") + "   (" 
-    plot_suptitle += str(db_today.Species[0]) + " species today, " + str(db_entire.Species[0]) + " in total;  "
+    plot_suptitle  = "Hourly overview updated at " + now.strftime("%Y-%m-%d %H:%M:%S") + "\n"
+    plot_suptitle += "(" + str(db_today.Species[0]) + " species today, " + str(db_entire.Species[0]) + " in total;  "
     plot_suptitle += str(db_today.Detections[0]) + " detections today, " + str(avg_daily_detections) + " on average)" 
     # prepare dataset
     sql = "SELECT Date, abs(strftime('%H',Time)) as Hour, Com_Name as Bird, count(Com_Name) as Count, Max(Confidence) as Conf \
@@ -121,12 +121,14 @@ def create_daily_plot(chart_name, chart_suptitle, df_birds, now):
     # Plot setup
     f, axs = plt.subplots(1, 4, figsize=(10, fig_height), width_ratios=[5, 2, 2, 18], facecolor=clr_plot_facecolor())
     plt.subplots_adjust(left=0.02, right=0.98, top=(1 - 2*row_space), bottom=(0 + 2*row_space), wspace=0, hspace=0)
-    plt.suptitle(chart_suptitle, y=(1 - row_space))
+    plt.suptitle(chart_suptitle, y=0.98)
     # Bird name column (labels goes from confidence columns)
-    hm_name = my_heatmap(axs[0], df_confidences, cmap_confi, norm_confi)
-    hm_name.tick_params(bottom=False, left=False, labelbottom=False, labelleft=False)
-    hm_name.set(xlabel=None, ylabel=None) 
-    hm_name.set_xlabel('updated at\n'+now.strftime("%Y-%m-%d %H:%M:%S"), labelpad=7, loc='left')
+    axs[0].clear()  # Make sure the axis is clear to avoid overlapping text
+    axs[0].set_xlim(0, 1)
+    axs[0].set_ylim(0, len(df_confidences.index))
+    axs[0].axis('off')
+    axs[0].set(xlabel=None, ylabel=None) 
+    axs[0].set_xlabel('updated at\n'+now.strftime("%Y-%m-%d %H:%M:%S"), labelpad=7, loc='left')
     # Confidence column
     hm_confi = my_heatmap(axs[1], df_confidences, cmap_confi, norm_confi, annotfmt=".0%")
     hm_confi.tick_params(bottom=True, left=False, labelbottom=True, labeltop=set_toplabels, labelleft=True, labelrotation=0)
