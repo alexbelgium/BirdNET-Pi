@@ -6,6 +6,7 @@
 #===             new formatting of total occurence in semi-monthly plot
 #=== 2024-09-01: updated suptitle and xlabels formatting
 #=== 2024-09-05: Daemon implementing
+#=== 2024-09-26: transparent first column
 #===============================================================================
 
 import argparse
