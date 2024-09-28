@@ -257,7 +257,8 @@ button:hover {
   margin-top: 10px;
 }
 .overview-stats {
-  display: none;
+  display: flex;
+  justify-content: center;
 }
 
 .center-column {
