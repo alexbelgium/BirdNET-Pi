@@ -19,7 +19,7 @@ $curr_hash = trim(shell_exec($cmd));
 $observationorgsites = ["observation.org", "waarneming.nl", "waarnemingen.be", "observations.be"];
 
 // Path to store iNaturalist tokens securely
-define('INAT_TOKENS_FILE', '/path/to/tokens.json'); // Replace with your secure path
+define('INAT_TOKENS_FILE', __ROOT__.'/tokens.json'); // Path for tokens
 
 // Function to get the URL of the uploaded observation
 function getOBSURL($UPLOADSITE_SITE, $UUID) {
