@@ -151,6 +151,58 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
   die();
 }
 
+if(isset($_GET['ajax_left_chart']) && $_GET['ajax_left_chart'] == "true") {
+
+$statement = $db->prepare('SELECT COUNT(*) FROM detections');
+ensure_db_ok($statement);
+$result = $statement->execute();
+$totalcount = $result->fetchArray(SQLITE3_ASSOC);
+
+$statement3 = $db->prepare('SELECT COUNT(*) FROM detections WHERE Date == Date(\'now\', \'localtime\') AND TIME >= TIME(\'now\', \'localtime\', \'-1 hour\')');
+ensure_db_ok($statement3);
+$result3 = $statement3->execute();
+$hourcount = $result3->fetchArray(SQLITE3_ASSOC);
+
+$statement5 = $db->prepare('SELECT COUNT(DISTINCT(Com_Name)) FROM detections WHERE Date == Date(\'now\',\'localtime\')');
+ensure_db_ok($statement5);
+$result5 = $statement5->execute();
+$speciestally = $result5->fetchArray(SQLITE3_ASSOC);
+
+$statement6 = $db->prepare('SELECT COUNT(DISTINCT(Com_Name)) FROM detections');
+ensure_db_ok($statement6);
+$result6 = $statement6->execute();
+$totalspeciestally = $result6->fetchArray(SQLITE3_ASSOC);
+  
+?>
+<table>
+  <tr>
+    <th>Total</th>
+    <td><?php echo $totalcount['COUNT(*)'];?></td>
+  </tr>
+  <tr>
+    <th>Today</th>
+    <td><form action="" method="GET"><button type="submit" name="view" value="Todays Detections"><?php echo $todaycount['COUNT(*)'];?></button></td>
+    </form>
+  </tr>
+  <tr>
+    <th>Last Hour</th>
+    <td><?php echo $hourcount['COUNT(*)'];?></td>
+  </tr>
+  <tr>
+    <th>Species Detected Today</th>
+    <td><form action="" method="GET"><input type="hidden" name="view" value="Recordings"><button type="submit" name="date" value="<?php echo date('Y-m-d');?>"><?php echo $speciestally['COUNT(DISTINCT(Com_Name))'];?></button></td>
+    </form>
+  </tr>
+  <tr>
+    <th>Total Number of Species</th>
+    <td><form action="" method="GET"><button type="submit" name="view" value="Species Stats"><?php echo $totalspeciestally['COUNT(DISTINCT(Com_Name))'];?></button></td>
+    </form>
+  </tr>
+</table>
+<?php
+die();
+}
+
 if(isset($_GET['ajax_center_chart']) && $_GET['ajax_center_chart'] == "true") {
 
 $statement = $db->prepare('SELECT COUNT(*) FROM detections');
@@ -251,6 +303,7 @@ if (get_included_files()[0] === __FILE__) {
   }
   </script>
 <div class="overview-stats">
+<div class="left-column">
 </div>
 <div class="right-column">
 <div class="chart">
@@ -296,11 +349,22 @@ function loadDetectionIfNewExists(previous_detection_identifier=undefined) {
 
       // only going to load left chart & 5 most recents if there's a new detection
       loadCenterChart();
+      loadLeftChart();
       loadFiveMostRecentDetections();
       refreshTopTen();
     }
   }
   xhttp.open("GET", "overview.php?ajax_detections=true&previous_detection_identifier="+previous_detection_identifier, true);
+  xhttp.send();
+}
+function loadLeftChart() {
+  const xhttp = new XMLHttpRequest();
+  xhttp.onload = function() {
+    if(this.responseText.length > 0 && !this.responseText.includes("Database is busy")) {
+      document.getElementsByClassName("left-column")[0].innerHTML = this.responseText;
+    }
+  }
+  xhttp.open("GET", "overview.php?ajax_left_chart=true", true);
   xhttp.send();
 }
 function loadCenterChart() {
