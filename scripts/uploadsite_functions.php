@@ -5,18 +5,21 @@ $_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
 error_reporting(E_ERROR);
 ini_set('display_errors', 1);
-require_once(__ROOT__ . '/scripts/common.php');
+require_once(__ROOT__.'/scripts/common.php');
 
 $config = get_config();
 $home = get_home();
 $user = get_user();
-$CLIENT_ID = 'birdnet-pi';
+$CLIENT_ID = 'birdnet-pi'; // Ensure this matches your registered application
 $UPLOADSITE_USER = $config['UPLOADSITE_USER'];
 $UPLOADSITE_PASS = $config['UPLOADSITE_PASS'];
 $UPLOADSITE_SITE = $config['UPLOADSITE_SITE'];
 $cmd = "cd " . escapeshellarg($home . "/BirdNET-Pi") . " && sudo -u " . escapeshellarg($user) . " git rev-list --max-count=1 HEAD";
 $curr_hash = trim(shell_exec($cmd));
 $observationorgsites = ["observation.org", "waarneming.nl", "waarnemingen.be", "observations.be"];
+
+// Path to store iNaturalist tokens securely
+define('INAT_TOKENS_FILE', '/path/to/tokens.json'); // Replace with your secure path
 
 // Function to get the URL of the uploaded observation
 function getOBSURL($UPLOADSITE_SITE, $UUID) {
@@ -32,9 +35,9 @@ function getOBSURL($UPLOADSITE_SITE, $UUID) {
 // Function to fetch the OAuth2 token based on the upload site
 function getOBSToken($UPLOADSITE_SITE) {
     global $CLIENT_ID, $UPLOADSITE_USER, $UPLOADSITE_PASS, $observationorgsites, $curr_hash;
-    
+
     if (in_array($UPLOADSITE_SITE, $observationorgsites)) {
-        // Authentication for observation.org and related sites
+        // Existing authentication for observation.org and related sites
         $ch = curl_init();
 
         curl_setopt($ch, CURLOPT_URL, 'https://' . $UPLOADSITE_SITE . '/api/v1/oauth2/token/');
@@ -70,13 +73,76 @@ function getOBSToken($UPLOADSITE_SITE) {
         }
     } elseif ($UPLOADSITE_SITE == "inaturalist.org") {
         // Authentication for iNaturalist
-        // Note: iNaturalist typically uses OAuth2 Authorization Code Grant.
-        // For simplicity, this example assumes you have a personal access token.
-        // Replace '<YOUR_INATURALIST_ACCESS_TOKEN>' with your actual token.
-        // Alternatively, implement the OAuth2 flow to obtain the token dynamically.
-        return '<YOUR_INATURALIST_ACCESS_TOKEN>'; // Replace with your actual token
+
+        // Load tokens from the tokens file
+        if (!file_exists(INAT_TOKENS_FILE)) {
+            echo "Error: iNaturalist tokens file not found. Please run oauth_callback.php to authorize the application.\n";
+            return null;
+        }
+
+        $tokens = json_decode(file_get_contents(INAT_TOKENS_FILE), true);
+        if (!$tokens || !isset($tokens['access_token'], $tokens['refresh_token'], $tokens['expires_at'])) {
+            echo "Error: Invalid tokens file. Please reauthorize the application.\n";
+            return null;
+        }
+
+        // Check if access token is expired
+        if (time() >= $tokens['expires_at']) {
+            // Refresh the access token
+            $new_tokens = refreshINAToken($tokens['refresh_token']);
+            if (!$new_tokens) {
+                echo "Error: Failed to refresh iNaturalist access token.\n";
+                return null;
+            }
+            // Update tokens file
+            file_put_contents(INAT_TOKENS_FILE, json_encode($new_tokens));
+            return $new_tokens['access_token'];
+        }
+
+        return $tokens['access_token'];
     }
     return null;
+}
+
+// Function to refresh iNaturalist access token using refresh token
+function refreshINAToken($refresh_token) {
+    global $CLIENT_ID;
+
+    // Load client secret from config or define it here
+    $client_secret = '<YOUR_CLIENT_SECRET>'; // Replace with your client secret
+
+    $token_url = 'https://www.inaturalist.org/oauth/token';
+    $params = [
+        'client_id'     => $CLIENT_ID,
+        'client_secret' => $client_secret,
+        'grant_type'    => 'refresh_token',
+        'refresh_token' => $refresh_token
+    ];
+
+    $ch = curl_init($token_url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    $response = curl_exec($ch);
+    if (curl_errno($ch)) {
+        echo 'Token Refresh Error: ' . curl_error($ch);
+        curl_close($ch);
+        return null;
+    }
+    curl_close($ch);
+
+    $token_data = json_decode($response, true);
+    if (isset($token_data['access_token'], $token_data['refresh_token'], $token_data['expires_in'])) {
+        return [
+            'access_token'  => $token_data['access_token'],
+            'refresh_token' => $token_data['refresh_token'],
+            'expires_at'    => time() + $token_data['expires_in']
+        ];
+    } else {
+        echo "Error: Unable to refresh access token. Response: " . htmlspecialchars($response);
+        return null;
+    }
 }
 
 // Function to fetch species ID based on scientific or common name
@@ -316,7 +382,10 @@ function getOBSUploaded($UPLOADSITE_SITE, $UPLOADSITE_USER) {
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         // Add authentication if required
-        // Example: curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $your_token]);
+        $OBSTOKEN = getOBSToken($UPLOADSITE_SITE);
+        if ($OBSTOKEN) {
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $OBSTOKEN]);
+        }
         $output = curl_exec($ch);
         if (curl_errno($ch)) {
             echo "cURL Error: " . curl_error($ch) . "\n";
@@ -438,7 +507,7 @@ function postOBS($UPLOADSITE_SITE, $OBSTOKEN, $filename, $uploadnotes) {
             }
         } elseif ($UPLOADSITE_SITE == "inaturalist.org") {
             // Handle response for iNaturalist
-            if ($http_status == 200) {
+            if ($http_status == 200 || $http_status == 201) {
                 if (isset($json_response['results'][0])) {
                     $observation = $json_response['results'][0];
                     $permalink = isset($observation['uri']) ? $observation['uri'] : 'N/A';
