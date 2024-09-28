@@ -301,7 +301,7 @@ if (get_included_files()[0] === __FILE__) {
     last_photo_link = text;
     showDialog();
   }
-  </script>
+  </script>  
 <div class="overview-stats">
 <div class="left-column">
 </div>
@@ -336,6 +336,7 @@ echo "<img id=\"spectrogramimage\" src=\"spectrogram.png?nocache=$time\">";
 <div id="customimage"></div>
 <br>
 
+</div>
 </div>
 </div>
 <script>
