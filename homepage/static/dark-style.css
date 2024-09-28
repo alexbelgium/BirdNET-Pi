@@ -268,6 +268,11 @@ button:hover {
   margin-top: 10px;
 }
 .overview-stats {
+  display: flex;
+  justify-content: center;
+}
+
+.center-column {
   display: none;
 }
 
@@ -278,6 +283,7 @@ button:hover {
 
 .right-column {
   flex: 90%;
+  margin-right: 10%;
 }
 
 .stats td {
@@ -499,7 +505,7 @@ button:hover {
   .column1,.column2,.column3,.column4 {
     height: 90%
   }
-  .overview-stats {
+  .center-column {
     display: flex;
     justify-content: center;
   }
@@ -517,6 +523,7 @@ button:hover {
     overflow-x: hidden;
   }
   .overview .right-column .chart img {
+    margin-left: 5%;
     margin-right: auto;
     margin-top: 10px;
     opacity: 0.7;
@@ -640,7 +647,7 @@ button:hover {
   .topnav.responsive button {
     display: block;
   }
-  .overview-stats {
+  .center-column {
     display: flex;
     justify-content: center;
   }
