@@ -260,6 +260,9 @@ button:hover {
   display: none;
 }
 
+.center-column {
+  display: none;
+}
 .left-column {
   flex: 10%;
   padding-left: 10px;
@@ -267,6 +270,7 @@ button:hover {
 
 .right-column {
   flex: 90%;
+  margin-right: 10%;
 }
 
 .stats td {
@@ -479,6 +483,10 @@ button:hover {
     display: flex;
     justify-content: center;
   }
+  .center-column {
+    display: flex;
+    justify-content: center;
+  }
   .left-column {
     display: none;
   }
@@ -493,7 +501,7 @@ button:hover {
     overflow-x: hidden;
   }
   .overview .right-column .chart img {
-    margin-left: auto;
+    margin-left: 5%;
     margin-right: auto;
     margin-top: 10px;
   }
@@ -611,6 +619,10 @@ button:hover {
     display: block;
   }
   .overview-stats {
+    display: flex;
+    justify-content: center;
+  }
+  .center-column {
     display: flex;
     justify-content: center;
   }
