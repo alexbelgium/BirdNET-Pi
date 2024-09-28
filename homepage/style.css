@@ -257,8 +257,7 @@ button:hover {
   margin-top: 10px;
 }
 .overview-stats {
-  display: flex;
-  justify-content: center;
+  display: none;
 }
 
 .left-column {
@@ -476,6 +475,10 @@ button:hover {
   .column1,.column2,.column3,.column4 {
     height: 90%
   }
+  .overview-stats {
+    display: flex;
+    justify-content: center;
+  }
   .left-column {
     display: none;
   }
@@ -606,6 +609,10 @@ button:hover {
   .topnav.responsive {position: relative;}
   .topnav.responsive button {
     display: block;
+  }
+  .overview-stats {
+    display: flex;
+    justify-content: center;
   }
   .left-column {
     display: none;
