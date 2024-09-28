@@ -306,6 +306,8 @@ if (get_included_files()[0] === __FILE__) {
 <div class="left-column">
 </div>
 <div class="right-column">
+<div class="center-column">
+</div>
 <div class="chart">
 <?php
 $refresh = $config['RECORDING_LENGTH'];
@@ -372,7 +374,7 @@ function loadCenterChart() {
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
     if(this.responseText.length > 0 && !this.responseText.includes("Database is busy")) {
-      document.getElementsByClassName("overview-stats")[0].innerHTML = this.responseText;
+      document.getElementsByClassName("center-column")[0].innerHTML = this.responseText;
     }
   }
   xhttp.open("GET", "overview.php?ajax_center_chart=true", true);
