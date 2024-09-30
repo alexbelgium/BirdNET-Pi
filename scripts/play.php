@@ -170,7 +170,7 @@ if(isset($_GET['bydate'])){
   if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
     $statement = $db->prepare("SELECT DISTINCT(Com_Name), Sci_Name FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY COUNT(Com_Name) DESC");
   } elseif(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement = $db->prepare("SELECT DISTINCT(Com_Name), Sci_Name, MAX(Confidence) as MaxConfidence FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY MaxConfidence DESC");
+    $statement = $db->prepare("SELECT Com_Name, Sci_Name, MAX(Confidence) as MaxConfidence FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY MaxConfidence DESC");
   } else {
     $statement = $db->prepare("SELECT DISTINCT(Com_Name), Sci_Name FROM detections WHERE Date == \"$date\" ORDER BY Com_Name");
   }
@@ -183,7 +183,7 @@ if(isset($_GET['bydate'])){
   if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
     $statement = $db->prepare('SELECT DISTINCT(Com_Name), Sci_Name FROM detections GROUP BY Com_Name ORDER BY COUNT(Com_Name) DESC');
   } elseif(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement = $db->prepare('SELECT DISTINCT(Com_Name), Sci_Name, MAX(Confidence) as MaxConfidence FROM detections GROUP BY Com_Name ORDER BY MaxConfidence DESC');
+    $statement = $db->prepare('SELECT Com_Name, Sci_Name, MAX(Confidence) as MaxConfidence FROM detections GROUP BY Com_Name ORDER BY MaxConfidence DESC');
   } else {
     $statement = $db->prepare('SELECT DISTINCT(Com_Name), Sci_Name FROM detections ORDER BY Com_Name ASC');
   }
@@ -533,6 +533,7 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
   } elseif($view == "byspecies") {
     $birds = array();
     $birds_sciname_name = array();
+    $confidence = array();
     while($results=$result->fetchArray(SQLITE3_ASSOC))
     {
       if(isset($_GET['only_confirmed']) && $_GET['only_confirmed'] == 'confirmed' && !in_array(str_replace("'", "", $results['Sci_Name'] . "_" . $results['Com_Name']), $confirmed_species)) {
@@ -544,6 +545,9 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
       $name = $results['Com_Name'];
       $birds[] = $name;
       $birds_sciname_name[] = $results['Sci_Name'] . "_" . $name;
+      if ($_GET['sort'] == "confidence") {
+	  $confidence[] = ' (' . round($results['MaxConfidence'] * 100) . '%)';
+      }
     }
     if(count($birds) > 45) {
       $num_cols = 3;
@@ -561,7 +565,7 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
         if ($index < count($birds)) {
           ?>
           <td class="spec">
-              <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index];?>
+              <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index].$confidence[$index];?>
               <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $birds_sciname_name[$index]), $confirmed_species)) {
                 echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"del\")'";
               } else {
@@ -580,13 +584,17 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
   } elseif($view == "date") {
     $birds = array();
     $birds_sciname_name = array();
+    $confidence = array();
 while($results=$result->fetchArray(SQLITE3_ASSOC))
 {
   $name = $results['Com_Name'];
   $dir_name = str_replace("'", '', $name);
   if(realpath($home."/BirdSongs/Extracted/By_Date/".$date."/".str_replace(" ", "_", $dir_name)) !== false){
-    $birds[] = $name;
-    $birds_sciname_name[] = $results['Sci_Name'] . "_" . $name;
+      $birds[] = $name;
+      $birds_sciname_name[] = $results['Sci_Name'] . "_" . $name;
+      if ($_GET['sort'] == "confidence") {
+	  $confidence[] = ' (' . round($results['MaxConfidence'] * 100) . '%)';
+      }
   }
 }
 
@@ -606,7 +614,7 @@ for ($row = 0; $row < $num_rows; $row++) {
     if ($index < count($birds)) {
       ?>
       <td class="spec">
-          <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index];?>
+          <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index].$confidence[$index];?>
               <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $birds_sciname_name[$index]), $confirmed_species)) {
                 echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"del\")'";
               } else {
