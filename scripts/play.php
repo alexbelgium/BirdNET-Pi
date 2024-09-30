@@ -170,7 +170,7 @@ if(isset($_GET['bydate'])){
   if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
     $statement = $db->prepare("SELECT DISTINCT(Com_Name), Sci_Name FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY COUNT(Com_Name) DESC");
   } elseif(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement = $db->prepare("SELECT DISTINCT(Com_Name), MAX(Confidence) as MaxConfidence FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY MaxConfidence DESC");
+    $statement = $db->prepare("SELECT DISTINCT(Com_Name), Sci_Name, MAX(Confidence) as MaxConfidence FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY MaxConfidence DESC");
   } else {
     $statement = $db->prepare("SELECT DISTINCT(Com_Name), Sci_Name FROM detections WHERE Date == \"$date\" ORDER BY Com_Name");
   }
@@ -183,7 +183,7 @@ if(isset($_GET['bydate'])){
   if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
     $statement = $db->prepare('SELECT DISTINCT(Com_Name), Sci_Name FROM detections GROUP BY Com_Name ORDER BY COUNT(Com_Name) DESC');
   } elseif(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement = $db->prepare('SELECT DISTINCT(Com_Name), MAX(Confidence) as MaxConfidence FROM detections GROUP BY Com_Name ORDER BY MaxConfidence DESC');
+    $statement = $db->prepare('SELECT DISTINCT(Com_Name), Sci_Name, MAX(Confidence) as MaxConfidence FROM detections GROUP BY Com_Name ORDER BY MaxConfidence DESC');
   } else {
     $statement = $db->prepare('SELECT DISTINCT(Com_Name), Sci_Name FROM detections ORDER BY Com_Name ASC');
   }
@@ -464,6 +464,55 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
       <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "confidence"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="confidence">
          <img src="images/sort_conf.svg" title="Sort by confidence" alt="Sort by confidence">
       </button>
+     <br><br>
+	<div style="display: inline-flex; align-items: center; justify-content: space-between; background: #333; border-radius: 18px; padding: 4px; box-shadow: inset 0 0 5px rgba(0,0,0,0.1);">
+	
+	  <!-- "Confirmed" Radio Button -->
+	  <input type="radio" id="confirmed" name="only_confirmed" value="confirmed" 
+	         <?php if(isset($_GET['only_confirmed']) && $_GET['only_confirmed'] == 'confirmed') echo 'checked'; ?> 
+	         style="display: none;" onChange="submit()">
+	  <label for="confirmed" style="
+	    display: flex; align-items: center; justify-content: center; width: 60px; height: 28px; border-radius: 14px; 
+	    cursor: pointer; font-size: 12px; margin: 0 5px; transition: 0.3s ease;
+	    <?php if(isset($_GET['only_confirmed']) && $_GET['only_confirmed'] == 'confirmed') {
+	        echo 'background: #d3d3d3; color: black; box-shadow: 0 0 5px rgba(211, 211, 211, 0.5);';
+	    } else {
+	        echo 'background: transparent; color: white; border: 1px solid #d3d3d3;';
+	    } ?>">
+	    Confirmed
+	  </label>
+	
+	  <!-- "All" Radio Button -->
+	  <input type="radio" id="all" name="only_confirmed" value="all" 
+	         <?php if(!isset($_GET['only_confirmed']) || $_GET['only_confirmed'] == 'all') echo 'checked'; ?> 
+	         style="display: none;" onChange="submit()">
+	  <label for="all" style="
+	    display: flex; align-items: center; justify-content: center; width: 60px; height: 28px; border-radius: 14px; 
+	    cursor: pointer; font-size: 12px; margin: 0 5px; transition: 0.3s ease;
+	    <?php if(!isset($_GET['only_confirmed']) || $_GET['only_confirmed'] == 'all') {
+	        echo 'background: #d3d3d3; color: black; box-shadow: 0 0 5px rgba(211, 211, 211, 0.5);';
+	    } else {
+	        echo 'background: transparent; color: white; border: 1px solid #d3d3d3;';
+	    } ?>">
+	    All
+	  </label>
+	
+	  <!-- "Unconfirmed" Radio Button -->
+	  <input type="radio" id="unconfirmed" name="only_confirmed" value="unconfirmed" 
+	         <?php if(isset($_GET['only_confirmed']) && $_GET['only_confirmed'] == 'unconfirmed') echo 'checked'; ?> 
+	         style="display: none;" onChange="submit()">
+	  <label for="unconfirmed" style="
+	    display: flex; align-items: center; justify-content: center; width: 80px; height: 28px; border-radius: 14px; 
+	    cursor: pointer; font-size: 12px; margin: 0 5px; transition: 0.3s ease;
+	    <?php if(isset($_GET['only_confirmed']) && $_GET['only_confirmed'] == 'unconfirmed') {
+	        echo 'background: #d3d3d3; color: black; box-shadow: 0 0 5px rgba(211, 211, 211, 0.5);';
+	    } else {
+	        echo 'background: transparent; color: white; border: 1px solid #d3d3d3;';
+	    } ?>">
+	    Unconfirmed
+	  </label>
+	  
+	</div>
    </form>
 </div>
 <br>
@@ -486,11 +535,16 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
     $birds_sciname_name = array();
     while($results=$result->fetchArray(SQLITE3_ASSOC))
     {
+      if(isset($_GET['only_confirmed']) && $_GET['only_confirmed'] == 'confirmed' && !in_array(str_replace("'", "", $results['Sci_Name'] . "_" . $results['Com_Name']), $confirmed_species)) {
+	continue;
+      }
+      if(isset($_GET['only_confirmed']) && $_GET['only_confirmed'] == 'unconfirmed' && in_array(str_replace("'", "", $results['Sci_Name'] . "_" . $results['Com_Name']), $confirmed_species)) {
+	continue;
+      }
       $name = $results['Com_Name'];
       $birds[] = $name;
       $birds_sciname_name[] = $results['Sci_Name'] . "_" . $name;
     }
-
     if(count($birds) > 45) {
       $num_cols = 3;
     } else {
