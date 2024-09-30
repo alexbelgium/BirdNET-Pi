@@ -480,10 +480,6 @@ button:hover {
   .column1,.column2,.column3,.column4 {
     height: 90%
   }
-  .overview-stats {
-    display: flex;
-    justify-content: center;
-  }
   .center-column {
     display: flex;
     justify-content: center;
@@ -618,10 +614,6 @@ button:hover {
   .topnav.responsive {position: relative;}
   .topnav.responsive button {
     display: block;
-  }
-  .overview-stats {
-    display: flex;
-    justify-content: center;
   }
   .center-column {
     display: flex;
