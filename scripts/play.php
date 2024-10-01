@@ -542,6 +542,9 @@ while($results=$result->fetchArray(SQLITE3_ASSOC))
 {
   $name = $results['Com_Name'];
   $dir_name = str_replace("'", '', $name);
+  if(isset($_GET['only_confirmed']) && in_array(str_replace("'", "", $results['Sci_Name'] . "_" . $results['Com_Name']), $confirmed_species)) {
+    continue; 
+  }
   if(realpath($home."/BirdSongs/Extracted/By_Date/".$date."/".str_replace(" ", "_", $dir_name)) !== false){
       $birds[] = $name;
       $birds_sciname_name[] = $results['Sci_Name'] . "_" . $name;
