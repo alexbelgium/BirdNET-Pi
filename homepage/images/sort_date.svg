@@ -1,43 +1,21 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
-<!-- Generator: Adobe Illustrator 19.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 466.008 466.008" style="enable-background:new 0 0 466.008 466.008;" xml:space="preserve">
-<g>
-	<g>
-		<path d="M233.004,0C104.224,0,0,104.212,0,233.004c0,128.781,104.212,233.004,233.004,233.004
-			c128.782,0,233.004-104.212,233.004-233.004C466.008,104.222,361.796,0,233.004,0z M244.484,242.659l-63.512,75.511
-			c-5.333,6.34-14.797,7.156-21.135,1.824c-6.34-5.333-7.157-14.795-1.824-21.135l59.991-71.325V58.028c0-8.284,6.716-15,15-15
-			s15,6.716,15,15v174.976h0C248.004,236.536,246.757,239.956,244.484,242.659z"/>
-	</g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
+<svg width="55" height="55" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" overflow="hidden">
+  <defs>
+    <clipPath id="clip0">
+      <rect x="935" y="197" width="55" height="55" />
+    </clipPath>
+    <clipPath id="clip1">
+      <rect x="-6096.49" y="-6096.44" width="341406" height="341406" />
+    </clipPath>
+    <image width="55" height="55" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADcAAAA3CAMAAACfBSJ0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAADSUExURQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANSuWtoAAABFdFJOUwACBAgQFBscHR8gIS4wMjRASE1PUFFTVWBiZGZocH+Bg4WHiI+UlpianJ+vtbe4uru/yMrMzs/b3+Pm5+jq7O7v9/n7/YgqDj0AAAAJcEhZcwAAFxEAABcRAcom8z8AAAH5SURBVEhLlZVrQ9MwFIajVMHpZMCUirYKjIurt6LEeq9A/v9f4jR92+XkJF33fMo5Oc+yXKta0v8G1HtIjaKERSyRGsWAN8kKXdVVWeQTZByi3kwj3VCmyPZEPGY1aM8MezlSppwUaJkcfS0hL1kiY0ymMrToN9BtCXn9ENxjYsBzKrlnFqggpDdHaOGembclhPScjPCqtoQQHhvO90y/G8JjwwmvtjWE700RAN8z3ZHzPa9MeJm1pOfsXYPwCmtJj09Pet2K+l6FAAivWxjfQxvUM98z1pJejaBlrhLvQsX+JyvLVeKtk9HWkp5bR8d4gWZPdyd8z5mOTsTkVrfX9xIExESlfLYNU2tJz9mI+Uxq3fSklyIK0z8ywvN3nlElbU3I4xeQs3oMpadWr5nP4PvCcoyy/5dhLwmLrhb0AseEWLhaxFOpv6q6u+gg4tGBc02dscGIqEffpKwkt9ZF3h0uhwFvkM29h9mS+AWJ+N7E4sMqiJynbXRHSX6gktFflDjpDWodfu6jc4gzFDu8Rdcgz65Q3fPhMbqGeXWLevD7AB3rOIcA3iG9lulXGJaPO0iv5+gODvHnBZJjuIBEHCM1iuffYJlPT5Aax2tof18iMZbL1jtBOJrd60b7/BTheN6Q9u8QwQY8eG/MKdob8Uh/2UJzHUrdA1LAhmaNQqYuAAAAAElFTkSuQmCC" preserveAspectRatio="none" id="img2"></image>
+    <clipPath id="clip3">
+      <path d="M-0.0205078-0.0139241 335309-0.0139241 335309 335309-0.03125 335309Z" fill-rule="evenodd" clip-rule="evenodd" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#clip0)" transform="translate(-935 -197)">
+    <g clip-path="url(#clip1)" transform="matrix(0.000164028 0 0 0.000164028 935 197)">
+      <g clip-path="url(#clip3)">
+        <use width="100%" height="100%" xlink:href="#img2" transform="matrix(6096.53 0 0 6096.53 -0.0205078 -0.0139241)"></use>
+      </g>
+    </g>
+  </g>
 </svg>
