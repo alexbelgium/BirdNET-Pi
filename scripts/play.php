@@ -540,9 +540,10 @@ if(isset($_GET['species'])){ ?>
       </button><br>
       <label style="cursor: pointer; margin-top: 10px; margin-bottom: 10px;font-weight: normal; display: inline-flex; align-items: center; justify-content: center;">
       <input type="checkbox" name="only_excluded" <?= isset($_GET['only_excluded']) ? 'checked' : '' ?> onchange="submit()" style="display:none;">
-      <span style="width: 40px; height: 20px; background: <?= isset($_GET['only_excluded']) ? '#333333' : '#ccc' ?>; border: 1px solid #777777; border-radius: 20px; display: inline-block; position: relative; margin-right: 8px; transition: background 0.4s, border 0.4s; box-sizing: border-box;">
-      <span style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 1px; left: 2px; transition: 0.4s; <?= isset($_GET['only_excluded']) ? 'transform: translateX(20px);' : '' ?>"></span>
-      </span>Only Show Purge Excluded</label>
+      <span style="width: 40px; height: 20px; background: <?= isset($_GET['only_excluded']) ? 'rgba(211, 211, 211, 0.7)' : 'transparent' ?>; border: 1px solid #777777; border-radius: 20px; display: inline-block; position: relative; margin-right: 8px; transition: background 0.4s, border 0.4s; box-sizing: border-box;">
+      <span style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 1px; left: 2px; transition: 0.4s; display: flex; align-items: center; justify-content: center; font-size: 8px; color: black; <?= isset($_GET['only_excluded']) ? 'transform: translateX(20px);' : '' ?>">
+      <?= isset($_GET['only_excluded']) ? 'ON' : '' ?>
+      </span></span>Only Show Purge Excluded</label>
    </form>
 </div>
 <?php
