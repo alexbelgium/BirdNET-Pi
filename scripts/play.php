@@ -172,7 +172,7 @@ if(isset($_GET['bydate'])){
   } elseif(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
     $statement = $db->prepare("SELECT Com_Name, Sci_Name, MAX(Confidence) as MaxConfidence FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY MaxConfidence DESC");
   } else {
-    $statement = $db->prepare("SELECT DISTINCT(Com_Name), Sci_Name FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY COUNT(Com_Name) DESC");
+    $statement = $db->prepare("SELECT DISTINCT(Com_Name), Sci_Name FROM detections WHERE Date == \"$date\" ORDER BY Com_Name");
   }
   ensure_db_ok($statement);
   $result = $statement->execute();
@@ -463,13 +463,13 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
       </button>
       <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "confidence"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="confidence">
          <img src="images/sort_conf.svg" title="Sort by confidence" alt="Sort by confidence">
-      </button>
+      </button><br><br>
       <label style="cursor: pointer; margin-top: 10px; margin-bottom: 10px; font-weight: normal; display: inline-flex; align-items: center; justify-content: center;">
       <input type="checkbox" name="only_confirmed" <?= isset($_GET['only_confirmed']) ? 'checked' : '' ?> onchange="submit()" style="display:none;">
       <span style="width: 40px; height: 20px; background: <?= isset($_GET['only_confirmed']) ? '#333333' : '#ccc' ?>; border: 1px solid #777777; border-radius: 20px; display: inline-block; position: relative; margin-right: 8px; transition: background 0.4s, border 0.4s; box-sizing: border-box;">
       <span style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 1px; left: 2px; transition: 0.4s; <?= isset($_GET['only_confirmed']) ? 'transform: translateX(20px);' : '' ?>"></span>
       </span>Only Unconfirmed Species</label>
-   </form>
+</form>
 </div>
 <br>
 <?php } ?>
@@ -492,11 +492,14 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
     $confidence = array();
     while($results=$result->fetchArray(SQLITE3_ASSOC))
     {
+      if(isset($_GET['only_confirmed']) && in_array(str_replace("'", "", $results['Sci_Name'] . "_" . $results['Com_Name']), $confirmed_species)) {
+	continue;
+      }
       $name = $results['Com_Name'];
       $birds[] = $name;
       $birds_sciname_name[] = $results['Sci_Name'] . "_" . $name;
       if ($_GET['sort'] == "confidence") {
-          $confidence[] = ' (' . round($results['MaxConfidence'] * 100) . '%)';
+	  $confidence[] = ' (' . round($results['MaxConfidence'] * 100) . '%)';
       }
     }
 
@@ -522,7 +525,7 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
               } else {
                 echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"add\")'";
               }}
-              ?>></button>              
+              ?>></button>           
           </td>
           <?php
         } else {
@@ -540,6 +543,9 @@ while($results=$result->fetchArray(SQLITE3_ASSOC))
 {
   $name = $results['Com_Name'];
   $dir_name = str_replace("'", '', $name);
+  if(isset($_GET['only_confirmed']) && in_array(str_replace("'", "", $results['Sci_Name'] . "_" . $results['Com_Name']), $confirmed_species)) {
+    continue; 
+  }
   if(realpath($home."/BirdSongs/Extracted/By_Date/".$date."/".str_replace(" ", "_", $dir_name)) !== false){
     $birds[] = $name;
     $birds_sciname_name[] = $results['Sci_Name'] . "_" . $name;
@@ -604,7 +610,7 @@ if(isset($_GET['species'])){ ?>
          <img width=35px src="images/sort_date.svg" title="Sort by date" alt="Sort by date">
       </button>
       <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "confidence"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="confidence">
-         <img src="images/sort_occ.svg" title="Sort by confidence" alt="Sort by confidence">
+         <img src="images/sort_conf.svg" title="Sort by confidence" alt="Sort by confidence">
       </button><br>
       <label style="cursor: pointer; margin-top: 10px; margin-bottom: 10px;font-weight: normal; display: inline-flex; align-items: center; justify-content: center;">
       <input type="checkbox" name="only_excluded" <?= isset($_GET['only_excluded']) ? 'checked' : '' ?> onchange="submit()" style="display:none;">
