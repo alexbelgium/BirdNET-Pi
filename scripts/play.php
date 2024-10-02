@@ -463,12 +463,12 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
       </button>
       <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "confidence"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="confidence">
          <img src="images/sort_conf.svg" title="Sort by confidence" alt="Sort by confidence">
-      </button>
-      <br><br><label style="cursor: pointer; font-weight: normal; display: inline-flex; align-items: center; justify-content: center;">
+      </button><br><br>
+      <label style="cursor: pointer; margin-top: 10px; margin-bottom: 10px; font-weight: normal; display: inline-flex; align-items: center; justify-content: center;">
       <input type="checkbox" name="only_confirmed" <?= isset($_GET['only_confirmed']) ? 'checked' : '' ?> onchange="submit()" style="display:none;">
-      <span style="width: 40px; height: 20px; background: #ccc; border-radius: 20px; display: inline-block; position: relative; margin-right: 8px;">
-      <span style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: 0.4s; <?= isset($_GET['only_confirmed']) ? 'transform: translateX(20px);' : '' ?>">		
-      </span></span>Only Show Unconfirmed</label>
+      <span style="width: 40px; height: 20px; background: <?= isset($_GET['only_confirmed']) ? '#333333' : '#ccc' ?>; border: 1px solid #777777; border-radius: 20px; display: inline-block; position: relative; margin-right: 8px; transition: background 0.4s, border 0.4s; box-sizing: border-box;">
+      <span style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 1px; left: 2px; transition: 0.4s; <?= isset($_GET['only_confirmed']) ? 'transform: translateX(20px);' : '' ?>"></span>
+      </span>Only Unconfirmed Species</label>
 </form>
 </div>
 <br>
@@ -611,7 +611,7 @@ if(isset($_GET['species'])){ ?>
       <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "confidence"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="confidence">
          <img src="images/sort_conf.svg" title="Sort by confidence" alt="Sort by confidence">
       </button><br>
-      <input style="margin-top:10px" <?php if(isset($_GET['only_excluded'])){ echo "checked"; }?> type="checkbox" name="only_excluded" onChange="submit()">
+      <input style="margin-top:10px" <?php if(isset($_GET['only_confirmed'])){ echo "checked"; }?> type="checkbox" name="only_confirmed" onChange="submit()">
       <label for="onlyverified">Only Show Purge Excluded</label>
    </form>
 </div>
@@ -681,7 +681,7 @@ echo "><br><i>$sciname</i></span><br>
     if(!file_exists($home."/BirdSongs/Extracted/".$filename)) {
       continue;
     }
-    if(!in_array($filename_formatted, $disk_check_exclude_arr) && isset($_GET['only_excluded'])) {
+    if(!in_array($filename_formatted, $disk_check_exclude_arr) && isset($_GET['only_confirmed'])) {
       continue;
     }
     $iter++;
