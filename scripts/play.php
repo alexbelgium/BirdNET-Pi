@@ -468,7 +468,7 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
         <input type="checkbox" name="only_confirmed" <?= isset($_GET['only_confirmed']) ? 'checked' : '' ?> onchange="submit()" style="display:none;">
         <span style="width: 40px; height: 20px; background: <?= isset($_GET['only_confirmed']) ? '#555555' : 'rgba(85, 85, 85, 0.3)' ?>; border: 1px solid #777777; border-radius: 20px; display: inline-block; position: relative; margin-right: 8px; transition: background 0.4s, border 0.4s; box-sizing: border-box;">
         <span style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 1px; left: 2px; transition: 0.4s; display: flex; align-items: center; justify-content: center; font-size: 8px; color: black; <?= isset($_GET['only_confirmed']) ? 'transform: translateX(20px);' : '' ?>">
-        <?= isset($_GET['only_confirmed']) ? '✓' : '' ?>
+        <?= isset($_GET['only_confirmed']) ? 'OK' : '' ?>
       </span>Show Unconfirmed Species</label>
 </form>
 </div>
@@ -617,7 +617,7 @@ if(isset($_GET['species'])){ ?>
         <input type="checkbox" name="only_excluded" <?= isset($_GET['only_excluded']) ? 'checked' : '' ?> onchange="submit()" style="display:none;">
         <span style="width: 40px; height: 20px; background: <?= isset($_GET['only_excluded']) ? '#555555' : 'rgba(85, 85, 85, 0.3)' ?>; border: 1px solid #777777; border-radius: 20px; display: inline-block; position: relative; margin-right: 8px; transition: background 0.4s, border 0.4s; box-sizing: border-box;">
         <span style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 1px; left: 2px; transition: 0.4s; display: flex; align-items: center; justify-content: center; font-size: 8px; color: black; <?= isset($_GET['only_excluded']) ? 'transform: translateX(20px);' : '' ?>">
-        <?= isset($_GET['only_excluded']) ? '✓' : '' ?>
+        <?= isset($_GET['only_excluded']) ? 'OK' : '' ?>
       </span></span>Only Show Purge Excluded</label>
    </form>
 </div>
