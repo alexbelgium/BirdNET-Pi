@@ -98,6 +98,12 @@ if ! grep -E '^MAX_FILES_SPECIES=' /etc/birdnet/birdnet.conf &>/dev/null;then
   echo "MAX_FILES_SPECIES=\"0\"" >> /etc/birdnet/birdnet.conf
 fi
 
+if ! grep -E '^CONFIRM_SPECIES=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo "## CONFIRM_SPECIES adds an icon next to species in the Recordings tab to keep track which species are manually confirmed" >> /etc/birdnet/birdnet.conf 
+  echo "## It generates a confirmed_species_list.txt file, and allows to better visualize species that could be false positives" >> /etc/birdnet/birdnet.conf
+  echo "CONFIRM_SPECIES=0" >> /etc/birdnet/birdnet.conf
+fi
+
 [ -d $RECS_DIR/StreamData ] || sudo_with_user mkdir -p $RECS_DIR/StreamData
 [ -L ${EXTRACTED}/spectrogram.png ] || sudo_with_user ln -sf ${RECS_DIR}/StreamData/spectrogram.png ${EXTRACTED}/spectrogram.png
 
