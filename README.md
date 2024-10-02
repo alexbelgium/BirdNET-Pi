@@ -9,3 +9,4 @@ Additional PR vs Nachtzuster, used for HA addon
 To do :
 - New species on top
 - observation.org upload
+- High/low pass
