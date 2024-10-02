@@ -303,8 +303,8 @@ if(isset($_GET['today_stats'])) {
   <th>Total</th>
   <th>Today</th>
   <th>Last Hour</th>
-  <th>Unique Species Total</th>
-  <th>Unique Species Today</th>
+  <th>Species Total</th>
+  <th>Species Today</th>
       </tr>
       <tr>
       <td><?php echo $totalcount['COUNT(*)'];?></td>
@@ -410,8 +410,8 @@ if (get_included_files()[0] === __FILE__) {
   <th>Total</th>
   <th>Today</th>
   <th>Last Hour</th>
-  <th>Unique Species Total</th>
-  <th>Unique Species Today</th>
+  <th>Species Total</th>
+  <th>Species Today</th>
       </tr>
       <tr>
       <td><?php echo $totalcount['COUNT(*)'];?></td>
