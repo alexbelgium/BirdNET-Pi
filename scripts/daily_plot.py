@@ -1,14 +1,14 @@
-#===============================================================================
-#=== daily_plot.py (adjusted version @jmtmp) ==========================================
-#===============================================================================
-#=== 2024-04-19: new version
-#=== 2024-04-28: new custom formatting for millions (my_int_fmt function)
-#===             new formatting of total occurence in semi-monthly plot
-#=== 2024-09-01: updated suptitle and xlabels formatting
-#=== 2024-09-05: Daemon implementing
-#=== 2024-09-26: transparent first column
-#=== 2024-10-02: code refactor
-#===============================================================================
+# ===============================================================================
+# === daily_plot.py (adjusted version @jmtmp) ==========================================
+# ===============================================================================
+# === 2024-04-19: new version
+# === 2024-04-28: new custom formatting for millions (my_int_fmt function)
+# ===             new formatting of total occurence in semi-monthly plot
+# === 2024-09-01: updated suptitle and xlabels formatting
+# === 2024-09-05: Daemon implementing
+# === 2024-09-26: transparent first column
+# === 2024-10-02: code refactor
+# ===============================================================================
 
 import argparse
 import sqlite3
@@ -25,10 +25,12 @@ from time import sleep
 from functools import lru_cache
 from utils.helpers import DB_PATH, get_settings
 
+
 # Cache the settings to avoid redundant calls
 @lru_cache(maxsize=None)
 def get_settings_cached():
     return get_settings()
+
 
 def load_fonts():
     # Add every font at the specified location
@@ -44,6 +46,7 @@ def load_fonts():
     else:
         rcParams['font.family'] = 'Roboto Flex'
 
+
 def my_int_fmt(number, converthundreds=False):
     try:
         number = float(number)
@@ -57,6 +60,7 @@ def my_int_fmt(number, converthundreds=False):
         return f".{round(number / 100)}k"
     else:
         return str(int(number))
+
 
 def clr_plot_facecolor():
     # Update colors according to color scheme
@@ -72,6 +76,7 @@ def clr_current_ticklabel():
     else:
         return 'red'
 
+
 def my_heatmap(axis, crosstable, clrmap, clrnorm, annotfmt='', annotsize='medium'):
     # annotsize: float or {'xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'}
     hm_axes = sns.heatmap(crosstable, cmap=clrmap, norm=clrnorm, cbar=False, linewidths=0.5, linecolor="Silver", ax=axis,
@@ -80,6 +85,7 @@ def my_heatmap(axis, crosstable, clrmap, clrnorm, annotfmt='', annotsize='medium
     for _, spine in hm_axes.spines.items():
         spine.set_visible(True)
     return hm_axes
+
 
 def get_daily_plot_data(conn, now):
     sql_fields = "COUNT(DISTINCT Com_Name) as Species, COUNT(Com_Name) as Detections, COUNT(DISTINCT Date) as Days"
@@ -101,6 +107,7 @@ def get_daily_plot_data(conn, now):
     plot_dataframe = pd.read_sql_query(sql, conn)
     return plot_suptitle, plot_dataframe
 
+
 def get_yearly_plot_data(conn, now):
     sql_fields = "COUNT(DISTINCT Com_Name) as Species, COUNT(Com_Name) as Detections, COUNT(DISTINCT Date) as Days"
     db_entire = pd.read_sql_query(f"SELECT {sql_fields} FROM detections", conn)
@@ -120,6 +127,7 @@ def get_yearly_plot_data(conn, now):
     """
     plot_dataframe = pd.read_sql_query(sql, conn)
     return plot_suptitle, plot_dataframe
+
 
 def create_plot(chart_name, chart_suptitle, df_birds, now, time_unit, period_col, xlabel, xtick_labels):
     # Common code for data preparation
@@ -207,6 +215,7 @@ def create_plot(chart_name, chart_suptitle, df_birds, now, time_unit, period_col
     plt.savefig(os.path.expanduser(f'~/BirdSongs/Extracted/Charts/{chart_name}.png'))
     plt.show()
     plt.close()
+
 
 def main(daemon, sleep_m):
     load_fonts()
