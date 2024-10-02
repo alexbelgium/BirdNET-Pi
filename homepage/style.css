@@ -261,6 +261,9 @@ button:hover {
   justify-content: center;
 }
 
+.center-column {
+  display: none;
+}
 .left-column {
   flex: 10%;
   padding-left: 10px;
@@ -477,6 +480,10 @@ button:hover {
   .column1,.column2,.column3,.column4 {
     height: 90%
   }
+  .center-column {
+    display: flex;
+    justify-content: center;
+  }
   .left-column {
     display: none;
   }
@@ -491,7 +498,7 @@ button:hover {
     overflow-x: hidden;
   }
   .overview .right-column .chart img {
-    margin-left: 5%;
+    margin-left: auto;
     margin-right: auto;
     margin-top: 10px;
   }
@@ -607,6 +614,10 @@ button:hover {
   .topnav.responsive {position: relative;}
   .topnav.responsive button {
     display: block;
+  }
+  .center-column {
+    display: flex;
+    justify-content: center;
   }
   .left-column {
     display: none;
