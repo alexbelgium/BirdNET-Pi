@@ -539,10 +539,10 @@ if(isset($_GET['species'])){ ?>
          <img src="images/sort_occ.svg" title="Sort by confidence" alt="Sort by confidence">
       </button><br>
       <label style="cursor: pointer; margin-top: 10px; margin-bottom: 10px;font-weight: normal; display: inline-flex; align-items: center; justify-content: center;">
-      <input type="checkbox" name="only_excluded" <?= isset($_GET['only_excluded']) ? 'checked' : '' ?> onchange="submit()" style="display:none;">
-      <span style="width: 40px; height: 20px; background: <?= isset($_GET['only_excluded']) ? 'rgba(211, 211, 211, 0.7)' : 'transparent' ?>; border: 1px solid #777777; border-radius: 20px; display: inline-block; position: relative; margin-right: 8px; transition: background 0.4s, border 0.4s; box-sizing: border-box;">
-      <span style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 1px; left: 2px; transition: 0.4s; display: flex; align-items: center; justify-content: center; font-size: 8px; color: black; <?= isset($_GET['only_excluded']) ? 'transform: translateX(20px);' : '' ?>">
-      <?= isset($_GET['only_excluded']) ? 'ON' : '' ?>
+        <input type="checkbox" name="only_excluded" <?= isset($_GET['only_excluded']) ? 'checked' : '' ?> onchange="submit()" style="display:none;">
+        <span style="width: 40px; height: 20px; background: <?= isset($_GET['only_excluded']) ? '#555555' : 'rgba(85, 85, 85, 0.3)' ?>; border: 1px solid #777777; border-radius: 20px; display: inline-block; position: relative; margin-right: 8px; transition: background 0.4s, border 0.4s; box-sizing: border-box;">
+        <span style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 1px; left: 2px; transition: 0.4s; display: flex; align-items: center; justify-content: center; font-size: 8px; color: black; <?= isset($_GET['only_excluded']) ? 'transform: translateX(20px);' : '' ?>">
+        <?= isset($_GET['only_excluded']) ? 'ON' : '' ?>
       </span></span>Only Show Purge Excluded</label>
    </form>
 </div>
