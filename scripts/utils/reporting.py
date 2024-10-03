@@ -107,7 +107,7 @@ def summary(file: ParseFileName, detection: Detection):
     s = (f'{file.date};{file.time};{detection.scientific_name};{detection.common_name};'
          f'{detection.confidence};'
          f'{conf["LATITUDE"]};{conf["LONGITUDE"]};{conf["CONFIDENCE"]};{file.week};{conf["SENSITIVITY"]};'
-         f'{conf["OVERLAP"]}')
+         f'{conf["OVERLAP"]};{detection.snr}')
     return s
 
 
