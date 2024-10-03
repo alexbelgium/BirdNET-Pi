@@ -9,6 +9,7 @@ import librosa
 import numpy as np
 
 from utils.helpers import get_settings, Detection
+from scipy.signal import butter, sosfilt
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 os.environ['CUDA_VISIBLE_DEVICES'] = ''
@@ -241,6 +242,39 @@ def predict(sample, sensitivity):
     return p_sorted[:human_cutoff]
 
 
+def calculate_snr(audio_signal, sample_rate=48000, bands=[(200, 500), (500, 1000), (1000, 8000)], percentile=20):
+    # Calculate the SNR by selecting the best frequency band and comparing it against a complementary noise band.
+    def bandpass_filter(signal, low_freq, high_freq):
+        sos = butter(4, [low_freq, high_freq], btype='bandpass', fs=sample_rate, output='sos')
+        return sosfilt(sos, signal)
+    def estimate_modulation(signal):
+        return np.std(signal) + np.max(np.abs(signal))
+    # Normalize the audio signal
+    audio_signal = audio_signal / np.max(np.abs(audio_signal))
+    # 1. Select the best frequency band based on modulation
+    modulation_metrics = {}
+    for band in bands:
+        filtered_signal = bandpass_filter(audio_signal, band[0], band[1])
+        modulation_metrics[band] = estimate_modulation(filtered_signal)
+    # Identify the band with the highest modulation
+    best_band = max(modulation_metrics, key=modulation_metrics.get)
+    # 2. Choose a noise band different from the selected signal band
+    remaining_bands = [b for b in bands if b != best_band]
+    noise_band = remaining_bands[0] if remaining_bands else bands[-1]  # Fallback to any band if needed
+    # 3. Apply bandpass filters to both the selected signal band and the noise band
+    filtered_signal = bandpass_filter(audio_signal, best_band[0], best_band[1])
+    filtered_noise = bandpass_filter(audio_signal, noise_band[0], noise_band[1])
+    # 4. Calculate power of the signal and noise
+    signal_power = np.mean(filtered_signal ** 2)
+    quiet_threshold = np.percentile(np.abs(filtered_noise), percentile)
+    quiet_section_noise = filtered_noise[np.abs(filtered_noise) < quiet_threshold]
+    # Use fallback noise power if the quiet section is sparse
+    noise_power = np.mean(quiet_section_noise ** 2) if len(quiet_section_noise) > 0 else signal_power * 0.1
+    # 5. Compute SNR
+    snr = 10 * np.log10(signal_power / noise_power)
+    return round(snr, 6)
+
+
 def analyzeAudioData(chunks, lat, lon, week, sens, overlap,):
     global INTERPRETER
 
@@ -327,6 +361,10 @@ def run_analysis(file):
     raw_detections = analyzeAudioData(audio_data, conf.getfloat('LATITUDE'), conf.getfloat('LONGITUDE'), file.week,
                                       conf.getfloat('SENSITIVITY'), conf.getfloat('OVERLAP'))
     confident_detections = []
+    if audio_data:
+        global_snr = calculate_snr(np.concatenate(audio_data))
+    else:
+        global_snr = 0
     for time_slot, entries in raw_detections.items():
         log.info('%s-%s', time_slot, entries[0])
         for entry in entries:
@@ -338,6 +376,6 @@ def run_analysis(file):
                 elif entry[0] not in PREDICTED_SPECIES_LIST and len(PREDICTED_SPECIES_LIST) != 0:
                     log.warning("Excluded as below Species Occurrence Frequency Threshold: %s", entry[0])
                 else:
-                    d = Detection(time_slot.split(';')[0], time_slot.split(';')[1], entry[0], entry[1])
+                    d = Detection(time_slot.split(';')[0], time_slot.split(';')[1], entry[0], entry[1], global_snr)
                     confident_detections.append(d)
     return confident_detections
