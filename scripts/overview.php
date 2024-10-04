@@ -281,8 +281,14 @@ $newspeciescount = count($new_species);
         <?php if ($newspeciescount > 5): ?>
             <table><tr><td style="text-align:center;"><form action="" method="GET"><input type="hidden" name="view" value="Recordings"><button type="submit" name="date" value="<?php echo date('Y-m-d');?>">Open Today's recordings page</button></form></td></tr></table>
         <?php else: ?>
-            <table><?php
+            <table>
+                <?php
+                if (!isset($_SESSION['images'])) {
+                    $_SESSION['images'] = [];
+                }
                 $iterations = 0;
+                $flickr = null;
+                
                 foreach($new_species as $todaytable):
                     $iterations++;
                     $comname = preg_replace('/ /', '_', $todaytable['Com_Name']);
@@ -294,9 +300,37 @@ $newspeciescount = count($new_species);
                     $engname_url = str_replace("'", '', str_replace(' ', '_', $engname));
                     $info_url = get_info_url($todaytable['Sci_Name']);
                     $url = $info_url['URL'];
-                    $url_title = $info_url['TITLE'];?>
+                    $url_title = $info_url['TITLE'];
+                    
+                    $image_url = ""; // Default empty image URL
+
+                    if (!empty($config["FLICKR_API_KEY"])) {
+                        if ($flickr === null) {
+                            $flickr = new Flickr();
+                        }
+                        if (isset($_SESSION["FLICKR_FILTER_EMAIL"]) && $_SESSION["FLICKR_FILTER_EMAIL"] !== $flickr->get_uid_from_db()['uid']) {
+                            unset($_SESSION['images']);
+                            $_SESSION["FLICKR_FILTER_EMAIL"] = $flickr->get_uid_from_db()['uid'];
+                        }
+
+                        // Check if the Flickr image has been cached in the session
+                        $key = array_search($comname, array_column($_SESSION['images'], 0));
+                        if ($key !== false) {
+                            $image = $_SESSION['images'][$key];
+                        } else {
+                            // Retrieve the image from Flickr API and cache it
+                            $flickr_cache = $flickr->get_image($todaytable['Sci_Name']);
+                            array_push($_SESSION["images"], array($comname, $flickr_cache["image_url"], $flickr_cache["title"], $flickr_cache["photos_url"], $flickr_cache["author_url"], $flickr_cache["license_url"]));
+                            $image = $_SESSION['images'][count($_SESSION['images']) - 1];
+                        }
+                        $image_url = $image[1] ?? ""; // Get the image URL if available
+                    }
+                ?>
                 <tr class="relative" id="<?php echo $iterations; ?>">
                     <td><?php echo $todaytable['Time']; ?><br></td>
+                    <td><?php if (!empty($image_url)): ?>
+                            <img src="<?php echo $image_url; ?>" style="height: 50px; width: 50px; border-radius: 5px;" title="Image from Flickr" />
+                    <?php endif; ?></td>
                     <td id="recent_detection_middle_td">
                         <div><form action="" method="GET">
                                 <input type="hidden" name="view" value="Species Stats">
@@ -308,8 +342,10 @@ $newspeciescount = count($new_species);
                                     <a target="_blank" href="index.php?filename=<?php echo $todaytable['File_Name']; ?>"><img style="height: 1em;cursor:pointer;float:unset;display:inline" class="copyimage-mobile" title="Open in new tab" width=16 src="images/copy.png"></a>
                                 </i><br></form></div></td>
                     <td><b>Confidence:</b> <?php echo round($todaytable['Confidence'] * 100 ) . '%'; ?><br></td>
-                </tr><?php endforeach; ?>
-            </table><?php endif; ?>
+                </tr>
+                <?php endforeach; ?>
+            </table>
+        <?php endif; ?>
     </div>
 <?php endif; ?>
 
