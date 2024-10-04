@@ -308,6 +308,67 @@ if (get_included_files()[0] === __FILE__) {
 <div class="right-column">
 <div class="center-column">
 </div>
+<?php
+$statement7 = $db->prepare('SELECT Com_Name, Sci_Name, Date, Time, Confidence, File_Name, MAX(Confidence) as MaxConfidence FROM detections WHERE Date = DATE(\'now\', \'localtime\') AND Com_Name NOT IN (SELECT Com_Name FROM detections WHERE Date < DATE(\'now\', \'localtime\', \'-1 day\')) GROUP BY Com_Name');
+ensure_db_ok($statement7);
+$result7 = $statement7->execute();
+$new_species = [];
+while ($row = $result7->fetchArray(SQLITE3_ASSOC)) {
+    $new_species[] = $row;
+}
+$newspeciescount = count($new_species);
+?>
+
+<?php if ($newspeciescount > 0): ?>
+    <div class="new_species">
+        <h2 style="text-align:center;"><?php echo $newspeciescount; ?> new species detected today!</h2>
+        <?php if ($newspeciescount > 5): ?>
+            <table><tr><td style="text-align:center;"><form action="" method="GET"><input type="hidden" name="view" value="Recordings"><button type="submit" name="date" value="<?php echo date('Y-m-d');?>">Open Today's recordings page</button></form></td></tr></table>
+        <?php else: ?>
+            <table>
+                <?php
+                $iterations = 0;
+                foreach($new_species as $todaytable):
+                    $iterations++;
+
+                    $comname = preg_replace('/ /', '_', $todaytable['Com_Name']);
+                    $comname = preg_replace('/\'/', '', $comname);
+                    $filename = "/By_Date/".$todaytable['Date']."/".$comname."/".$todaytable['File_Name'];
+                    $filename_formatted = $todaytable['Date']."/".$comname."/".$todaytable['File_Name'];
+                    $sciname = preg_replace('/ /', '_', $todaytable['Sci_Name']);
+                    $engname = get_com_en_name($todaytable['Sci_Name']);
+                    $engname_url = str_replace("'", '', str_replace(' ', '_', $engname));
+
+                    $info_url = get_info_url($todaytable['Sci_Name']);
+                    $url = $info_url['URL'];
+                    $url_title = $info_url['TITLE'];
+                ?>
+                <tr class="relative" id="<?php echo $iterations; ?>">
+                    <td><?php echo $todaytable['Time']; ?><br></td>
+                    <td id="recent_detection_middle_td">
+                        <div>
+                            <form action="" method="GET">
+                                <input type="hidden" name="view" value="Species Stats">
+                                <button class="a2" type="submit" name="species" value="<?php echo $todaytable['Com_Name']; ?>"><?php echo $todaytable['Com_Name']; ?></button>
+                                <br><i>
+                                    <?php echo $todaytable['Sci_Name']; ?>
+                                    <br>
+                                    <a href="<?php echo $url; ?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="<?php echo $url_title; ?>" src="images/info.png" width="25"></a>
+                                    <a href="https://wikipedia.org/wiki/<?php echo $sciname; ?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="25"></a>
+                                    <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comname; ?>')" width=25 src="images/chart.svg">
+                                    <a target="_blank" href="index.php?filename=<?php echo $todaytable['File_Name']; ?>"><img style="height: 1em;cursor:pointer;float:unset;display:inline" class="copyimage-mobile" title="Open in new tab" width=16 src="images/copy.png"></a>
+                                </i>
+                                <br>
+                            </form>
+                        </div>
+                    </td>
+                    <td><b>Confidence:</b> <?php echo round($todaytable['Confidence'] * 100 ) . '%'; ?><br></td>
+                </tr>
+                <?php endforeach; ?>
+            </table>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
 <div class="chart">
 <?php
 $refresh = $config['RECORDING_LENGTH'];
