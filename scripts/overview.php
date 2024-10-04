@@ -273,9 +273,8 @@ while ($row = $result7->fetchArray(SQLITE3_ASSOC)) {
     $new_species[] = $row;
 }
 $newspeciescount = count($new_species);
-?>
 
-<?php if ($newspeciescount > 0): ?>
+if ($newspeciescount > 0): ?>
     <div class="new_species">
         <h2 style="text-align:center;"><?php echo $newspeciescount; ?> new species detected today!</h2>
         <?php if ($newspeciescount > 5): ?>
