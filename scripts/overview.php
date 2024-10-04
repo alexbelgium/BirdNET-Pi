@@ -277,7 +277,7 @@ $newspeciescount = count($new_species);
 
 <?php if ($newspeciescount > 0): ?>
     <div class="new_species">
-        <h2 style="text-align:center;"><?php echo $newspeciescount; ?> species detected today!</h2>
+        <h2 style="text-align:center;"><?php echo $newspeciescount; ?> new species detected today!</h2>
         <?php if ($newspeciescount > 5): ?>
             <table><tr><td style="text-align:center;"><form action="" method="GET"><input type="hidden" name="view" value="Recordings"><button type="submit" name="date" value="<?php echo date('Y-m-d');?>">Open Today's recordings page</button></form></td></tr></table>
         <?php else: ?>
