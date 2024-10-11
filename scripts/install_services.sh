@@ -55,6 +55,23 @@ EOF
   systemctl enable birdnet_analysis.service
 }
 
+install_birdnet_watchdog() {
+  cat << EOF > $HOME/BirdNET-Pi/templates/birdnet_watchdog.service
+[Unit]
+Description=BirdNET Watchdog
+[Service]
+Restart=always
+Type=simple
+RestartSec=2
+User=${USER}
+ExecStart=$PYTHON_VIRTUAL_ENV /usr/local/bin/birdnet_watchdog.service
+[Install]
+WantedBy=multi-user.target
+EOF
+  ln -sf $HOME/BirdNET-Pi/templates/birdnet_watchdog.service /usr/lib/systemd/system
+  systemctl enable birdnet_watchdog.service
+}
+
 create_necessary_dirs() {
   echo "Creating necessary directories"
   [ -d ${EXTRACTED} ] || sudo -u ${USER} mkdir -p ${EXTRACTED}
@@ -421,6 +438,7 @@ install_services() {
   install_birdnet_mount
   install_cleanup_cron
   install_weekly_cron
+  install_birdnet_watchdog
   increase_caddy_timeout
 
   create_necessary_dirs
