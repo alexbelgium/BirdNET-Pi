@@ -83,12 +83,12 @@ function service_status($name) {
     <button type="submit" name="submit" value="sudo systemctl disable --now spectrogram_viewer.service">Disable</button>
     <button type="submit" name="submit" value="sudo systemctl enable --now spectrogram_viewer.service">Enable</button>
   </div>
-    <h3>Monitoring Service <?php echo service_status("services_monitoring.service");?></h3>
+    <h3>Monitoring Service <?php echo service_status("birdnet_watchdog.service");?></h3>
   <div role="group" class="btn-group-center">
-    <button type="submit" name="submit" value="sudo systemctl stop services_monitoring.service">Stop</button>
-    <button type="submit" name="submit" value="sudo systemctl restart services_monitoring.service">Restart</button>
-    <button type="submit" name="submit" value="sudo systemctl disable --now services_monitoring.service">Disable</button>
-    <button type="submit" name="submit" value="sudo systemctl enable --now services_monitoring.service">Enable</button>
+    <button type="submit" name="submit" value="sudo systemctl stop birdnet_watchdog.service">Stop</button>
+    <button type="submit" name="submit" value="sudo systemctl restart birdnet_watchdog.service">Restart</button>
+    <button type="submit" name="submit" value="sudo systemctl disable --now birdnet_watchdog.service">Disable</button>
+    <button type="submit" name="submit" value="sudo systemctl enable --now birdnet_watchdog.service">Enable</button>
   </div>
     <h3>Ram drive (!experimental!) <?php echo service_status(get_service_mount_name());?></h3>
   <div role="group" class="btn-group-center">
