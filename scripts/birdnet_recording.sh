@@ -36,6 +36,11 @@ if [ ! -z $RTSP_STREAM ];then
       MAP_ID=$((RTSP_STREAMS_STARTED_COUNT-1))
       # Build up the parameters to process the RSTP stream, including mapping for the output
       FFMPEG_PARAMS+="-vn -thread_queue_size 512 -i ${i} -map ${MAP_ID}:a:0 -t ${RECORDING_LENGTH} -acodec pcm_s16le -ac 2 -ar 48000 file:${RECS_DIR}/StreamData/$(date "+%F")-birdnet-RTSP_${RTSP_STREAMS_STARTED_COUNT}-$(date "+%H:%M:%S").wav "
+	  # If model is bats, convert the file to a compressed 16bits 48khz wav
+      if [[ "$MODEL" == *"Bat"* ]]; then 
+		OUTPUT="${RECS_DIR}/StreamData/$(date "+%F")-birdnet-RTSP_${RTSP_STREAMS_STARTED_COUNT}-$(date "+%H:%M:%S").wav" && \
+		FFMPEG_PARAMS+="-vn -thread_queue_size 512 -i ${i} -map ${MAP_ID}:a:0 -t ${RECORDING_LENGTH} -acodec pcm_s16le -ac 2 file:\"$OUTPUT\" && python $HOME/BirdNET-Pi/scripts/bats_wav_transform.py \"$OUTPUT\" "
+	  fi
       # Increment counter
       ((RTSP_STREAMS_STARTED_COUNT += 1))
     done
