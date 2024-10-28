@@ -43,6 +43,7 @@ if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
   $result2 = $statement2->execute();
 }
 
+
 if(isset($_GET['species'])){
   $selection = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
   $statement3 = $db->prepare("SELECT Com_Name, Sci_Name, COUNT(*), MAX(Confidence), File_Name, Date, Time from detections WHERE Com_Name = \"$selection\"");
@@ -109,7 +110,6 @@ if (get_included_files()[0] === __FILE__) {
   } else {
     $num_cols = 1;
   }
-
   $num_rows = ceil(count($birds) / $num_cols);
 
   for ($row = 0; $row < $num_rows; $row++) {
@@ -135,14 +135,12 @@ if (get_included_files()[0] === __FILE__) {
 </table>
 </form>
 </div>
-
 <dialog style="margin-top: 5px;max-height: 95vh;
   overflow-y: auto;overscroll-behavior:contain" id="attribution-dialog">
   <h1 id="modalHeading"></h1>
   <p id="modalText"></p>
   <button onclick="hideDialog()">Close</button>
 </dialog>
-
 <script src="static/dialog-polyfill.js"></script>
 <script>
 var dialog = document.querySelector('dialog');
@@ -162,7 +160,6 @@ function setModalText(iter, title, text, authorlink) {
   showDialog();
 }
 </script>  
-
 <div class="column center">
 <?php if(!isset($_GET['species'])){
 ?><p class="centered">Choose a species to load images from Flickr.</p>
