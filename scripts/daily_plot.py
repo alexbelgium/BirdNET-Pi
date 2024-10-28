@@ -1,11 +1,11 @@
 # ===============================================================================
 # === daily_plot.py (adjusted version @jmtmp) ==========================================
 # ===============================================================================
-# === 2024-04-19: new version
-# === 2024-04-28: new custom formatting for millions (my_int_fmt function)
-# ===             new formatting of total occurence in semi-monthly plot
-# === 2024-09-01: updated suptitle and xlabels formatting
-# === 2024-09-05: Daemon implementing
+# === 2024-04-19: new version @jmtmp
+# === 2024-04-28: new custom formatting for millions (my_int_fmt function) @jmtmp
+# ===             new formatting of total occurence in semi-monthly plot @jmtmp
+# === 2024-09-01: updated suptitle and xlabels formatting @jmtmp
+# === 2024-09-05: Daemon implementing @jmtmp
 # === 2024-09-26: transparent first column
 # === 2024-10-02: code refactor
 # ===============================================================================
