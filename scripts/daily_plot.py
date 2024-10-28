@@ -69,6 +69,7 @@ def clr_plot_facecolor():
     else:
         return 'none'
 
+
 def clr_current_ticklabel():
     # Update colors according to color scheme
     if get_settings_cached()['COLOR_SCHEME'] == "dark":
@@ -253,6 +254,7 @@ def main(daemon, sleep_m):
             sleep(60 * sleep_m)
         else:
             break
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
