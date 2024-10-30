@@ -24,6 +24,7 @@ from datetime import datetime
 from time import sleep
 from functools import lru_cache
 from utils.helpers import DB_PATH, get_settings
+from utils.interactive_plot import create_plotly_heatmap
 
 # Cache the settings to avoid redundant calls
 @lru_cache(maxsize=None)
@@ -214,6 +215,7 @@ def main(daemon, sleep_m):
         with sqlite3.connect(DB_PATH) as conn:
             now = datetime.now()
 
+            # Generate daily plot data and static plot
             suptitle, dataframe = get_daily_plot_data(conn, now)
             create_plot(
                 chart_name='Combo-' + now.strftime("%Y-%m-%d"),
@@ -226,6 +228,12 @@ def main(daemon, sleep_m):
                 xtick_labels=list(range(24))
             )
 
+            try:
+                create_plotly_heatmap(dataframe, now)
+            except Exception as e:
+                print(f"Failed to create interactive heatmap: {e}")
+
+            # Generate yearly plot data and static plot
             suptitle, dataframe = get_yearly_plot_data(conn, now)
             month_labels = ['Jan', '', 'Feb', '', 'Mar', '', 'Apr', '', 'May', '', 'Jun', '', 'Jul', '',
                             'Aug', '', 'Sep', '', 'Oct', '', 'Nov', '', 'Dec', '']
