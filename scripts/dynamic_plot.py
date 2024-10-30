@@ -2,7 +2,6 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
-from datetime import datetime
 import os
 from utils.helpers import get_settings  # Import if needed for other settings
 
@@ -11,28 +10,28 @@ conf = get_settings()
 color_scheme = conf.get('COLOR_SCHEME', 'light')
 
 if color_scheme == 'dark':
-  PLOT_BGCOLOR='#F0F0F0'
-  PAPER_BGCOLOR='#7F7F7F'
-  CUSTOM_COLOR_SCALE = [
-      [0.0, PLOT_BGCOLOR], 
-      [0.2, '#BDBDBD'], 
-      [0.4, '#969696'],
-      [0.6, '#737373'], 
-      [0.8, '#525252'], 
-      [1.0, '#252525']
-  ]
+    PLOT_BGCOLOR = '#F0F0F0'
+    PAPER_BGCOLOR = '#7F7F7F'
+    CUSTOM_COLOR_SCALE = [
+        [0.0, PLOT_BGCOLOR],
+        [0.2, '#BDBDBD'],
+        [0.4, '#969696'],
+        [0.6, '#737373'],
+        [0.8, '#525252'],
+        [1.0, '#252525']
+    ]
 else:
-  PLOT_BGCOLOR='#FFFFFF'
-  PAPER_BGCOLOR='#7BC58A'
-  CUSTOM_COLOR_SCALE = [
-      [0.0, PLOT_BGCOLOR], 
-      [0.1, '#E0F2E9'], 
-      [0.2, '#A3D8A1'], 
-      [0.4, '#70BD70'],
-      [0.6, '#46A846'], 
-      [0.8, '#2E7D2E'], 
-      [1.0, '#004D00']
-  ]
+    PLOT_BGCOLOR = '#FFFFFF'
+    PAPER_BGCOLOR = '#7BC58A'
+    CUSTOM_COLOR_SCALE = [
+        [0.0, PLOT_BGCOLOR],
+        [0.1, '#E0F2E9'],
+        [0.2, '#A3D8A1'],
+        [0.4, '#70BD70'],
+        [0.6, '#46A846'],
+        [0.8, '#2E7D2E'],
+        [1.0, '#004D00']
+    ]
 
 ALL_HOURS = list(range(24))
 
@@ -124,44 +123,45 @@ def create_plotly_heatmap(df_birds, now):
     # Add traces with updated customdata structure and hovertemplate
     fig.add_trace(go.Heatmap(
         z=z_confidence, customdata=custom_data_confidence, x=['Confidence'], y=species_list,
-        colorscale=CUSTOM_COLOR_SCALE, showscale=False, 
+        colorscale=CUSTOM_COLOR_SCALE, showscale=False,
         hovertemplate='Species: %{y}<br>Max Confidence: %{customdata.confidence:.0f}%<extra></extra>',
         xgap=1, ygap=1, zmin=0, zmax=1
     ), row=1, col=1)
     
     fig.add_trace(go.Heatmap(
         z=z_detections, customdata=custom_data_count, x=['Count'], y=species_list,
-        colorscale=CUSTOM_COLOR_SCALE, showscale=False, 
+        colorscale=CUSTOM_COLOR_SCALE, showscale=False,
         hovertemplate='Species: %{y}<br>Total Counts: %{customdata.count}<extra></extra>',
         xgap=1, ygap=1, zmin=0, zmax=1
     ), row=1, col=2)
 
     fig.add_trace(go.Heatmap(
         z=z_hourly, customdata=df_hourly.values, x=ALL_HOURS, y=species_list,
-        colorscale=CUSTOM_COLOR_SCALE, showscale=False, hovertemplate='Species: %{y}<br>Hour: %{x}<br>Detections: %{customdata}<extra></extra>',
+        colorscale=CUSTOM_COLOR_SCALE, showscale=False,
+        hovertemplate='Species: %{y}<br>Hour: %{x}<br>Detections: %{customdata}<extra></extra>',
         xgap=1, ygap=1, zmin=0, zmax=1
     ), row=1, col=3)
 
     # Annotations
     annotations = []
-    add_annotations(fig, text_confidence.reshape(-1, 1), determine_text_color(z_confidence, threshold=0.5), 
-                   col=1, row=1, species_list=species_list, all_hours=ALL_HOURS, annotations=annotations)
-    add_annotations(fig, text_detections.reshape(-1, 1), text_color_detections, 
-                   col=2, row=1, species_list=species_list, all_hours=ALL_HOURS, annotations=annotations)
-    add_annotations(fig, text_hourly, text_color_hourly, 
-                   col=3, row=1, species_list=species_list, all_hours=ALL_HOURS, annotations=annotations)
+    add_annotations(fig, text_confidence.reshape(-1, 1), determine_text_color(z_confidence, threshold=0.5),
+                    col=1, row=1, species_list=species_list, all_hours=ALL_HOURS, annotations=annotations)
+    add_annotations(fig, text_detections.reshape(-1, 1), text_color_detections,
+                    col=2, row=1, species_list=species_list, all_hours=ALL_HOURS, annotations=annotations)
+    add_annotations(fig, text_hourly, text_color_hourly,
+                    col=3, row=1, species_list=species_list, all_hours=ALL_HOURS, annotations=annotations)
     fig.update_layout(annotations=annotations)
 
     # Layout configuration
     fig.update_layout(
-        title=dict(text=f"<b>{main_title}</b><br><span style='font-size:14px;'>{subtitle}</span>", 
+        title=dict(text=f"<b>{main_title}</b><br><span style='font-size:14px;'>{subtitle}</span>",
                    x=0.5, y=0.97, xanchor='center', yanchor='top', font=dict(size=24)),
         autosize=True, height=max(600, len(species_list) * 25 + 100),
         yaxis=dict(autorange='reversed', tickfont=dict(size=12), showticklabels=True, ticklabelstandoff=15, fixedrange=True),
         xaxis1=dict(title='Max Confidence', showticklabels=False, title_font=dict(size=12), fixedrange=True),
         xaxis2=dict(title='Total Counts', showticklabels=False, title_font=dict(size=12), fixedrange=True),
         xaxis3=dict(title='Hour', tickfont=dict(size=12), tickmode='linear', dtick=1, fixedrange=True),
-        margin=dict(l=20, r=20, t=80, b=80), clickmode='event+select', 
+        margin=dict(l=20, r=20, t=80, b=80), clickmode='event+select',
         plot_bgcolor=PAPER_BGCOLOR,
         paper_bgcolor=PAPER_BGCOLOR,
         font=dict(size=12, color='#000000'), dragmode=False
