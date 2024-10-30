@@ -1,9 +1,9 @@
+import os
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
-import os
-from utils.helpers import get_settings  # Import if needed for other settings
+from utils.helpers import get_settings
 
 # Fetch color scheme setting and choose corresponding colorscale and text color
 conf = get_settings()
@@ -77,13 +77,13 @@ def create_plotly_heatmap(df_birds, now):
     # Titles and Subtitle
     main_title = f"Hourly Overview Updated at {now.strftime('%Y-%m-%d %H:%M:%S')}"
     subtitle = f"({df_birds['Com_Name'].nunique()} species today; {len(df_birds)} detections today)"
-    
+
     # Ensure 'Time' is datetime
     if not pd.api.types.is_datetime64_any_dtype(df_birds['Time']):
         df_birds['Time'] = pd.to_datetime(df_birds['Time'], unit='ns')
 
     df_birds['Hour'] = df_birds['Time'].dt.hour
-    
+
     # Group data and fill missing values
     plot_dataframe = df_birds.groupby(['Hour', 'Com_Name']).agg(
         Count=('Com_Name', 'count'),
@@ -119,7 +119,7 @@ def create_plotly_heatmap(df_birds, now):
     # Prepare structured customdata arrays for each heatmap trace
     custom_data_confidence = np.array([{'confidence': conf * 100} for conf in df_birds_summary['Conf'].values]).reshape(-1, 1)
     custom_data_count = np.array([{'count': count} for count in df_birds_summary['Count'].values]).reshape(-1, 1)
-    
+
     # Add traces with updated customdata structure and hovertemplate
     fig.add_trace(go.Heatmap(
         z=z_confidence, customdata=custom_data_confidence, x=['Confidence'], y=species_list,
@@ -127,7 +127,7 @@ def create_plotly_heatmap(df_birds, now):
         hovertemplate='Species: %{y}<br>Max Confidence: %{customdata.confidence:.0f}%<extra></extra>',
         xgap=1, ygap=1, zmin=0, zmax=1
     ), row=1, col=1)
-    
+
     fig.add_trace(go.Heatmap(
         z=z_detections, customdata=custom_data_count, x=['Count'], y=species_list,
         colorscale=CUSTOM_COLOR_SCALE, showscale=False,
@@ -189,7 +189,7 @@ def create_plotly_heatmap(df_birds, now):
         )
         + "</div>"
     )
-    
+
     # Add CSS and JavaScript
     html_str = (
         "<style>.modebar-container { display: none !important; }</style>"
