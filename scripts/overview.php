@@ -323,27 +323,16 @@ if($dividedrefresh < 1) {
 $time = time();
 $interactivechart_path = './Charts/' . $interactivechart;
 $chart_path = './Charts/' . $chart;
+if (file_exists($interactivechart_path)) {
+    $html_content = file_get_contents($interactivechart_path);
+    echo $html_content;
+} elseif (file_exists($chart_path)) {
+    echo "<img id='chart' src='Charts/$chart?nocache=$time'>";
+}
 ?>
-
 <script>
-    // Check screen size before deciding which chart to load
-    if (window.innerWidth > 800) {
-        <?php if (file_exists($interactivechart_path)) { ?>
-            // Load the interactive chart if it exists and screen is large
-            document.querySelector('.chart').innerHTML = <?php echo json_encode(file_get_contents($interactivechart_path) . "?nocache=$time"); ?>;
-        <?php } elseif (file_exists($chart_path)) { ?>
-            // Fallback to static chart if the interactive chart doesn't exist
-            document.querySelector('.chart').innerHTML = '<img id="chart" src="Charts/<?php echo $chart; ?>?nocache=<?php echo $time; ?>">';
-        <?php } else { ?>
-            document.querySelector('.chart').innerHTML = '<p>No chart available.</p>';
-        <?php } ?>
-    } else {
-        // Load static chart for smaller screens
-        <?php if (file_exists($chart_path)) { ?>
-            document.querySelector('.chart').innerHTML = '<img id="chart" src="Charts/<?php echo $chart; ?>?nocache=<?php echo $time; ?>">';
-        <?php } else { ?>
-            document.querySelector('.chart').innerHTML = '<p>No chart available.</p>';
-        <?php } ?>
+    if (window.innerWidth <= 800) {
+        document.querySelector('.chart').innerHTML = '<img id="chart" src="Charts/<?php echo $chart; ?>?nocache=<?php echo $time; ?>">';
     }
 </script>
 </div>
