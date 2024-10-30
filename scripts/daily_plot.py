@@ -14,7 +14,7 @@ from matplotlib import rcParams
 from matplotlib.colors import LogNorm
 
 from utils.helpers import DB_PATH, get_settings
-from dynamic_plot import create_plotly_heatmap
+from utils.interactive_plot import create_plotly_heatmap
 
 
 def get_data(now=None):
