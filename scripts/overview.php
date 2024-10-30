@@ -313,7 +313,7 @@ if (get_included_files()[0] === __FILE__) {
 <div class="right-column">
 <div class="center-column">
 </div>
-<div class="chart">
+<div class="chart" style="visibility: hidden;">
 <?php
 $refresh = $config['RECORDING_LENGTH'];
 $dividedrefresh = $refresh/4;
@@ -331,9 +331,13 @@ if (file_exists($interactivechart_path)) {
 }
 ?>
 <script>
-    if (window.innerWidth <= 800) {
-        document.querySelector('.chart').innerHTML = '<img id="chart" src="Charts/<?php echo $chart; ?>?nocache=<?php echo $time; ?>">';
-    }
+    document.addEventListener("DOMContentLoaded", function() {
+        const chartContainer = document.querySelector('.chart');
+        if (window.innerWidth <= 800) {
+            chartContainer.innerHTML = '<img id="chart" src="Charts/<?php echo $chart; ?>?nocache=<?php echo $time; ?>">';
+        }
+        chartContainer.style.visibility = 'visible';
+    });
 </script>
 </div>
 
