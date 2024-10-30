@@ -123,7 +123,7 @@ def create_plotly_heatmap(df_birds, now):
         z=z_confidence, customdata=custom_data_confidence, x=['Confidence'], y=species_list,
         colorscale=CUSTOM_COLOR_SCALE, showscale=False,
         hovertemplate='Species: %{y}<br>Max Confidence: %{customdata.confidence:.0f}%<extra></extra>',
-        xgap=1, ygap=1, zmin=0, zmax=1
+        xgap=1, ygap=1, zmin=0, zmax=100
     ), row=1, col=1)
 
     fig.add_trace(go.Heatmap(
