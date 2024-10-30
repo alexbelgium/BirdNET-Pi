@@ -113,20 +113,20 @@ def get_yearly_plot_data(conn, now):
     sql = """
         SELECT 2 * (CAST(strftime('%m', Date) AS INTEGER) - 1) +
                CASE WHEN CAST(strftime('%d', Date) AS INTEGER) < 16 THEN 0 ELSE 1 END AS Period,
-               strftime('%Y', Date) AS Year, Com_Name AS Bird,
+               strftime('%Y', Date) AS Year, Com_Name,
                COUNT(Com_Name) AS Count, MAX(Confidence) AS Conf
         FROM detections
         WHERE Date >= DATE('now','start of year')
-        GROUP BY Period, Bird
+        GROUP BY Period, Com_Name
     """
     plot_dataframe = pd.read_sql_query(sql, conn)
     return plot_suptitle, plot_dataframe
 
 def create_plot(chart_name, chart_suptitle, df_birds, now, time_unit, period_col, xlabel, xtick_labels):
     # Common code for data preparation
-    df_birds_summary = df_birds.groupby('Bird').agg({'Count': 'sum', 'Conf': 'max'})
+    df_birds_summary = df_birds.groupby('Com_Name').agg({'Count': 'sum', 'Conf': 'max'})
     df_birds_ordered = df_birds_summary.sort_values(by=['Count', 'Conf'], ascending=[False, False])
-    df_birds['Bird'] = pd.Categorical(df_birds['Bird'], ordered=True, categories=df_birds_ordered.index)
+    df_birds['Com_Name'] = pd.Categorical(df_birds['Com_Name'], ordered=True, categories=df_birds_ordered.index)
     no_of_rows = df_birds_summary.shape[0]
     total_recordings = df_birds['Count'].sum()
     if no_of_rows == 0:
@@ -134,9 +134,9 @@ def create_plot(chart_name, chart_suptitle, df_birds, now, time_unit, period_col
         return
 
     # Prepare crosstables
-    df_confidences = pd.crosstab(index=df_birds['Bird'], columns=df_birds[time_unit], values=df_birds['Conf'], aggfunc='max')
-    df_detections = pd.crosstab(index=df_birds['Bird'], columns=df_birds[time_unit], values=df_birds['Count'], aggfunc='sum')
-    df_perioddata = pd.crosstab(index=df_birds['Bird'], columns=df_birds[period_col], values=df_birds['Count'], aggfunc='sum')
+    df_confidences = pd.crosstab(index=df_birds['Com_Name'], columns=df_birds[time_unit], values=df_birds['Conf'], aggfunc='max')
+    df_detections = pd.crosstab(index=df_birds['Com_Name'], columns=df_birds[time_unit], values=df_birds['Count'], aggfunc='sum')
+    df_perioddata = pd.crosstab(index=df_birds['Com_Name'], columns=df_birds[period_col], values=df_birds['Count'], aggfunc='sum')
 
     # Prepare empty matrix for periods
     df_empty_matrix = pd.DataFrame(data=0, index=df_perioddata.index, columns=pd.Series(data=range(len(xtick_labels))))
