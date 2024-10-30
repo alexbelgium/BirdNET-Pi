@@ -83,7 +83,7 @@ def my_heatmap(axis, crosstable, clrmap, clrnorm, annotfmt='', annotsize='medium
     return hm_axes
 
 def get_daily_plot_data(conn, now):
-    sql_fields = "COUNT(DISTINCT Com_Name) as Species, COUNT(Com_Name) as Detections, COUNT(DISTINCT Date) as Days"
+    sql_fields = "Time, Confidence, COUNT(DISTINCT Com_Name) as Species, COUNT(Com_Name) as Detections, COUNT(DISTINCT Date) as Days"
     db_entire = pd.read_sql_query(f"SELECT {sql_fields} FROM detections", conn)
     db_today = pd.read_sql_query(f"SELECT {sql_fields} FROM detections WHERE Date = DATE('now')", conn)
     # Prepare suptitle
@@ -93,7 +93,7 @@ def get_daily_plot_data(conn, now):
     plot_suptitle += f"{db_today.Detections[0]} detections today, {avg_daily_detections} on average)"
     # Prepare dataset
     sql = """
-        SELECT Date, CAST(strftime('%H', Time) AS INTEGER) AS Hour, Com_Name,
+        SELECT Time, Confidence, Date, CAST(strftime('%H', Time) AS INTEGER) AS Hour, Com_Name,
                COUNT(Com_Name) AS Count, MAX(Confidence) AS Conf
         FROM detections
         WHERE Date = DATE('now', 'localtime')
@@ -101,6 +101,22 @@ def get_daily_plot_data(conn, now):
     """
     plot_dataframe = pd.read_sql_query(sql, conn)
     return plot_suptitle, plot_dataframe
+
+def get_data(now=None):
+    conn = sqlite3.connect(DB_PATH)
+    if now is None:
+        now = datetime.now()
+    df = pd.read_sql_query(f"SELECT * from detections WHERE Date = DATE('{now.strftime('%Y-%m-%d')}')",
+                           conn)
+
+    # Convert Date and Time Fields to Panda's format
+    df['Date'] = pd.to_datetime(df['Date'])
+    df['Time'] = pd.to_datetime(df['Time'], unit='ns')
+
+    # Add round hours to dataframe
+    df['Hour of Day'] = [r.hour for r in df.Time]
+
+    return df, now
 
 def get_yearly_plot_data(conn, now):
     sql_fields = "COUNT(DISTINCT Com_Name) as Species, COUNT(Com_Name) as Detections, COUNT(DISTINCT Date) as Days"
@@ -229,7 +245,8 @@ def main(daemon, sleep_m):
             )
 
             try:
-                create_plotly_heatmap(dataframe, now)
+                data, time = get_data(now)
+                create_plotly_heatmap(data, now)
             except Exception as e:
                 print(f"Failed to create interactive heatmap: {e}")
 
