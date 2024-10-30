@@ -446,10 +446,20 @@ if($dividedrefresh < 1) {
   $dividedrefresh = 1;
 }
 $time = time();
-if (file_exists('./Charts/'.$chart)) {
-  echo "<img id='chart' src=\"Charts/$chart?nocache=$time\">";
-} 
+$interactivechart_path = './Charts/' . $interactivechart;
+$chart_path = './Charts/' . $chart;
+if (file_exists($interactivechart_path)) {
+    $html_content = file_get_contents($interactivechart_path);
+    echo $html_content;
+} elseif (file_exists($chart_path)) {
+    echo "<img id='chart' src='Charts/$chart?nocache=$time'>";
+}
 ?>
+<script>
+    if (window.innerWidth <= 800) {
+        document.querySelector('.chart').innerHTML = '<img id="chart" src="Charts/<?php echo $chart; ?>?nocache=<?php echo $time; ?>">';
+    }
+</script>
 </div>
 
 <div id="most_recent_detection"></div>
