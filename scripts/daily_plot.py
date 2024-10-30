@@ -93,11 +93,11 @@ def get_daily_plot_data(conn, now):
     plot_suptitle += f"{db_today.Detections[0]} detections today, {avg_daily_detections} on average)"
     # Prepare dataset
     sql = """
-        SELECT Date, CAST(strftime('%H', Time) AS INTEGER) AS Hour, Com_Name AS Bird,
+        SELECT Date, CAST(strftime('%H', Time) AS INTEGER) AS Hour, Com_Name,
                COUNT(Com_Name) AS Count, MAX(Confidence) AS Conf
         FROM detections
         WHERE Date = DATE('now', 'localtime')
-        GROUP BY Hour, Bird
+        GROUP BY Hour, Com_Name
     """
     plot_dataframe = pd.read_sql_query(sql, conn)
     return plot_suptitle, plot_dataframe
