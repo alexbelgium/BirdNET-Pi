@@ -234,17 +234,17 @@ def create_plotly_heatmap(df_birds, now):
     <style>.modebar-container {{ display: none !important; }}</style>
     <div class='chart-container' style='position: relative; width: 80%; margin: 0 auto;'>
         <div style='position: absolute; bottom: 10px; left: 10px; z-index: 10;'>
-            <input type='text' id='birdSearch' placeholder='Search...'
-            style='padding: 5px; font-size: 14px; background-color: rgba(255, 255, 255, 0.5); color: #333; border: none;
-            border-radius: 3px; width: 150px;' />
-            <button id='filterButton' style='margin-left: 5px; padding: 5px; font-size: 14px; background-color: rgba(255, 255, 255, 0.5);
-            color: #333; border: none; border-radius: 3px;'>OK</button>
             <select id='sortOptions' style='margin-left: 5px; padding: 5px; font-size: 14px; background-color: rgba(255, 255, 255, 0.5);
             color: #333; border: none; border-radius: 3px;'>
                 <option value="count" selected>Count</option>
                 <option value="confidence">Max Confidence</option>
                 <option value="species">Species Name</option>
             </select>
+            <input type='text' id='birdSearch' placeholder='Search...'
+            style='padding: 5px; font-size: 14px; background-color: rgba(255, 255, 255, 0.5); color: #333; border: none;
+            border-radius: 3px; width: 150px;' />
+            <button id='filterButton' style='padding: 5px; font-size: 14px; background-color: rgba(255, 255, 255, 0.5);
+            color: #333; border: none; border-radius: 3px;'>OK</button>
         </div>
         {fig.to_html(
             include_plotlyjs='cdn',
