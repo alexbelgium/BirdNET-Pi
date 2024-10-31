@@ -227,10 +227,10 @@ def create_plotly_heatmap(df_birds, now):
     <style>.modebar-container {{ display: none !important; }}</style>
     <div class='chart-container' style='position: relative; width: 80%; margin: 0 auto;'>
         <div style='position: absolute; top: 10px; left: 10px; z-index: 10;'>
-            <input type='text' id='birdSearch' placeholder='Search...' 
-            style='padding: 5px; font-size: 14px; background-color: #ddd; color: #333; border: none; 
+            <input type='text' id='birdSearch' placeholder='Search...'
+            style='padding: 5px; font-size: 14px; background-color: #ddd; color: #333; border: none;
             border-radius: 3px; opacity: 0.8; width: 150px;' />
-            <button id='filterButton' style='margin-left: 5px; padding: 5px; font-size: 14px; background-color: #ddd; 
+            <button id='filterButton' style='margin-left: 5px; padding: 5px; font-size: 14px; background-color: #ddd;
             color: #333; border: none; border-radius: 3px; opacity: 0.8;'>OK</button>
         </div>
         {fig.to_html(
@@ -249,14 +249,14 @@ def create_plotly_heatmap(df_birds, now):
             )
         )}
     </div>
-    
+
     <script>
         // Store the serialized annotations from Python
         var allAnnotations = {annotations_json};
-        
+
         var plot = document.getElementsByClassName('plotly-graph-div')[0];
         var originalData = JSON.parse(JSON.stringify(plot.data));  // Deep copy of original data
-    
+
         function applyFilter() {{
             var searchTerm = document.getElementById('birdSearch').value.toLowerCase();
             var indicesToShow = [];
@@ -290,14 +290,14 @@ def create_plotly_heatmap(df_birds, now):
             Plotly.react(plot, newData, plot.layout);
             Plotly.relayout(plot, {{ annotations: filteredAnnotations }});
         }}
-    
+
         document.getElementById('filterButton').addEventListener('click', applyFilter);
         document.getElementById('birdSearch').addEventListener('keyup', function(event) {{
             if (event.key === 'Enter') {{
                 applyFilter();
             }}
         }});
-    
+
         plot.on('plotly_click', function(data) {{
             if (data.points && data.points[0] && data.points[0].y) {{
                 var species = data.points[0].y.replace(/ /g, '+');
@@ -307,7 +307,6 @@ def create_plotly_heatmap(df_birds, now):
         }});
     </script>
     """
-
 
     output_dir = os.path.expanduser('~/BirdSongs/Extracted/Charts/')
     os.makedirs(output_dir, exist_ok=True)
