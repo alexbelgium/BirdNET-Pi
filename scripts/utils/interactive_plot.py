@@ -224,8 +224,11 @@ def create_plotly_heatmap(df_birds, now):
     )
 
     # Correct `custom_data_confidence` in the create_plotly_heatmap function:
-    custom_data_confidence = np.array([{'confidence': conf * 100, 'count': count} for conf, count in zip(df_birds_summary['Conf'].values, df_birds_summary['Count'].values)]).reshape(-1, 1)
-    
+    custom_data_confidence = np.array([
+        {'confidence': conf * 100, 'count': count}
+        for conf, count in zip(df_birds_summary['Conf'].values, df_birds_summary['Count'].values)
+    ]).reshape(-1, 1)
+
     # In HTML string:
     html_str = f"""
     <style>.modebar-container {{ display: none !important; }}</style>
@@ -259,27 +262,27 @@ def create_plotly_heatmap(df_birds, now):
             )
         )}
     </div>
-    
+
     <script>
         // Store the serialized annotations from Python
         var allAnnotations = {annotations_json};
-    
+
         var plot = document.getElementsByClassName('plotly-graph-div')[0];
         var originalData = JSON.parse(JSON.stringify(plot.data));  // Deep copy of original data
-    
+
         function applyFilter() {{
             var searchTerm = document.getElementById('birdSearch').value.toLowerCase();
             var sortOption = document.getElementById('sortOptions').value;
             var indicesToShow = [];
             var speciesList = originalData[0].y;
-    
+
             // Filter species list based on search term
             speciesList.forEach(function(species, index) {{
                 if (species.toLowerCase().includes(searchTerm)) {{
                     indicesToShow.push(index);
                 }}
             }});
-    
+
             // Sort indices based on selected sort option
             if (sortOption === 'confidence') {{
                 indicesToShow.sort(function(a, b) {{
@@ -294,7 +297,7 @@ def create_plotly_heatmap(df_birds, now):
                     return originalData[0].customdata[b][0].count - originalData[0].customdata[a][0].count;
                 }});
             }}
-    
+
             // Prepare new data based on sorted and filtered indices
             var newData = [];
             originalData.forEach(function(trace) {{
@@ -311,18 +314,18 @@ def create_plotly_heatmap(df_birds, now):
                 }}
                 newData.push(newTrace);
             }});
-    
+
             // Filter annotations based on visible species
             var filteredAnnotations = allAnnotations.filter(function(annotation) {{
                 var species = annotation.y.toLowerCase();
                 return species.includes(searchTerm);
             }});
-    
+
             // Update the plot with new data and annotations
             Plotly.react(plot, newData, plot.layout);
             Plotly.relayout(plot, {{ annotations: filteredAnnotations }});
         }}
-    
+
         document.getElementById('filterButton').addEventListener('click', applyFilter);
         document.getElementById('birdSearch').addEventListener('keyup', function(event) {{
             if (event.key === 'Enter') {{
@@ -330,7 +333,7 @@ def create_plotly_heatmap(df_birds, now):
             }}
         }});
         document.getElementById('sortOptions').addEventListener('change', applyFilter);
-    
+
         plot.on('plotly_click', function(data) {{
             if (data.points && data.points[0] && data.points[0].y) {{
                 var species = data.points[0].y.replace(/ /g, '+');
