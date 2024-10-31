@@ -2,6 +2,7 @@
 import os
 import pandas as pd
 import plotly.graph_objects as go
+import json
 from plotly.subplots import make_subplots
 import numpy as np
 from utils.helpers import get_settings
@@ -156,6 +157,7 @@ def create_plotly_heatmap(df_birds, now):
     add_annotations(text_hourly, text_color_hourly,
                     col=3, species_list=species_list, all_hours=ALL_HOURS, annotations=annotations)
     fig.update_layout(annotations=annotations)
+    annotations_json = json.dumps(annotations)
 
     fig.update_layout(
         title=dict(
@@ -221,30 +223,90 @@ def create_plotly_heatmap(df_birds, now):
         + "</div>"
     )
 
-    html_str = (
-        "<style>.modebar-container { display: none !important; }</style>"
-        + html_str +
-        "<script>"
-        "var plot = document.getElementsByClassName('plotly-graph-div')[0];"
-        "plot.on('plotly_click', function(data){"
-        "    var species = data.points[0].y.replace(/ /g, '+');"
-        "    var url = '/views.php?view=Recordings&species=' + species;"
-        "    window.location.href = url;"
-        "});"
-        "function makeYAxisLabelsClickable() {"
-        "    document.querySelectorAll('.yaxislayer-above .ytick text').forEach(function(label) {"
-        "        label.style.cursor = 'pointer';"
-        "        label.addEventListener('click', function() {"
-        "            var species = label.textContent.replace(/ /g, '+');"
-        "            var url = '/views.php?view=Recordings&species=' + species;"
-        "            window.location.href = url;"
-        "        });"
-        "    });"
-        "}"
-        "makeYAxisLabelsClickable();"
-        "plot.on('plotly_afterplot', makeYAxisLabelsClickable);"
-        "</script>"
-    )
+    html_str = f"""
+    <style>.modebar-container {{ display: none !important; }}</style>
+    <div class='chart-container' style='position: relative; width: 80%; margin: 0 auto;'>
+        <div style='position: absolute; top: 10px; left: 10px; z-index: 10;'>
+            <input type='text' id='birdSearch' placeholder='Search...'
+            style='padding: 5px; font-size: 14px; background-color: rgba(255, 255, 255, 0.5); color: #333; border: none;
+            border-radius: 3px; width: 150px;' />
+            <button id='filterButton' style='margin-left: 5px; padding: 5px; font-size: 14px; background-color: rgba(255, 255, 255, 0.5);
+            color: #333; border: none; border-radius: 3px;'>OK</button>
+        </div>
+        {fig.to_html(
+            include_plotlyjs='cdn',
+            full_html=False,
+            default_height='80%',
+            default_width='100%',
+            config=dict(
+                scrollZoom=False,
+                doubleClick=False,
+                displaylogo=False,
+                displayModeBar=False,
+                modeBarButtonsToRemove=[
+                    'zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d', 'resetScale2d'
+                ]
+            )
+        )}
+    </div>
+
+    <script>
+        // Store the serialized annotations from Python
+        var allAnnotations = {annotations_json};
+
+        var plot = document.getElementsByClassName('plotly-graph-div')[0];
+        var originalData = JSON.parse(JSON.stringify(plot.data));  // Deep copy of original data
+
+        function applyFilter() {{
+            var searchTerm = document.getElementById('birdSearch').value.toLowerCase();
+            var indicesToShow = [];
+            var speciesList = originalData[0].y;
+            speciesList.forEach(function(species, index) {{
+                if (species.toLowerCase().includes(searchTerm)) {{
+                    indicesToShow.push(index);
+                }}
+            }});
+            var newData = [];
+            originalData.forEach(function(trace) {{
+                var newTrace = JSON.parse(JSON.stringify(trace));
+                if (trace.type === 'heatmap') {{
+                    newTrace.y = indicesToShow.map(i => speciesList[i]);
+                    newTrace.z = indicesToShow.map(i => trace.z[i]);
+                    if (trace.customdata) {{
+                        newTrace.customdata = indicesToShow.map(i => trace.customdata[i]);
+                    }}
+                    if (trace.text) {{
+                        newTrace.text = indicesToShow.map(i => trace.text[i]);
+                    }}
+                }}
+                newData.push(newTrace);
+            }});
+            // Filter annotations based on visible species
+            var filteredAnnotations = allAnnotations.filter(function(annotation) {{
+                var species = annotation.y.toLowerCase();
+                return species.includes(searchTerm);
+            }});
+            // Update the plot with new data and annotations
+            Plotly.react(plot, newData, plot.layout);
+            Plotly.relayout(plot, {{ annotations: filteredAnnotations }});
+        }}
+
+        document.getElementById('filterButton').addEventListener('click', applyFilter);
+        document.getElementById('birdSearch').addEventListener('keyup', function(event) {{
+            if (event.key === 'Enter') {{
+                applyFilter();
+            }}
+        }});
+
+        plot.on('plotly_click', function(data) {{
+            if (data.points && data.points[0] && data.points[0].y) {{
+                var species = data.points[0].y.replace(/ /g, '+');
+                var url = '/views.php?view=Recordings&species=' + species;
+                window.location.href = url;
+            }}
+        }});
+    </script>
+    """
 
     output_dir = os.path.expanduser('~/BirdSongs/Extracted/Charts/')
     os.makedirs(output_dir, exist_ok=True)
