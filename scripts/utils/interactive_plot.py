@@ -232,7 +232,7 @@ def create_plotly_heatmap(df_birds, now):
     # In HTML string:
     html_str = f"""
     <style>.modebar-container {{ display: none !important; }}</style>
-    <div class='chart-container' style='position: relative; width: 80%; margin: 0 auto;'>
+    <div class='chart-container' style='position: relative; max-width: 1000px; width: 98%; margin: 0 auto;'>
         <div style='position: absolute; bottom: 10px; left: 10px; z-index: 10;'>
             <select id='sortOptions' style='margin-left: 5px; padding: 5px; font-size: 14px; background-color: rgba(255, 255, 255, 0.5);
             color: #333; border: none; border-radius: 3px;'>
