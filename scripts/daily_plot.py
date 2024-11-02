@@ -120,9 +120,8 @@ def create_plot(df_plt_today, now, is_top=None):
 
     # Generate confidence plot
     df_confmax = (confmax * 100).to_frame(name='')
-    plot = sns.heatmap(df_confmax, annot=df_confmax.map(lambda x: f"{x:.0f} %"),
-                       annot_kws={"fontsize": 7}, fmt="", cmap=pal, square=False,
-                       cbar=False, linewidths=0.5, linecolor='Grey', ax=axs[0])
+    plot = sns.heatmap(df_confmax, annot=df_confmax.map(lambda x: f"{x:.0f} %"), annot_kws={"fontsize": 7},
+                        fmt="", cmap=pal, square=False, cbar=False, ax=axs[0])
 
     # Try plot grid lines between bars - problem at the moment plots grid lines on bars - want between bars
     yticklabels = ['\n'.join(textwrap.wrap(ticklabel.get_text(), wrap_width(ticklabel.get_text()))) for ticklabel in plot.get_yticklabels()]
@@ -142,6 +141,7 @@ def create_plot(df_plt_today, now, is_top=None):
     show_values_on_bars(axs[1], confmax)
 
     plot.set_yticklabels([])
+    plot.set_yticks([])
     plot.set(ylabel=None)
     plot.set(xlabel="Detections")
 
