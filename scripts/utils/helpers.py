@@ -42,9 +42,10 @@ def get_settings(settings_path='/etc/birdnet/birdnet.conf', force_reload=False):
 
 
 class Detection:
-    def __init__(self, start_time, stop_time, species, confidence):
+    def __init__(self, file_date, start_time, stop_time, species, confidence):
         self.start = float(start_time)
         self.stop = float(stop_time)
+        self.datetime = file_date + datetime.timedelta(seconds=self.start)
         self.confidence = round(float(confidence), 4)
         self.confidence_pct = round(self.confidence * 100)
         self.species = species
@@ -52,6 +53,26 @@ class Detection:
         self.common_name = species.split('_')[1]
         self.common_name_safe = self.common_name.replace("'", "").replace(" ", "_")
         self.file_name_extr = None
+
+    @property
+    def date(self):
+        current_date = self.datetime.strftime("%Y-%m-%d")
+        return current_date
+
+    @property
+    def time(self):
+        current_time = self.datetime.strftime("%H:%M:%S")
+        return current_time
+
+    @property
+    def iso8601(self):
+        current_iso8601 = self.file_date.astimezone(get_localzone()).isoformat()
+        return current_iso8601
+
+    @property
+    def week(self):
+        week = self.datetime.isocalendar()[1]
+        return week
 
 
 class ParseFileName:
@@ -65,16 +86,6 @@ class ParseFileName:
 
         ident_match = re.search("RTSP_[0-9]+-", file_name)
         self.RTSP_id = ident_match.group() if ident_match is not None else ""
-
-    @property
-    def date(self):
-        current_date = self.file_date.strftime("%Y-%m-%d")
-        return current_date
-
-    @property
-    def time(self):
-        current_time = self.file_date.strftime("%H:%M:%S")
-        return current_time
 
     @property
     def iso8601(self):
