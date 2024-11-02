@@ -117,14 +117,14 @@ def create_plot(df_plt_today, now, is_top=None):
         colors = plt.cm.Reds(norm(confmax)).tolist()
         plot_type = "Bottom"
         name = "Combo2"
-    
+
     # Generate dictionary
     species_colors = dict(zip(confmax.index, colors))
 
-	# Generate confidence plot
+    # Generate confidence plot
     df_confmax = (confmax * 100).to_frame(name='')
     plot = sns.heatmap(df_confmax, annot=df_confmax.map(lambda x: f"{x:.0f} %"), annot_kws={"fontsize": 7},
-                        fmt="", cmap=pal, square=False, cbar=False, linewidths=0.5, linecolor='Grey', ax=axs[0], yticklabels=True)
+                        fmt="", cmap=pal, square=False, cbar=False, linewidths=0.5, linecolor='Grey', ax=axs[0])
     plot.set_ylabel("")
     plot.set_xlabel("Confidence", labelpad=15)
 
@@ -143,7 +143,7 @@ def create_plot(df_plt_today, now, is_top=None):
     plot.set_yticklabels([])
     plot.set(ylabel=None)
     plot.set(xlabel="Detections")
-   
+
     # Generate crosstab matrix for heatmap plot
     heat = pd.crosstab(df_plt_selection_today['Com_Name'], df_plt_selection_today['Hour of Day'])
 
@@ -180,7 +180,7 @@ def create_plot(df_plt_today, now, is_top=None):
     # Set combined plot layout and titles
     y = 1 - 8 / (height * 100)
     plot_suptitle = f"Hourly overview updated at {now.strftime('%Y-%m-%d %H:%M')}\n"
-    plot_suptitle += f"{readings} species, {df_plt_today.shape[0]} detections today"
+    plot_suptitle += f"{plot_type} {readings} species, {df_plt_today.shape[0]} detections today"
     plt.suptitle(plot_suptitle, y=y)
     f.tight_layout()
     top = 1 - 50 / (height * 100)
