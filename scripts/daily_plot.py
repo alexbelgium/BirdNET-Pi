@@ -118,28 +118,28 @@ def create_plot(df_plt_today, now, is_top=None):
         plot_type = "Bottom"
         name = "Combo2"
 
-    # Generate dictionary
-    species_colors = dict(zip(confmax.index, colors))
-
     # Generate confidence plot
     df_confmax = (confmax * 100).to_frame(name='')
     plot = sns.heatmap(df_confmax, annot=df_confmax.map(lambda x: f"{x:.0f} %"), annot_kws={"fontsize": 7},
                         fmt="", cmap=pal, square=False, cbar=False, linewidths=0.5, linecolor='Grey', ax=axs[0])
-    plot.set_ylabel("")
+
+    # Try plot grid lines between bars - problem at the moment plots grid lines on bars - want between bars
+    yticklabels = ['\n'.join(textwrap.wrap(ticklabel.get_text(), wrap_width(ticklabel.get_text()))) for ticklabel in plot.get_yticklabels()]
+
+# Next two lines avoid a UserWarning on set_ticklabels() requesting a fixed number of ticks
+    yticks = plot.get_yticks()
+    plot.set_yticks(yticks)
+    plot.set_yticklabels(yticklabels, fontsize=10)
+    plot.set(ylabel=None)
     plot.set_xlabel("Confidence", labelpad=15)
 
     # Generate frequency plot
     plot = sns.countplot(y='Com_Name', hue='Com_Name', legend=False, data=df_plt_selection_today,
-                         palette=species_colors, order=freq_order, ax=axs[1], edgecolor='lightgrey')
+                         palette=colors, order=freq_order, ax=axs[1], edgecolor='lightgrey')
 
-    # Prints Counts on bars
-    show_values_on_bars(axs[1], confmax)
+    # Prints Max Confidence on bars
+    show_values_on_bars(axs[0], confmax)
 
-    # Try plot grid lines between bars - problem at the moment plots grid lines on bars - want between bars
-    yticklabels = ['\n'.join(textwrap.wrap(ticklabel.get_text(), wrap_width(ticklabel.get_text()))) for ticklabel in plot.get_yticklabels()]
-    # Next two lines avoid a UserWarning on set_ticklabels() requesting a fixed number of ticks
-    yticks = plot.get_yticks()
-    plot.set_yticks(yticks)
     plot.set_yticklabels([])
     plot.set(ylabel=None)
     plot.set(xlabel="Detections")
@@ -179,12 +179,13 @@ def create_plot(df_plt_today, now, is_top=None):
     plot.set(xlabel="Hour of Day")
     # Set combined plot layout and titles
     y = 1 - 8 / (height * 100)
-    plot_suptitle = f"Hourly overview updated at {now.strftime('%Y-%m-%d %H:%M')}\n"
-    plot_suptitle += f"{plot_type} {readings} species, {df_plt_today.shape[0]} detections today"
+    date = now.strftime('%Y-%m-%d %H:%M')
+    plot_suptitle = f"Hourly overview for {date[:10]}\n"
+    plot_suptitle += f"{plot_type} {readings} species, {df_plt_today.shape[0]} detections today, updated {date[11:]}"
     plt.suptitle(plot_suptitle, y=y)
     f.tight_layout()
     top = 1 - 50 / (height * 100)
-    f.subplots_adjust(left=0.2, right=0.9, top=top, wspace=0)
+    f.subplots_adjust(left=0.125, right=0.9, top=top, wspace=0)
 
     # Save combined plot
     save_name = os.path.expanduser(f"~/BirdSongs/Extracted/Charts/{name}-{now.strftime('%Y-%m-%d')}.png")
