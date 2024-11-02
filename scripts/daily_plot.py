@@ -138,8 +138,8 @@ def create_plot(df_plt_today, now, is_top=None):
     plot = sns.countplot(y='Com_Name', hue='Com_Name', legend=False, data=df_plt_selection_today,
                          palette=colors, order=freq_order, ax=axs[1], edgecolor='lightgrey')
 
-    # Prints Max Confidence on bars
-    show_values_on_bars(axs[0], confmax)
+    # Prints Count on bars
+    show_values_on_bars(axs[1], confmax)
 
     plot.set_yticklabels([])
     plot.set(ylabel=None)
