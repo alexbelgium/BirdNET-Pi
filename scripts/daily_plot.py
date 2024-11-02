@@ -126,7 +126,7 @@ def create_plot(df_plt_today, now, is_top=None):
     # Try plot grid lines between bars - problem at the moment plots grid lines on bars - want between bars
     yticklabels = ['\n'.join(textwrap.wrap(ticklabel.get_text(), wrap_width(ticklabel.get_text()))) for ticklabel in plot.get_yticklabels()]
 
-# Next two lines avoid a UserWarning on set_ticklabels() requesting a fixed number of ticks
+    # Next two lines avoid a UserWarning on set_ticklabels() requesting a fixed number of ticks
     yticks = plot.get_yticks()
     plot.set_yticks(yticks)
     plot.set_yticklabels(yticklabels, fontsize=10)
