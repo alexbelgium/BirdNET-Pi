@@ -242,36 +242,38 @@ def predict(sample, sensitivity):
     return p_sorted[:human_cutoff]
 
 
-def calculate_snr(audio_signal, sample_rate=48000, bands=[(200, 500), (500, 1000), (1000, 8000)], percentile=20):
-    # Calculate the SNR by selecting the best frequency band and comparing it against a complementary noise band.
+def calculate_snr(audio_signal, sample_rate=48000, bands=[(250, 1000), (1000, 2000), (2000, 10000)], num_bins=5):
+    """
+    Calculate SNR by selecting the band with the highest modulation metric and calculating noise RMS in 1000-8000 Hz band.
+    """
+    # Define bandpass filter function
     def bandpass_filter(signal, low_freq, high_freq):
         sos = butter(4, [low_freq, high_freq], btype='bandpass', fs=sample_rate, output='sos')
         return sosfilt(sos, signal)
+    # Estimate modulation metric for a signal
     def estimate_modulation(signal):
         return np.std(signal) + np.max(np.abs(signal))
     # Normalize the audio signal
-    audio_signal = audio_signal / np.max(np.abs(audio_signal))
-    # 1. Select the best frequency band based on modulation
+    audio_signal = audio_signal / np.max(np.abs(audio_signal) + 1e-10)  # Add epsilon to avoid division by zero
+    # Calculate modulation metrics for each band and select the band with the highest modulation
     modulation_metrics = {}
     for band in bands:
         filtered_signal = bandpass_filter(audio_signal, band[0], band[1])
         modulation_metrics[band] = estimate_modulation(filtered_signal)
-    # Identify the band with the highest modulation
     best_band = max(modulation_metrics, key=modulation_metrics.get)
-    # 2. Choose a noise band different from the selected signal band
-    remaining_bands = [b for b in bands if b != best_band]
-    noise_band = remaining_bands[0] if remaining_bands else bands[-1]  # Fallback to any band if needed
-    # 3. Apply bandpass filters to both the selected signal band and the noise band
+    # Calculate signal power in the selected band
     filtered_signal = bandpass_filter(audio_signal, best_band[0], best_band[1])
-    filtered_noise = bandpass_filter(audio_signal, noise_band[0], noise_band[1])
-    # 4. Calculate power of the signal and noise
     signal_power = np.mean(filtered_signal ** 2)
-    quiet_threshold = np.percentile(np.abs(filtered_noise), percentile)
-    quiet_section_noise = filtered_noise[np.abs(filtered_noise) < quiet_threshold]
-    # Use fallback noise power if the quiet section is sparse
-    noise_power = np.mean(quiet_section_noise ** 2) if len(quiet_section_noise) > 0 else signal_power * 0.1
-    # 5. Compute SNR
-    snr = 10 * np.log10(signal_power / noise_power)
+    # Calculate noise RMS within the 1000-8000 Hz band
+    noise_band = (2000, 8000)
+    filtered_noise = bandpass_filter(audio_signal, noise_band[0], noise_band[1])
+    # Divide the filtered noise signal into bins and calculate RMS of each bin
+    bin_length = len(filtered_noise) // num_bins
+    rms_values = [np.sqrt(np.mean(filtered_noise[i * bin_length: (i + 1) * bin_length] ** 2)) for i in range(num_bins)]
+    # Use the minimum RMS value among the bins as the noise level
+    noise_rms = min(rms_values)
+    # Compute SNR in dB
+    snr = 10 * np.log10(signal_power / (noise_rms ** 2 + 1e-10))  # Add epsilon to avoid division by zero
     return round(snr, 6)
 
 
