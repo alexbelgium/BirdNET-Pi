@@ -89,7 +89,7 @@ def write_to_db(file: ParseFileName, detection: Detection):
                          conf['LATITUDE'], conf['LONGITUDE'], conf['CONFIDENCE'], str(file.week), conf['SENSITIVITY'],
                          conf['OVERLAP'], os.path.basename(detection.file_name_extr)))
             cur.execute("INSERT INTO additional VALUES (?, ?)",
-                        (os.path.basename(detection.file_name_extr), detection.snr)))
+                        (os.path.basename(detection.file_name_extr), detection.snr))
             # (Date, Time, Sci_Name, Com_Name, str(score),
             # Lat, Lon, Cutoff, Week, Sens,
             # Overlap, File_Name))
