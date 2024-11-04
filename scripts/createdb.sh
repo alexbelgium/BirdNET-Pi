@@ -19,8 +19,8 @@ CREATE INDEX "detections_Com_Name" ON "detections" ("Com_Name");
 CREATE INDEX "detections_Date_Time" ON "detections" ("Date" DESC, "Time" DESC);
 
 DROP TABLE IF EXISTS info;
-CREATE TABLE IF NOT EXISTS additional (
-  Filename VARCHAR(100) PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS info (
+  File_Name VARCHAR(100) NOT NULL,
   SNR FLOAT
 );
 EOF
