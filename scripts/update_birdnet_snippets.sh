@@ -198,6 +198,14 @@ if [ "$(grep -o "#birdnet" /etc/crontab | wc -l)" -lt 5 ]; then
   sed "s/\$USER/$USER/g" "$HOME"/BirdNET-Pi/templates/weekly_report.cron >> /etc/crontab
 fi
 
+# Create info table
+sqlite3 $HOME/BirdNET-Pi/scripts/birds.db << EOF
+CREATE TABLE IF NOT EXISTS info (
+  File_Name VARCHAR(100) NOT NULL,
+  SNR FLOAT
+);
+EOF
+
 # update snippets above
 
 systemctl daemon-reload
