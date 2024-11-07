@@ -444,7 +444,12 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
       if ($_GET['sort'] == "confidence") {
             $values[] = ' (' . round($results['MaxConfidence'] * 100) . '%)';
       } elseif ($_GET['sort'] == "occurrences") {
-            $values[] = ' (' . $results['Count'] . ')';
+	    $valuescount = $results['Count'];
+            if ($valuescount >= 1000) {
+                $values[] = ' (' . round($valuescount / 1000, 1) . 'k)';
+            } else {
+                $values[] = ' (' . $valuescount . ')';
+            }
       }
     }
 
@@ -486,7 +491,12 @@ while($results=$result->fetchArray(SQLITE3_ASSOC))
     if ($_GET['sort'] == "confidence") {
         $values[] = ' (' . round($results['MaxConfidence'] * 100) . '%)';
     } elseif ($_GET['sort'] == "occurrences") {
-        $values[] = ' (' . $results['Count'] . ')';
+	$valuescount = $results['Count'];
+        if ($valuescount >= 1000) {
+            $values[] = ' (' . round($valuescount / 1000, 1) . 'k)';
+        } else {
+            $values[] = ' (' . $valuescount . ')';
+        }
     }
   }
 }
