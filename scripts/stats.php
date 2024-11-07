@@ -103,7 +103,12 @@ if (get_included_files()[0] === __FILE__) {
     if ($_GET['sort'] == "confidence") {
         $values[] = ' (' . round($results['MAX(Confidence)'] * 100) . '%)';
     } elseif ($_GET['sort'] == "occurrences") {
-        $values[] = ' (' . $results['COUNT(*)'] . ')';
+        $valuescount = $results['COUNT(*)'];
+        if ($valuescount >= 1000) {
+            $values[] = ' (' . round($valuescount / 1000, 1) . 'k)';
+        } else {
+            $values[] = ' (' . $valuescount . ')';
+        }
     }
   }
 
