@@ -38,7 +38,7 @@ if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
   ensure_db_ok($statement);
   $result = $statement->execute();
 
-  $statement2 = $db->prepare('SELECT Date, Time, File_Name, Com_Name, COUNT(*), $values FROM detections GROUP BY Com_Name ORDER BY Com_Name ASC');
+  $statement2 = $db->prepare('SELECT Date, Time, File_Name, Com_Name, COUNT(*), MAX(Confidence) FROM detections GROUP BY Com_Name ORDER BY Com_Name ASC');
   ensure_db_ok($statement2);
   $result2 = $statement2->execute();
 }
