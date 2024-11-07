@@ -137,7 +137,7 @@ if(isset($_GET['bydate'])){
   session_start();
   $_SESSION['date'] = $date;
   if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
-    $statement = $db->prepare("SELECT DISTINCT(Com_Name) FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY COUNT(*) DESC");
+    $statement = $db->prepare("SELECT DISTINCT(Com_Name), COUNT(Com_Name) AS Count FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY COUNT(*) DESC");
   } elseif(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
     $statement = $db->prepare("SELECT Com_Name, Sci_Name, MAX(Confidence) as MaxConfidence FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY MaxConfidence DESC");
   } else {
@@ -150,7 +150,7 @@ if(isset($_GET['bydate'])){
   #By Species
 } elseif(isset($_GET['byspecies'])) {
   if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
-    $statement = $db->prepare('SELECT DISTINCT(Com_Name) FROM detections GROUP BY Com_Name ORDER BY COUNT(*) DESC');
+    $statement = $db->prepare('SELECT DISTINCT(Com_Name), COUNT(Com_Name) AS Count FROM detections GROUP BY Com_Name ORDER BY COUNT(*) DESC');
   } elseif(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
     $statement = $db->prepare('SELECT Com_Name, Sci_Name, MAX(Confidence) as MaxConfidence FROM detections GROUP BY Com_Name ORDER BY MaxConfidence DESC');
   } else {
@@ -436,13 +436,15 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
           #By Species
   } elseif($view == "byspecies") {
     $birds = array();
-    $confidence = array();
+    $values = array();
     while($results=$result->fetchArray(SQLITE3_ASSOC))
     {
       $name = $results['Com_Name'];
       $birds[] = $name;
       if ($_GET['sort'] == "confidence") {
-          $confidence[] = ' (' . round($results['MaxConfidence'] * 100) . '%)';
+            $values[] = ' (' . round($results['MaxConfidence'] * 100) . '%)';
+      } elseif ($_GET['sort'] == "occurrences") {
+            $values[] = ' (' . $results['Count'] . ')';
       }
     }
 
@@ -462,7 +464,7 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
         if ($index < count($birds)) {
           ?>
           <td class="spec">
-              <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index].$confidence[$index];?></button>
+              <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index].$values[$index];?></button>
           </td>
           <?php
         } else {
@@ -474,7 +476,7 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
     }
   } elseif($view == "date") {
     $birds = array();
-    $confidence = array();
+    $values = array();
 while($results=$result->fetchArray(SQLITE3_ASSOC))
 {
   $name = $results['Com_Name'];
@@ -482,7 +484,9 @@ while($results=$result->fetchArray(SQLITE3_ASSOC))
   if(realpath($home."/BirdSongs/Extracted/By_Date/".$date."/".str_replace(" ", "_", $dir_name)) !== false){
     $birds[] = $name;
     if ($_GET['sort'] == "confidence") {
-	    $confidence[] = ' (' . round($results['MaxConfidence'] * 100) . '%)';
+        $values[] = ' (' . round($results['MaxConfidence'] * 100) . '%)';
+    } elseif ($_GET['sort'] == "occurrences") {
+        $values[] = ' (' . $results['Count'] . ')';
     }
   }
 }
@@ -503,7 +507,7 @@ for ($row = 0; $row < $num_rows; $row++) {
     if ($index < count($birds)) {
       ?>
       <td class="spec">
-          <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index].$confidence[$index];?></button>
+          <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index].$values[$index];?></button>
       </td>
       <?php
     } else {
@@ -598,7 +602,7 @@ echo "<table>
     $sciname = preg_replace('/ /', '_', $results['Sci_Name']);
     $sci_name = $results['Sci_Name'];
     $time = $results['Time'];
-    $confidence = round((float)round($results['Confidence'],2) * 100 ) . '%';
+    $values = round((float)round($results['Confidence'],2) * 100 ) . '%';
     $filename_formatted = $date."/".$comname."/".$results['File_Name'];
 
     // file was deleted by disk check, no need to show the detection in recordings
@@ -644,14 +648,14 @@ echo "<table>
 <img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Delete Detection'> 
 <img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
 <img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
-<img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\"> $date $time<br>$confidence<br>
+<img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\"> $date $time<br>$values<br>
 
         ".$imageelem."
         </td>
         </tr>";
     } else {
       echo "<tr>
-  <td class=\"relative\">$date $time<br>$confidence
+  <td class=\"relative\">$date $time<br>$values
 <img style='cursor:pointer' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Delete Detection'><br>
         ".$imageelem."
         </td>
@@ -686,7 +690,7 @@ echo "<table>
         $sciname = preg_replace('/ /', '_', $results['Sci_Name']);
         $sci_name = $results['Sci_Name'];
         $time = $results['Time'];
-        $confidence = round((float)round($results['Confidence'],2) * 100 ) . '%';
+        $values = round((float)round($results['Confidence'],2) * 100 ) . '%';
         $filename_formatted = $date."/".$comname."/".$results['File_Name'];
 
         // add disk_check_exclude.txt lines into an array for grepping
@@ -725,13 +729,13 @@ echo "<table>
 <img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'> 
 <img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
 <img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
-<img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\">$date $time<br>$confidence<br>
+<img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\">$date $time<br>$values<br>
 
 <video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster=\"$filename_png\" preload=\"none\" title=\"$filename\"><source src=\"$filename\"></video></td>
             </tr>";
         } else {
           echo "<tr>
-      <td class=\"relative\">$date $time<br>$confidence
+      <td class=\"relative\">$date $time<br>$values
 <img style='cursor:pointer' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'><br>
             <video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster=\"$filename_png\" preload=\"none\" title=\"$filename\"><source src=\"$filename\"></video></td>
             </tr>";
