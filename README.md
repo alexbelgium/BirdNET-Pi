@@ -4,6 +4,7 @@ Additional PR vs Nachtzuster, used for HA addon
 - SNR : https://github.com/alexbelgium/BirdNET-Pi/tree/SNR
 - New species on top : https://github.com/alexbelgium/BirdNET-Pi/tree/new_species
 - Interactive graph : https://github.com/alexbelgium/BirdNET-Pi/tree/dynamic_plots
+- Explicit values when sorting by count
 
 To do :
 - observation.org upload
