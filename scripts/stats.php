@@ -38,7 +38,7 @@ if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
   ensure_db_ok($statement);
   $result = $statement->execute();
 
-  $statement2 = $db->prepare('SELECT Date, Time, File_Name, Com_Name, COUNT(*), MAX(Confidence) FROM detections GROUP BY Com_Name ORDER BY Com_Name ASC');
+  $statement2 = $db->prepare('SELECT Date, Time, File_Name, Com_Name, COUNT(*), $values FROM detections GROUP BY Com_Name ORDER BY Com_Name ASC');
   ensure_db_ok($statement2);
   $result2 = $statement2->execute();
 }
@@ -92,7 +92,7 @@ if (get_included_files()[0] === __FILE__) {
 <table>
   <?php
   $birds = array();
-  $confidence = array();
+  $values = array();
 
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
   {
@@ -101,7 +101,9 @@ if (get_included_files()[0] === __FILE__) {
     $filename = "/By_Date/".$results['Date']."/".$comname."/".$results['File_Name'];
     $birds[] = $results['Com_Name'];
     if ($_GET['sort'] == "confidence") {
-        $confidence[] = ' (' . round($results['MAX(Confidence)'] * 100) . '%)';
+        $values[] = ' (' . round($results['MAX(Confidence)'] * 100) . '%)';
+    } elseif ($_GET['sort'] == "occurrences") {
+        $values[] = ' (' . $results['COUNT(*)'] . ')';
     }
   }
 
@@ -121,7 +123,7 @@ if (get_included_files()[0] === __FILE__) {
       if ($index < count($birds)) {
         ?>
         <td>
-            <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index].$confidence[$index];?></button>
+            <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index].$values[$index];?></button>
         </td>
         <?php
       } else {
