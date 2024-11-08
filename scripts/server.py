@@ -254,8 +254,7 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=8300
         return sosfilt(sos, signal)
     # Refined modulation metric to emphasize fluctuation relative to mean amplitude
     def estimate_modulation(signal):
-        mean_amplitude = np.mean(np.abs(signal))
-        return np.std(signal) / (mean_amplitude + 1e-6)
+        return np.std(signal) + np.max(np.abs(signal))
     # Normalize the audio signal
     audio_signal = audio_signal / (np.max(np.abs(audio_signal)) + 1e-10)
     # Generate frequency bands from start_freq to end_freq with bin_size intervals
