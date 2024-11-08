@@ -242,9 +242,11 @@ def predict(sample, sensitivity):
     return p_sorted[:human_cutoff]
 
 
-def calculate_snr(audio_signal, sample_rate=48000, bands=[(250, 1000), (1000, 2000), (2000, 10000)], num_bins=5):
+def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=8300, bin_size=2000):
     """
-    Calculate SNR by selecting the band with the highest modulation metric and calculating noise RMS in 1000-8000 Hz band.
+    Calculate SNR by selecting the frequency band with the highest modulation metric.
+    Frequency bands are generated in 2000 Hz bins between start_freq and end_freq.
+    Returns only the SNR value in dB.
     """
     # Define bandpass filter function
     def bandpass_filter(signal, low_freq, high_freq):
@@ -254,26 +256,21 @@ def calculate_snr(audio_signal, sample_rate=48000, bands=[(250, 1000), (1000, 20
     def estimate_modulation(signal):
         return np.std(signal) + np.max(np.abs(signal))
     # Normalize the audio signal
-    audio_signal = audio_signal / np.max(np.abs(audio_signal) + 1e-10)  # Add epsilon to avoid division by zero
+    audio_signal = audio_signal / (np.max(np.abs(audio_signal)) + 1e-10)  # Avoid division by zero
+    # Generate frequency bands from start_freq to end_freq with bin_size intervals
+    bands = [(freq, min(freq + bin_size, end_freq)) for freq in range(start_freq, end_freq, bin_size)]
     # Calculate modulation metrics for each band and select the band with the highest modulation
     modulation_metrics = {}
     for band in bands:
         filtered_signal = bandpass_filter(audio_signal, band[0], band[1])
         modulation_metrics[band] = estimate_modulation(filtered_signal)
     best_band = max(modulation_metrics, key=modulation_metrics.get)
-    # Calculate signal power in the selected band
+    # Calculate peak and background RMS within the selected band
     filtered_signal = bandpass_filter(audio_signal, best_band[0], best_band[1])
-    signal_power = np.mean(filtered_signal ** 2)
-    # Calculate noise RMS within the 1000-8000 Hz band
-    noise_band = (2000, 8000)
-    filtered_noise = bandpass_filter(audio_signal, noise_band[0], noise_band[1])
-    # Divide the filtered noise signal into bins and calculate RMS of each bin
-    bin_length = len(filtered_noise) // num_bins
-    rms_values = [np.sqrt(np.mean(filtered_noise[i * bin_length: (i + 1) * bin_length] ** 2)) for i in range(num_bins)]
-    # Use the minimum RMS value among the bins as the noise level
-    noise_rms = min(rms_values)
-    # Compute SNR in dB
-    snr = 10 * np.log10(signal_power / (noise_rms ** 2 + 1e-10))  # Add epsilon to avoid division by zero
+    peak_signal = np.max(np.abs(filtered_signal))
+    background_rms = np.sqrt(np.mean(filtered_signal ** 2))
+    # Compute and return SNR in dB
+    snr = 20 * np.log10((peak_signal - background_rms) / (background_rms + 1e-10))
     return round(snr, 6)
 
 
