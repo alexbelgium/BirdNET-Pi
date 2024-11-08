@@ -246,7 +246,7 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=8300
     """
     Calculate SNR by selecting the frequency band with the highest modulation metric.
     Frequency bands are generated in 2000 Hz bins between start_freq and end_freq.
-    Returns only the SNR value in dB.
+    Returns the SNR value rounded to 0 digits.
     """
     # Define bandpass filter function
     def bandpass_filter(signal, low_freq, high_freq):
@@ -271,7 +271,10 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=8300
     background_rms = np.sqrt(np.mean(filtered_signal ** 2))
     # Compute and return SNR in dB
     snr = 20 * np.log10((peak_signal - background_rms) / (background_rms + 1e-10))
-    return round(snr, 6)
+    #return round(snr, 6)
+    snr_value = round(snr)
+    band_used = f"{best_band[0]}-{best_band[1]}"
+    return f"{snr_value}({band_used})"
 
 
 def analyzeAudioData(chunks, lat, lon, week, sens, overlap,):
