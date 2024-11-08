@@ -169,9 +169,10 @@ def create_plot(df_plt_today, now, is_top=None):
     plot.set(xlabel="Hour of Day")
     # Set combined plot layout and titles
     y = 1 - 8 / (height * 100)
-    plt.suptitle(f"Hourly overview for {now.strftime('%Y-%m-%d')}\n{plot_type} {readings} species, {df_plt_today.shape[0]} detections today, updated {now.strftime('%H:%M')}", y=y)
+    plt.suptitle(f"Hourly overview for {now.strftime('%Y-%m-%d')}\n{plot_type} {readings} species, "
+                 f"{df_plt_today.shape[0]} detections today, updated {now.strftime('%H:%M')}", y=y)
     f.tight_layout()
-    top = 1 - 40 / (height * 100)
+    top = 1 - 50 / (height * 100)
     f.subplots_adjust(left=0.125, right=0.9, top=top, wspace=0)
 
     # Save combined plot
