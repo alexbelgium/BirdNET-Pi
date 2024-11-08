@@ -44,7 +44,7 @@ def show_values_on_bars(ax, label):
         # value = '{:.0%}'.format(label.iloc[i])
         # Species Count Total
         value = '{:n}'.format(p.get_width()) + ' (' + '{:.0%}'.format(label.iloc[i]) + ')'
-        bbox = {'facecolor': 'lightgrey', 'edgecolor': 'none', 'pad': 1.0, 'alpha': 0.7}
+        bbox = {'facecolor': 'lightgrey', 'edgecolor': 'none', 'pad': 1.0, 'alpha': 0.9}
         if conf['COLOR_SCHEME'] == "dark":
             color = 'black'
         else:
