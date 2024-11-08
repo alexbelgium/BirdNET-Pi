@@ -252,11 +252,12 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=8300
     def bandpass_filter(signal, low_freq, high_freq):
         sos = butter(4, [low_freq, high_freq], btype='bandpass', fs=sample_rate, output='sos')
         return sosfilt(sos, signal)
-    # Estimate modulation metric for a signal
+    # Refined modulation metric to emphasize fluctuation relative to mean amplitude
     def estimate_modulation(signal):
-        return np.std(signal) + np.max(np.abs(signal))
+        mean_amplitude = np.mean(np.abs(signal))
+        return np.std(signal) / (mean_amplitude + 1e-6)
     # Normalize the audio signal
-    audio_signal = audio_signal / (np.max(np.abs(audio_signal)) + 1e-10)  # Avoid division by zero
+    audio_signal = audio_signal / (np.max(np.abs(audio_signal)) + 1e-10)
     # Generate frequency bands from start_freq to end_freq with bin_size intervals
     bands = [(freq, min(freq + bin_size, end_freq)) for freq in range(start_freq, end_freq, bin_size)]
     # Calculate modulation metrics for each band and select the band with the highest modulation
@@ -264,6 +265,7 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=8300
     for band in bands:
         filtered_signal = bandpass_filter(audio_signal, band[0], band[1])
         modulation_metrics[band] = estimate_modulation(filtered_signal)
+    # Select band with highest modulation
     best_band = max(modulation_metrics, key=modulation_metrics.get)
     # Calculate peak and background RMS within the selected band
     filtered_signal = bandpass_filter(audio_signal, best_band[0], best_band[1])
@@ -271,10 +273,9 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=8300
     background_rms = np.sqrt(np.mean(filtered_signal ** 2))
     # Compute and return SNR in dB
     snr = 20 * np.log10((peak_signal - background_rms) / (background_rms + 1e-10))
-    #return round(snr, 6)
     snr_value = round(snr)
     band_used = f"{best_band[0]}-{best_band[1]}"
-    return f"{snr_value}({band_used})"
+    return f"{snr_value} ({band_used})"
 
 
 def analyzeAudioData(chunks, lat, lon, week, sens, overlap,):
