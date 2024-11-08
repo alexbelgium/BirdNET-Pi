@@ -14,7 +14,6 @@ from matplotlib import rcParams
 from matplotlib.colors import LogNorm
 
 from utils.helpers import DB_PATH, get_settings
-from utils.interactive_plot import create_plotly_heatmap
 
 
 def get_data(now=None):
@@ -39,13 +38,13 @@ def show_values_on_bars(ax, label):
     conf = get_settings()
 
     for i, p in enumerate(ax.patches):
-        x = p.get_x() + p.get_width() * 0.9
+        x = p.get_x() + p.get_width() * 0.7 + 100
         y = p.get_y() + p.get_height() / 2
         # Species confidence
         # value = '{:.0%}'.format(label.iloc[i])
         # Species Count Total
-        value = '{:n}'.format(p.get_width())
-        bbox = {'facecolor': 'lightgrey', 'edgecolor': 'none', 'pad': 1.0}
+        value = '{:n}'.format(p.get_width()) + ' (' + '{:.0%}'.format(label.iloc[i]) + ')'
+        bbox = {'facecolor': 'lightgrey', 'edgecolor': 'none', 'pad': 1.0, 'alpha': 0.7}
         if conf['COLOR_SCHEME'] == "dark":
             color = 'black'
         else:
@@ -87,7 +86,7 @@ def create_plot(df_plt_today, now, is_top=None):
     else:
         facecolor = 'none'
 
-    f, axs = plt.subplots(1, 3, figsize=(10, height), gridspec_kw=dict(width_ratios=[0.5, 2, 7]), facecolor=facecolor)
+    f, axs = plt.subplots(1, 2, figsize=(10, height), gridspec_kw=dict(width_ratios=[3, 6]), facecolor=facecolor)
 
     # generate y-axis order for all figures based on frequency
     freq_order = df_plt_selection_today['Com_Name'].value_counts().index
@@ -119,30 +118,19 @@ def create_plot(df_plt_today, now, is_top=None):
         plot_type = "Bottom"
         name = "Combo2"
 
-    # Generate confidence plot
-    df_confmax = (confmax * 100).to_frame(name='')
-    plot = sns.heatmap(df_confmax, annot=df_confmax.map(lambda x: f"{x:.0f} %"), annot_kws={"fontsize": 7}, fmt="",
-                       cmap=pal, square=False, cbar=False, ax=axs[0])
+    # Generate frequency plot
+    plot = sns.countplot(y='Com_Name', hue='Com_Name', legend=False, data=df_plt_selection_today,
+                         palette=colors, order=freq_order, ax=axs[0], edgecolor='lightgrey')
+
+    # Prints Max Confidence on bars
+    show_values_on_bars(axs[0], confmax)
 
     # Try plot grid lines between bars - problem at the moment plots grid lines on bars - want between bars
     yticklabels = ['\n'.join(textwrap.wrap(ticklabel.get_text(), wrap_width(ticklabel.get_text()))) for ticklabel in plot.get_yticklabels()]
-
     # Next two lines avoid a UserWarning on set_ticklabels() requesting a fixed number of ticks
     yticks = plot.get_yticks()
     plot.set_yticks(yticks)
     plot.set_yticklabels(yticklabels, fontsize=10)
-    plot.set(ylabel=None)
-    plot.set_xlabel("Confidence", labelpad=15)
-
-    # Generate frequency plot
-    plot = sns.countplot(y='Com_Name', hue='Com_Name', legend=False, data=df_plt_selection_today,
-                         palette=colors, order=freq_order, ax=axs[1], edgecolor='lightgrey')
-
-    # Prints Count on bars
-    show_values_on_bars(axs[1], confmax)
-
-    plot.set_yticklabels([])
-    plot.set_yticks([])
     plot.set(ylabel=None)
     plot.set(xlabel="Detections")
 
@@ -161,7 +149,7 @@ def create_plot(df_plt_today, now, is_top=None):
 
     # Generatie heatmap plot
     plot = sns.heatmap(heat, norm=LogNorm(),  annot=True,  annot_kws={"fontsize": 7}, fmt="g", cmap=pal, square=False,
-                       cbar=False, linewidths=0.5, linecolor="Grey", ax=axs[2], yticklabels=False)
+                       cbar=False, linewidths=0.5, linecolor="Grey", ax=axs[1], yticklabels=False)
 
     # Set color and weight of tick label for current hour
     for label in plot.get_xticklabels():
@@ -181,12 +169,9 @@ def create_plot(df_plt_today, now, is_top=None):
     plot.set(xlabel="Hour of Day")
     # Set combined plot layout and titles
     y = 1 - 8 / (height * 100)
-    date = now.strftime('%Y-%m-%d %H:%M')
-    plot_suptitle = f"Hourly overview for {date[:10]}\n"
-    plot_suptitle += f"{plot_type} {readings} species, {df_plt_today.shape[0]} detections today, updated {date[11:]}"
-    plt.suptitle(plot_suptitle, y=y)
+    plt.suptitle(f"{plot_type} {readings} Last Updated: {now.strftime('%Y-%m-%d %H:%M')}", y=y)
     f.tight_layout()
-    top = 1 - 50 / (height * 100)
+    top = 1 - 40 / (height * 100)
     f.subplots_adjust(left=0.125, right=0.9, top=top, wspace=0)
 
     # Save combined plot
@@ -229,10 +214,6 @@ def main(daemon, sleep_m):
             data, time = get_data(now)
         if not data.empty:
             create_plot(data, time)
-            try:
-                create_plotly_heatmap(data, time)
-            except Exception as e:
-                print(f"Failed to create interactive heatmap: {e}")
         else:
             print('empty dataset')
         if daemon:
