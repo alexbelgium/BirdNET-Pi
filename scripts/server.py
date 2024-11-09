@@ -268,7 +268,7 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=1030
     for band in bands:
         filtered_signal = bandpass_filter(audio_signal, band[0], band[1])
         frequency_weight = band[0] / band[1]
-        modulation_metrics[f"{band[0]}-{band[1]}"] = estimate_modulation(filtered_signal, frequency_weight)
+        modulation_metrics[(band[0], band[1])] = estimate_modulation(filtered_signal, frequency_weight)
     # Select band with highest modulation
     best_band = max(modulation_metrics, key=modulation_metrics.get)
     # Calculate peak and background RMS within the selected band
