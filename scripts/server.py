@@ -242,7 +242,7 @@ def predict(sample, sensitivity):
     return p_sorted[:human_cutoff]
 
 
-def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=8300, bin_size=2000):
+def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=10300, bin_size=2000):
     """
     Calculate SNR by selecting the frequency band with the highest modulation metric.
     Frequency bands are generated in 2000 Hz bins between start_freq and end_freq.
