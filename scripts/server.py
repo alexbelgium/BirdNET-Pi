@@ -276,7 +276,7 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=1030
     background_rms = np.percentile(np.abs(filtered_signal), 20)  # Use lower 20% as background noise estimate
     peak_rms = np.percentile(np.abs(filtered_signal), 90) - background_rms  # Emphasize signal above background
     # Compute and return SNR in dB
-    snr = 20 * np.log10(max(peak_rms, 1e-10) / (background_rms + 1e-10))
+    snr = 20 * np.log10((peak_rms + 1e-10) / (background_rms + 1e-10))
     snr_value = round(snr)
     band_used = f"{best_band[0]}-{best_band[1]}"
     return f"{snr_value} ({band_used})"
