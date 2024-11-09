@@ -252,9 +252,13 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=8300
     def bandpass_filter(signal, low_freq, high_freq):
         sos = butter(4, [low_freq, high_freq], btype='bandpass', fs=sample_rate, output='sos')
         return sosfilt(sos, signal)
-    # Refined modulation metric to emphasize fluctuation relative to mean amplitude
-    def estimate_modulation(signal):
-        return np.std(signal) + np.max(np.abs(signal))
+    # Estimate modulation metric for a signal
+    def estimate_modulation(signal, frequency_weight):
+        # Directly use the standard deviation of the signal as a modulation measure
+        modulation_strength = np.std(signal)
+        # Apply pre-calculated frequency weight to emphasize higher frequencies
+        weighted_modulation = modulation_strength * frequency_weight
+        return weighted_modulation
     # Normalize the audio signal
     audio_signal = audio_signal / (np.max(np.abs(audio_signal)) + 1e-10)
     # Generate frequency bands from start_freq to end_freq with bin_size intervals
@@ -263,7 +267,8 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=8300
     modulation_metrics = {}
     for band in bands:
         filtered_signal = bandpass_filter(audio_signal, band[0], band[1])
-        modulation_metrics[band] = estimate_modulation(filtered_signal)
+        frequency_weight = band[0] / band[1]
+        modulation_metrics[f"{band[0]}-{band[1]}"] = estimate_modulation(filtered_signal, frequency_weight)
     # Select band with highest modulation
     best_band = max(modulation_metrics, key=modulation_metrics.get)
     # Calculate peak and background RMS within the selected band
