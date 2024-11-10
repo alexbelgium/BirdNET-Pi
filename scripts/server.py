@@ -387,6 +387,6 @@ def run_analysis(file):
                 elif entry[0] not in PREDICTED_SPECIES_LIST and len(PREDICTED_SPECIES_LIST) != 0:
                     log.warning("Excluded as below Species Occurrence Frequency Threshold: %s", entry[0])
                 else:
-                    d = Detection(time_slot.split(';')[0], time_slot.split(';')[1], entry[0], entry[1], global_snr)
+                    d = Detection(time_slot.split(';')[0], time_slot.split(';')[1], entry[0], entry[1], global_snr, global_snr * entry[1])
                     confident_detections.append(d)
     return confident_detections
