@@ -372,9 +372,9 @@ def run_analysis(file):
                                       conf.getfloat('SENSITIVITY'), conf.getfloat('OVERLAP'))
     confident_detections = []
     if audio_data:
-        global_snr, best_band = calculate_snr(np.concatenate(audio_data))
+        global_snr, snr_band = calculate_snr(np.concatenate(audio_data))
     else:
-        global_snr, best_band = 0, (0, 0)
+        global_snr, snr_band = 0, (0, 0)
     for time_slot, entries in raw_detections.items():
         log.info('%s-%s', time_slot, entries[0])
         for entry in entries:
@@ -386,6 +386,6 @@ def run_analysis(file):
                 elif entry[0] not in PREDICTED_SPECIES_LIST and len(PREDICTED_SPECIES_LIST) != 0:
                     log.warning("Excluded as below Species Occurrence Frequency Threshold: %s", entry[0])
                 else:
-                    d = Detection(time_slot.split(';')[0], time_slot.split(';')[1], entry[0], entry[1], global_snr, best_band, global_snr * entry[1])
+                    d = Detection(time_slot.split(';')[0], time_slot.split(';')[1], entry[0], entry[1], global_snr, snr_band, global_snr * entry[1])
                     confident_detections.append(d)
     return confident_detections
