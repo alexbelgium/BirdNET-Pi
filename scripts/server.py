@@ -253,9 +253,9 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=1030
         sos = butter(4, [low_freq, high_freq], btype='bandpass', fs=sample_rate, output='sos')
         return sosfilt(sos, signal)
     # Global noise band definition (2000-8000 Hz) divided by sqrt(3) to accomodate for difference of bin sizes
-    global_noise_band = (2000, 8000)
+    global_noise_band = (2300, 4300)
     global_filtered_signal = bandpass_filter(audio_signal, *global_noise_band)
-    global_background_rms = np.percentile(np.abs(global_filtered_signal), 20) / 1.732
+    global_background_rms = np.percentile(np.abs(global_filtered_signal), 20)
     # Estimate modulation metric for a signal
     def estimate_modulation(signal, frequency_weight):
         # Directly use the standard deviation of the signal as a modulation measure
@@ -278,7 +278,7 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=1030
     # Calculate peak and background RMS within the selected band
     filtered_signal = bandpass_filter(audio_signal, best_band[0], best_band[1])
     background_rms = np.percentile(np.abs(filtered_signal), 20)  # Use lower 20% as background noise estimate
-    peak_rms = np.percentile(np.abs(filtered_signal), 90) - background_rms  # Emphasize signal above background
+    peak_rms = np.percentile(np.abs(filtered_signal), 80) - background_rms  # Emphasize signal above background
     # Compute and return SNR in dB
     snr = 20 * np.log10((peak_rms + 1e-10) / (global_background_rms + 1e-10))
     snr_value = round(snr)
