@@ -316,18 +316,8 @@ if (get_included_files()[0] === __FILE__) {
 <?php
 // Single query to fetch today's species with their last seen date
 $statement = $db->prepare("
-SELECT 
-    d_today.Com_Name, 
-    d_today.Sci_Name, 
-    d_today.Date, 
-    d_today.Time, 
-    d_today.Confidence, 
-    d_today.File_Name, 
-    MAX(d_today.Confidence) as MaxConfidence,
-    (SELECT MAX(Date) 
-     FROM detections d_prev 
-     WHERE d_prev.Com_Name = d_today.Com_Name 
-       AND d_prev.Date < DATE('now', 'localtime')) as LastSeenDate
+SELECT d_today.Com_Name, d_today.Sci_Name, d_today.Date, d_today.Time, d_today.Confidence, d_today.File_Name, MAX(d_today.Confidence) as MaxConfidence,
+       (SELECT MAX(Date) FROM detections d_prev WHERE d_prev.Com_Name = d_today.Com_Name AND d_prev.Date < DATE('now', 'localtime')) as LastSeenDate
 FROM detections d_today
 WHERE d_today.Date = DATE('now', 'localtime')
 GROUP BY d_today.Com_Name
@@ -360,16 +350,7 @@ if ($newspeciescount > 0): ?>
     <div class="new_species">
         <h2 style="text-align:center;"><?php echo $newspeciescount; ?> new species detected today!</h2>
         <?php if ($newspeciescount > 5): ?>
-            <table>
-                <tr>
-                    <td style="text-align:center;">
-                        <form action="" method="GET">
-                            <input type="hidden" name="view" value="Recordings">
-                            <button type="submit" name="date" value="<?php echo date('Y-m-d');?>">Open Today's recordings page</button>
-                        </form>
-                    </td>
-                </tr>
-            </table>
+            <table><tr><td style="text-align:center;"><form action="" method="GET"><input type="hidden" name="view" value="Recordings"><button type="submit" name="date" value="<?php echo date('Y-m-d');?>">Open Today's recordings page</button></form></td></tr></table>
         <?php else: ?>
             <table>
                 <?php
@@ -418,77 +399,26 @@ if ($newspeciescount > 0): ?>
                 ?>
                 <tr class="relative" id="<?php echo $iterations; ?>">
                     <td><?php echo $todaytable['Time']; ?><br></td>
-                    <td>
-                        <?php if (!empty($image_url)): ?>
-                            <img 
-                                onclick='setModalText(
-                                    <?php echo $iterations; ?>,
-                                    "<?php echo urlencode($image[2]); ?>", 
-                                    "<?php echo $image[3]; ?>", 
-                                    "<?php echo $image[4]; ?>", 
-                                    "<?php echo $image[1]; ?>", 
-                                    "<?php echo $image[5]; ?>"
-                                )' 
-                                src="<?php echo $image_url; ?>" 
-                                style="height: 50px; width: 50px; border-radius: 5px; cursor: pointer;" 
-                                class="img1" 
-                                title="Image from Flickr" 
-                            />
-                        <?php endif; ?>
-                    </td>
+                    <td><?php if (!empty($image_url)): ?>
+                      <img onclick='setModalText(<?php echo $iterations; ?>,"<?php echo urlencode($image[2]); ?>", "<?php echo $image[3]; ?>", "<?php echo $image[4]; ?>", "<?php echo $image[1]; ?>", "<?php echo $image[5]; ?>")' src="<?php echo $image_url; ?>" style="height: 50px; width: 50px; border-radius: 5px; cursor: pointer;" class="img1" title="Image from Flickr" />
+                    <?php endif; ?></td>
                     <td id="recent_detection_middle_td">
-                        <div>
-                            <form action="" method="GET">
+                        <div><form action="" method="GET">
                                 <input type="hidden" name="view" value="Species Stats">
-                                <button class="a2" type="submit" name="species" value="<?php echo htmlspecialchars($todaytable['Com_Name']); ?>">
-                                    <?php echo htmlspecialchars($todaytable['Com_Name']); ?>
-                                </button>
-                                <br>
-                                <i>
-                                    <?php echo htmlspecialchars($todaytable['Sci_Name']); ?><br>
-                                    <a href="<?php echo htmlspecialchars($url); ?>" target="_blank">
-                                        <img 
-                                            style="height: 1em; cursor:pointer; float:unset; display:inline" 
-                                            title="<?php echo htmlspecialchars($url_title); ?>" 
-                                            src="images/info.png" 
-                                            width="25"
-                                        >
-                                    </a>
-                                    <a href="https://wikipedia.org/wiki/<?php echo htmlspecialchars($sciname); ?>" target="_blank">
-                                        <img 
-                                            style="height: 1em; cursor:pointer; float:unset; display:inline" 
-                                            title="Wikipedia" 
-                                            src="images/wiki.png" 
-                                            width="25"
-                                        >
-                                    </a>
-                                    <img 
-                                        style="height: 1em; cursor:pointer; float:unset; display:inline" 
-                                        title="View species stats" 
-                                        onclick="generateMiniGraph(this, '<?php echo htmlspecialchars($comname); ?>')" 
-                                        width="25" 
-                                        src="images/chart.svg"
-                                    >
-                                    <a target="_blank" href="index.php?filename=<?php echo urlencode($todaytable['File_Name']); ?>">
-                                        <img 
-                                            style="height: 1em; cursor:pointer; float:unset; display:inline" 
-                                            class="copyimage-mobile" 
-                                            title="Open in new tab" 
-                                            width="16" 
-                                            src="images/copy.png"
-                                        >
-                                    </a>
-                                </i>
-                                <br>
-                            </form>
-                        </div>
-                    </td>
-                    <td><b>Confidence:</b> <?php echo round($todaytable['MaxConfidence'] * 100 ) . '%'; ?><br></td>
+                                <button class="a2" type="submit" name="species" value="<?php echo $todaytable['Com_Name']; ?>"><?php echo $todaytable['Com_Name']; ?></button>
+                                <br><i><?php echo $todaytable['Sci_Name']; ?><br>
+                                    <a href="<?php echo $url; ?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="<?php echo $url_title; ?>" src="images/info.png" width="25"></a>
+                                    <a href="https://wikipedia.org/wiki/<?php echo $sciname; ?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="25"></a>
+                                    <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comname; ?>')" width=25 src="images/chart.svg">
+                                    <a target="_blank" href="index.php?filename=<?php echo $todaytable['File_Name']; ?>"><img style="height: 1em;cursor:pointer;float:unset;display:inline" class="copyimage-mobile" title="Open in new tab" width=16 src="images/copy.png"></a>
+                                </i><br></form></div></td>
+                    <td><b>Confidence:</b> <?php echo round($todaytable['Confidence'] * 100 ) . '%'; ?><br></td>
                 </tr>
                 <?php endforeach; ?>
             </table>
-        </div>
-    <?php endif; ?>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
 
 <?php
 // Display Rare Species
@@ -545,79 +475,28 @@ if ($rarespeciescount > 0): ?>
                 $days_ago = $todaytable['DaysAgo'];
                 if ($days_ago > 30) {
                     $months_ago = floor($days_ago / 30);
-                    $last_seen_text = "Last seen: " . $months_ago . " month" . ($months_ago > 1 ? 's' : '') . " ago";
+                    $last_seen_text = "Last seen: " . $months_ago . " months ago";
                 } else {
-                    $last_seen_text = "Last seen: " . $days_ago . " day" . ($days_ago > 1 ? 's' : '') . " ago";
+                    $last_seen_text = "Last seen: " . $days_ago . " days ago";
                 }
             ?>
             <tr class="relative" id="<?php echo $iterations; ?>">
-                <td><?php echo htmlspecialchars($last_seen_text); ?><br></td>
-                <td>
-                    <?php if (!empty($image_url)): ?>
-                        <img 
-                            onclick='setModalText(
-                                <?php echo $iterations; ?>,
-                                "<?php echo urlencode($image[2]); ?>", 
-                                "<?php echo $image[3]; ?>", 
-                                "<?php echo $image[4]; ?>", 
-                                "<?php echo $image[1]; ?>", 
-                                "<?php echo $image[5]; ?>"
-                            )' 
-                            src="<?php echo htmlspecialchars($image_url); ?>" 
-                            style="height: 50px; width: 50px; border-radius: 5px; cursor: pointer;" 
-                            class="img1" 
-                            title="Image from Flickr" 
-                        />
-                    <?php endif; ?>
-                </td>
+                <td><?php echo $last_seen_text; ?><br></td>
+                <td><?php if (!empty($image_url)): ?>
+                  <img onclick='setModalText(<?php echo $iterations; ?>,"<?php echo urlencode($image[2]); ?>", "<?php echo $image[3]; ?>", "<?php echo $image[4]; ?>", "<?php echo $image[1]; ?>", "<?php echo $image[5]; ?>")' src="<?php echo $image_url; ?>" style="height: 50px; width: 50px; border-radius: 5px; cursor: pointer;" class="img1" title="Image from Flickr" />
+                <?php endif; ?></td>
                 <td id="recent_detection_middle_td">
-                    <div>
-                        <form action="" method="GET">
+                    <div><form action="" method="GET">
                             <input type="hidden" name="view" value="Species Stats">
-                            <button class="a2" type="submit" name="species" value="<?php echo htmlspecialchars($todaytable['Com_Name']); ?>">
-                                <?php echo htmlspecialchars($todaytable['Com_Name']); ?>
-                            </button>
-                            <br>
-                            <i>
-                                <?php echo htmlspecialchars($todaytable['Sci_Name']); ?><br>
-                                <a href="<?php echo htmlspecialchars($url); ?>" target="_blank">
-                                    <img 
-                                        style="height: 1em; cursor:pointer; float:unset; display:inline" 
-                                        title="<?php echo htmlspecialchars($url_title); ?>" 
-                                        src="images/info.png" 
-                                        width="25"
-                                    >
-                                </a>
-                                <a href="https://wikipedia.org/wiki/<?php echo htmlspecialchars($sciname); ?>" target="_blank">
-                                    <img 
-                                        style="height: 1em; cursor:pointer; float:unset; display:inline" 
-                                        title="Wikipedia" 
-                                        src="images/wiki.png" 
-                                        width="25"
-                                    >
-                                </a>
-                                <img 
-                                    style="height: 1em; cursor:pointer; float:unset; display:inline" 
-                                    title="View species stats" 
-                                    onclick="generateMiniGraph(this, '<?php echo htmlspecialchars($comname); ?>')" 
-                                    width="25" 
-                                    src="images/chart.svg"
-                                >
-                                <a target="_blank" href="index.php?filename=<?php echo urlencode($todaytable['File_Name']); ?>">
-                                    <img 
-                                        style="height: 1em; cursor:pointer; float:unset; display:inline" 
-                                        class="copyimage-mobile" 
-                                        title="Open in new tab" 
-                                        width="16" 
-                                        src="images/copy.png"
-                                    >
-                                </a>
-                            </i>
-                            <br>
-                        </form>
-                    </div>
+                            <button class="a2" type="submit" name="species" value="<?php echo $todaytable['Com_Name']; ?>"><?php echo $todaytable['Com_Name']; ?></button>
+                            <br><i><?php echo $todaytable['Sci_Name']; ?><br>
+                                <a href="<?php echo $url; ?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="<?php echo $url_title; ?>" src="images/info.png" width="25"></a>
+                                <a href="https://wikipedia.org/wiki/<?php echo $sciname; ?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="25"></a>
+                                <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comname; ?>')" width=25 src="images/chart.svg">
+                                <a target="_blank" href="index.php?filename=<?php echo $todaytable['File_Name']; ?>"><img style="height: 1em;cursor:pointer;float:unset;display:inline" class="copyimage-mobile" title="Open in new tab" width=16 src="images/copy.png"></a>
+                            </i><br></form></div>
                 </td>
-                <td><b>Confidence:</b> <?php echo round($todaytable['MaxConfidence'] * 100 ) . '%'; ?><br></td>
+                <td><b>Confidence:</b> <?php echo round($todaytable['Confidence'] * 100 ) . '%'; ?><br></td>
             </tr>
             <?php endforeach; ?>
         </table>
