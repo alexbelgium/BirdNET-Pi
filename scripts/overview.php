@@ -475,9 +475,9 @@ if ($rarespeciescount > 0): ?>
                 $days_ago = $todaytable['DaysAgo'];
                 if ($days_ago > 30) {
                     $months_ago = floor($days_ago / 30);
-                    $last_seen_text = "Last detected: " . $months_ago . "m ago";
+                    $last_seen_text = $todaytable['Time'] . "\nLast: " . $months_ago . "m ago";
                 } else {
-                    $last_seen_text = "Last detected: " . $days_ago . "d ago";
+                    $last_seen_text = $todaytable['Time'] . "\nLast: " . $days_ago . "d ago";
                 }
             ?>
             <tr class="relative" id="<?php echo $iterations; ?>">
