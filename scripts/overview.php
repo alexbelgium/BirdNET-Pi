@@ -313,16 +313,16 @@ if (get_included_files()[0] === __FILE__) {
 <div class="right-column">
 <div class="center-column">
 </div>
-</div>
 <?php
-// Combined query for both new and rare species
+// Unified query for both new and rare species
 $statement = $db->prepare('
-SELECT d_today.Com_Name, d_today.Sci_Name, d_today.Date, d_today.Time, d_today.Confidence, d_today.File_Name, 
-       MAX(d_today.Confidence) as MaxConfidence,
-       (SELECT MAX(Date) FROM detections d_prev WHERE d_prev.Com_Name = d_today.Com_Name AND d_prev.Date < DATE(\'now\', \'localtime\')) as LastSeenDate
-FROM detections d_today
-WHERE d_today.Date = DATE(\'now\', \'localtime\')
-GROUP BY d_today.Com_Name
+    SELECT d_today.Com_Name, d_today.Sci_Name, d_today.Date, d_today.Time, d_today.Confidence, d_today.File_Name, MAX(d_today.Confidence) as MaxConfidence,
+           (SELECT MAX(Date) FROM detections d_prev WHERE d_prev.Com_Name = d_today.Com_Name AND d_prev.Date < DATE(\'now\', \'localtime\')) as LastSeenDate
+    FROM detections d_today
+    WHERE d_today.Date = DATE(\'now\', \'localtime\')
+    AND (d_today.Com_Name NOT IN (SELECT Com_Name FROM detections WHERE Date BETWEEN DATE(\'now\', \'localtime\', \'-5 day\') AND DATE(\'now\', \'localtime\', \'-1 day\'))
+        OR d_today.Com_Name NOT IN (SELECT Com_Name FROM detections WHERE Date < DATE(\'now\', \'localtime\', \'-1 day\')))
+    GROUP BY d_today.Com_Name
 ');
 ensure_db_ok($statement);
 $result = $statement->execute();
@@ -331,57 +331,61 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $species_data[] = $row;
 }
 
+// Separate species into new and rare based on the presence of LastSeenDate
 $new_species = [];
 $rare_species = [];
 foreach ($species_data as $species) {
     if (is_null($species['LastSeenDate'])) {
-        $new_species[] = $species;
+        $new_species[] = $species; // New species have no previous sightings
     } else {
-        // Calculate days/months ago for rare species
-        $last_seen_date = $species['LastSeenDate'];
-        $date1 = new DateTime($last_seen_date);
-        $date2 = new DateTime('now');
-        $interval = $date1->diff($date2);
-        $days_ago = $interval->days;
-        if ($days_ago > 30) {
-            $months_ago = floor($days_ago / 30);
-            $species['LastSeenText'] = "Last seen: " . $last_seen_date . " (" . $months_ago . " months ago)";
-        } else {
-            $species['LastSeenText'] = "Last seen: " . $last_seen_date . " (" . $days_ago . " days ago)";
-        }
-        $rare_species[] = $species;
+        $rare_species[] = $species; // Rare species have a LastSeenDate
     }
 }
-$newspeciescount = count($new_species);
-$rarespeciescount = count($rare_species);
 
-// Display new species
+// Display New Species
+$newspeciescount = count($new_species);
 if ($newspeciescount > 0): ?>
     <div class="new_species">
         <h2 style="text-align:center;"><?php echo $newspeciescount; ?> new species detected today!</h2>
-        <!-- Display New Species Code (similar to your existing code) -->
-    </div>
-<?php endif; ?>
-
-<?php
-// Display rare species
-if ($rarespeciescount > 0): ?>
-    <div class="rare_species">
-        <h2 style="text-align:center;"><?php echo $rarespeciescount; ?> rare species detected today!</h2>
         <table>
-            <?php foreach($rare_species as $species): ?>
-                <tr>
-                    <td><?php echo $species['Time']; ?><br></td>
-                    <td><?php echo $species['Com_Name']; ?></td>
-                    <td><?php echo $species['Sci_Name']; ?></td>
-                    <td><?php echo $species['LastSeenText']; ?></td>
-                    <td><b>Confidence:</b> <?php echo round($species['Confidence'] * 100) . '%'; ?><br></td>
-                </tr>
+            <?php foreach ($new_species as $species): ?>
+            <tr>
+                <td><?php echo $species['Time']; ?></td>
+                <td><?php echo htmlspecialchars($species['Com_Name']); ?></td>
+                <td><?php echo htmlspecialchars($species['Sci_Name']); ?></td>
+                <td><b>Confidence:</b> <?php echo round($species['Confidence'] * 100) . '%'; ?></td>
+            </tr>
             <?php endforeach; ?>
         </table>
     </div>
 <?php endif; ?>
 
+<?php
+// Display Rare Species
+$rarespeciescount = count($rare_species);
+if ($rarespeciescount > 0): ?>
+    <div class="rare_species">
+        <h2 style="text-align:center;"><?php echo $rarespeciescount; ?> rare species detected today!</h2>
+        <table>
+            <?php foreach ($rare_species as $species): ?>
+            <?php
+                // Calculate days since last sighting
+                $last_seen_date = new DateTime($species['LastSeenDate']);
+                $days_ago = $last_seen_date->diff(new DateTime('now'))->days;
+                $time_ago_text = ($days_ago > 30)
+                    ? floor($days_ago / 30) . ' months ago'
+                    : $days_ago . ' days ago';
+            ?>
+            <tr>
+                <td><?php echo $species['LastSeenDate'] . " ($time_ago_text)"; ?></td>
+                <td><?php echo htmlspecialchars($species['Com_Name']); ?></td>
+                <td><?php echo htmlspecialchars($species['Sci_Name']); ?></td>
+                <td><b>Confidence:</b> <?php echo round($species['Confidence'] * 100) . '%'; ?></td>
+            </tr>
+            <?php endforeach; ?>
+        </table>
+    </div>
+<?php endif; ?>
 <div class="chart" style="visibility: hidden;">
 <?php
 $refresh = $config['RECORDING_LENGTH'];
