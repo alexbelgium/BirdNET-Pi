@@ -336,7 +336,7 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
         $date2 = new DateTime('now');
         $interval = $date1->diff($date2);
         $days_ago = $interval->days;
-        if ($days_ago > 5) {
+        if ($days_ago > 7) {
             $row['DaysAgo'] = $days_ago;
             $rare_species[] = $row;
         }
@@ -474,9 +474,9 @@ if ($rarespeciescount > 0): ?>
                 $days_ago = $todaytable['DaysAgo'];
                 if ($days_ago > 30) {
                     $months_ago = floor($days_ago / 30);
-                    $last_seen_text = $todaytable['Time'] . "\n<i>Last seen: " . $months_ago . "m ago</i>";
+                    $last_seen_text = $todaytable['Time'] . "\n<i>Last : " . $months_ago . "m ago</i>";
                 } else {
-                    $last_seen_text = $todaytable['Time'] . "\n<i>Last seen: " . $days_ago . "d ago</i>";
+                    $last_seen_text = $todaytable['Time'] . "\n<i>Last : " . $days_ago . "d ago</i>";
                 }
             ?>
             <tr class="relative" id="<?php echo $iterations; ?>">
