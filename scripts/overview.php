@@ -314,7 +314,6 @@ if (get_included_files()[0] === __FILE__) {
 <div class="center-column">
 </div>
 <?php
-// Single query to fetch today's species with their last seen date
 $statement = $db->prepare("
 SELECT d_today.Com_Name, d_today.Sci_Name, d_today.Date, d_today.Time, d_today.Confidence, d_today.File_Name, MAX(d_today.Confidence) as MaxConfidence,
        (SELECT MAX(Date) FROM detections d_prev WHERE d_prev.Com_Name = d_today.Com_Name AND d_prev.Date < DATE('now', 'localtime')) as LastSeenDate
