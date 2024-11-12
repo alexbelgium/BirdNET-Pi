@@ -5,4 +5,3 @@ Additional PR vs Nachtzuster, used for HA addon
 - Shows daily new species on top : https://github.com/alexbelgium/BirdNET-Pi/tree/new_species
 - Interactive graph : https://github.com/alexbelgium/BirdNET-Pi/tree/dynamic_plots
 - Detection date improvement : https://github.com/tvoirand/BirdNET-Pi/tree/dates
-- Explicit values when sorting by count : https://github.com/alexbelgium/BirdNET-Pi/tree/countvalues_sort
