@@ -420,7 +420,7 @@ function display_species($species_list, $title, $show_last_seen=false) {
                                         <a href="<?php echo htmlspecialchars($url); ?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="<?php echo htmlspecialchars($url_title); ?>" src="images/info.png" width="25"></a>
                                         <a href="https://wikipedia.org/wiki/<?php echo htmlspecialchars($sciname); ?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="25"></a>
                                         <?php if ($show_last_seen): ?>
-                                            <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo htmlspecialchars($comname); ?>', 360)" width="25" src="images/chart.svg">
+                                            <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo htmlspecialchars($comname); ?>', 180)" width="25" src="images/chart.svg">
                                         <?php endif; ?>
                                         <a target="_blank" href="index.php?filename=<?php echo htmlspecialchars($todaytable['File_Name']); ?>"><img style="height: 1em;cursor:pointer;float:unset;display:inline" class="copyimage-mobile" title="Open in new tab" width="16" src="images/copy.png"></a>
                                     </i><br></form></div>
