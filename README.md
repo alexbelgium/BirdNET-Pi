@@ -4,4 +4,3 @@ Additional PR vs Nachtzuster, used for HA addon
 - Calculation of dignal quality through SNR : https://github.com/alexbelgium/BirdNET-Pi/tree/SNR
 - Shows daily new species on top : https://github.com/alexbelgium/BirdNET-Pi/tree/new_species
 - Interactive graph : https://github.com/alexbelgium/BirdNET-Pi/tree/dynamic_plots
-- Detection date improvement : https://github.com/tvoirand/BirdNET-Pi/tree/dates
