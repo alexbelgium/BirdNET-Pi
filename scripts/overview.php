@@ -363,6 +363,7 @@ function display_species($species, $count, $title, $show_last_seen = false) {
                                 <br><i><?php echo $todaytable['Sci_Name']; ?><br>
                                     <a href="<?php echo $info_url['URL']; ?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="<?php echo $info_url['TITLE']; ?>" src="images/info.png" width="25"></a>
                                     <a href="https://wikipedia.org/wiki/<?php echo $sciname; ?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="25"></a>
+                                    <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comname; ?>', 120)" width=25 src="images/chart.svg">
                                     <a target="_blank" href="index.php?filename=<?php echo $todaytable['File_Name']; ?>"><img style="height: 1em;cursor:pointer;float:unset;display:inline" class="copyimage-mobile" title="Open in new tab" width=16 src="images/copy.png"></a>
                                 </i><br></form></div></td>
                     <td><b>Confidence:</b> <?php echo round($todaytable['Confidence'] * 100 ) . '%'; ?><br></td>
