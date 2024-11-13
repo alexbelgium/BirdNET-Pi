@@ -196,6 +196,15 @@ if (isset($_GET["max_files_species"])) {
     $contents = preg_replace("/RAW_SPECTROGRAM=.*/", "RAW_SPECTROGRAM=0", $contents);
   }
 
+  if(isset($_GET["rare_species_threshold"])) {
+    $rare_species_threshold = $_GET["rare_species_threshold"];
+    if(strcmp($rare_species_threshold, $config['RARE_SPECIES_THRESHOLD']) !== 0) {
+        $contents = preg_replace("/RARE_SPECIES_THRESHOLD=.*/", "RARE_SPECIES_THRESHOLD=$rare_species_threshold", $contents);
+    }
+  } else {
+      $contents = preg_replace("/RARE_SPECIES_THRESHOLD=.*/", "RARE_SPECIES_THRESHOLD=30", $contents);
+  }
+
   if(isset($_GET["confirm_species"])) {
     $confirm_species = 1;
     if(strcmp($CONFIRM_SPECIES,$config['CONFIRM_SPECIES']) !== 0) {
