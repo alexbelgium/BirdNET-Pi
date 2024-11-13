@@ -326,6 +326,7 @@ $result = $statement->execute();
 
 $new_species = [];
 $rare_species = [];
+$rare_species_threshold = isset($config['RARE_SPECIES_THRESHOLD']) ? $config['RARE_SPECIES_THRESHOLD'] : 30;
 while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
     $last_seen_date = $row['LastSeenDate'];
     if ($last_seen_date === NULL) {
@@ -335,7 +336,7 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
         $date2 = new DateTime('now');
         $interval = $date1->diff($date2);
         $days_ago = $interval->days;
-        if ($days_ago > 7) {
+        if ($days_ago > $rare_species_threshold) {
             $row['DaysAgo'] = $days_ago;
             $rare_species[] = $row;
         }
