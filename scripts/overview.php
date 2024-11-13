@@ -619,7 +619,7 @@ function generateMiniGraph(elem, comname, days = 30) {
 
   // Make an AJAX call to fetch the number of detections for the bird species
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/todays_detections.php?comname=' + encodeURIComponent(comname) + '&days=' + days);
+  xhr.open('GET', '/todays_detections.php?comname=' + comname + '&days=' + days);
   xhr.onload = function() {
     if (xhr.status === 200) {
       var detections = JSON.parse(xhr.responseText);
