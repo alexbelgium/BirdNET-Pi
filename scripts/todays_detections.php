@@ -64,7 +64,7 @@ if(isset($_GET['comname'])) {
 $days = isset($_GET['days']) ? intval($_GET['days']) : 30;
 	
 // Prepare a SQL statement to retrieve the detection data for the specified bird
-$stmt = $db->prepare('SELECT Date, COUNT(*) AS Detections FROM detections WHERE REPLACE(Com_Name, '''', '') = :com_name AND Date BETWEEN DATE("now", "-' . $days . ' days") AND DATE("now") GROUP BY Date');
+$stmt = $db->prepare('SELECT Date, COUNT(*) AS Detections FROM detections WHERE Com_Name = :com_name AND Date BETWEEN DATE("now", "-' . $days . ' days") AND DATE("now") GROUP BY Date');
 
 // Bind the bird name parameter to the SQL statement
 $stmt->bindValue(':com_name', $birdName);
