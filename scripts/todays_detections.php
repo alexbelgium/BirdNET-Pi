@@ -57,7 +57,7 @@ $result6 = $statement6->execute();
 $totalspeciestally = $result6->fetchArray(SQLITE3_ASSOC);
 
 if(isset($_GET['comname'])) {
- $birdName = $_GET['comname'];
+ $birdName = urldecode($_GET['comname']);
  $birdName = str_replace("_", " ", $birdName);
 
 // Set default days to 30 if not provided
