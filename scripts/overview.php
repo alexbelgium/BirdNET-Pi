@@ -672,7 +672,7 @@ function generateMiniGraph(elem, comname, days = 30) {
           },
           title: {
             display: true,
-            text: 'Detections Over ' + days + 'd'
+            text: 'Detections Over ' + comname + 'd'
           },
           legend: {
             display: false
