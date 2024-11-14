@@ -82,12 +82,10 @@ def write_to_db(file: ParseFileName, detection: Detection):
         try:
             con = sqlite3.connect(DB_PATH)
             cur = con.cursor()
-            cur.execute("INSERT INTO detections
+            cur.execute("INSERT INTO detections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                         (detection.date, detection.time, detection.scientific_name, detection.common_name, detection.confidence,
                          conf['LATITUDE'], conf['LONGITUDE'], conf['CONFIDENCE'], str(detection.week), conf['SENSITIVITY'],
                          conf['OVERLAP'], os.path.basename(detection.file_name_extr)))
- #           cur.execute("INSERT INTO info VALUES (?, ?, ?)",
- #                       (os.path.basename(detection.file_name_extr), detection.snr, detection.quality))
             # (Date, Time, Sci_Name, Com_Name, str(score),
             # Lat, Lon, Cutoff, Week, Sens,
             # Overlap, File_Name))
