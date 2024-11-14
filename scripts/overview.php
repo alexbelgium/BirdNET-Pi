@@ -134,7 +134,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
                   <a href="<?php $info_url = get_info_url($mostrecent['Sci_Name']); $url = $info_url['URL']; echo $url ?>" target="_blank">
                   <img style="width: unset !important; display: inline; height: 1em; cursor: pointer;" title="Info" src="images/info.png" width="25"></a>
                   <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style="width: unset !important; display: inline; height: 1em; cursor: pointer;" title="Wikipedia" src="images/wiki.png" width="25"></a>
-                  <img style="width: unset !important;display: inline;height: 1em;cursor:pointer" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comname; ?>')" width=25 src="images/chart.svg">
+                  <img style="width: unset !important;display: inline;height: 1em;cursor:pointer" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $sciname; ?>')" width=25 src="images/chart.svg">
                   <br>Confidence: <?php echo $percent = round((float)round($mostrecent['Confidence'],2) * 100 ) . '%';?><br></div><br>
                   <video style="margin-top:10px" onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster="<?php echo $filename.".png";?>" preload="none" title="<?php echo $filename;?>"><source src="<?php echo $filename;?>"></video></td>
               </form>
@@ -421,7 +421,7 @@ function display_species($species_list, $title, $show_last_seen=false) {
                                         <a href="<?php echo htmlspecialchars($url); ?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="<?php echo htmlspecialchars($url_title); ?>" src="images/info.png" width="25"></a>
                                         <a href="https://wikipedia.org/wiki/<?php echo htmlspecialchars($sciname); ?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="25"></a>
                                         <?php if ($show_last_seen): ?>
-                                            <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo htmlspecialchars($comname); ?>', 180)" width="25" src="images/chart.svg">
+                                            <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $sciname; ?>', 180)" width="25" src="images/chart.svg">
                                         <?php endif; ?>
                                         <a target="_blank" href="index.php?filename=<?php echo htmlspecialchars($todaytable['File_Name']); ?>"><img style="height: 1em;cursor:pointer;float:unset;display:inline" class="copyimage-mobile" title="Open in new tab" width="16" src="images/copy.png"></a>
                                     </i><br></form></div>
@@ -615,11 +615,11 @@ startAutoRefresh();
 }
 </style>
 <script>
-function generateMiniGraph(elem, comname, days = 30) {
+function generateMiniGraph(elem, sciname, days = 30) {
 
   // Make an AJAX call to fetch the number of detections for the bird species
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/todays_detections.php?comname=' + comname + '&days=' + days);
+  xhr.open('GET', '/todays_detections.php?sciname=' + sciname + '&days=' + days);
   xhr.onload = function() {
     if (xhr.status === 200) {
       var detections = JSON.parse(xhr.responseText);
