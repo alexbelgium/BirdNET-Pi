@@ -276,13 +276,13 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=1230
     # Select band with highest modulation
     best_band = max(modulation_metrics, key=modulation_metrics.get)
     
-    # Calculate peak and background RMS within the selected band
+    # Calculate RMS values within the selected band
     filtered_signal = bandpass_filter(audio_signal, best_band[0], best_band[1])
-    background_rms = np.mean(np.abs(filtered_signal))  # Use mean as background noise estimate
-    peak_rms = np.std(filtered_signal)  # Use standard deviation as signal strength
+    signal_rms = np.sqrt(np.mean(filtered_signal ** 2))  # Use RMS value as signal strength
+    noise_rms = np.sqrt(np.mean((filtered_signal - np.mean(filtered_signal)) ** 2))  # Use RMS value as noise strength
     
     # Compute and return SNR in dB
-    snr = 20 * np.log10((peak_rms + 1e-10) / (background_rms + 1e-10))
+    snr = 20 * np.log10((signal_rms + 1e-10) / (noise_rms + 1e-10))
     band_used = f"{best_band[0]}-{best_band[1]}"
     
     # Return both SNR and best_band
