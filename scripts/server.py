@@ -261,7 +261,7 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=1230
         return weighted_modulation
     
     # Normalize the audio signal
-    # audio_signal = audio_signal / (np.max(np.abs(audio_signal)) + 1e-10)
+    audio_signal = audio_signal / (np.max(np.abs(audio_signal)) + 1e-10)
     
     # Generate frequency bands from start_freq to end_freq with bin_size intervals
     bands = [(freq, min(freq + bin_size, end_freq)) for freq in range(start_freq, end_freq, bin_size)]
