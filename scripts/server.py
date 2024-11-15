@@ -260,29 +260,29 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=1230
         weighted_modulation = modulation_strength * frequency_weight
         return weighted_modulation
     
-    # Normalize the audio signal
-    audio_signal = audio_signal / (np.max(np.abs(audio_signal)) + 1e-10)
-    
     # Generate frequency bands from start_freq to end_freq with bin_size intervals
     bands = [(freq, min(freq + bin_size, end_freq)) for freq in range(start_freq, end_freq, bin_size)]
+
+    # Normalize the audio signal
+    # audio_signal = audio_signal / (np.max(np.abs(audio_signal)) + 1e-10)
     
     # Calculate modulation metrics for each band and select the band with the highest modulation
     modulation_metrics = {}
     for band in bands:
         filtered_signal = bandpass_filter(audio_signal, band[0], band[1])
-        frequency_weight = band[0] / band[1]
+        frequency_weight = band[0] / band[1] if band[1] != 0 else 0
         modulation_metrics[(band[0], band[1])] = estimate_modulation(filtered_signal, frequency_weight)
     
     # Select band with highest modulation
     best_band = max(modulation_metrics, key=modulation_metrics.get)
     
-    # Calculate RMS values within the selected band
+    # Calculate peak and background RMS within the selected band
     filtered_signal = bandpass_filter(audio_signal, best_band[0], best_band[1])
-    signal_rms = np.sqrt(np.mean(filtered_signal ** 2))  # Use RMS value as signal strength
-    noise_rms = np.sqrt(np.mean((filtered_signal - np.mean(filtered_signal)) ** 2))  # Use RMS value as noise strength
+    background_rms = np.mean(np.abs(filtered_signal))  # Use mean as background noise estimate
+    peak_rms = np.std(filtered_signal)  # Use standard deviation as signal strength
     
     # Compute and return SNR in dB
-    snr = 20 * np.log10((signal_rms + 1e-10) / (noise_rms + 1e-10))
+    snr = 20 * np.log10((peak_rms + 1e-10) / (background_rms + 1e-10))
     band_used = f"{best_band[0]}-{best_band[1]}"
     
     # Return both SNR and best_band
