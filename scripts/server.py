@@ -251,6 +251,7 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=1230
     def bandpass_filter(signal, low_freq, high_freq):
         sos = butter(4, [low_freq, high_freq], btype='bandpass', fs=sample_rate, output='sos')
         return sosfilt(sos, signal)
+    
     # Estimate modulation metric for a signal
     def estimate_modulation(signal, frequency_weight):
         # Directly use the standard deviation of the signal as a modulation measure
@@ -258,31 +259,35 @@ def calculate_snr(audio_signal, sample_rate=48000, start_freq=300, end_freq=1230
         # Apply pre-calculated frequency weight to emphasize higher frequencies
         weighted_modulation = modulation_strength * frequency_weight
         return weighted_modulation
+    
     # Normalize the audio signal
-    audio_signal = audio_signal / (np.max(np.abs(audio_signal)) + 1e-10)
+    # audio_signal = audio_signal / (np.max(np.abs(audio_signal)) + 1e-10)
+    
     # Generate frequency bands from start_freq to end_freq with bin_size intervals
     bands = [(freq, min(freq + bin_size, end_freq)) for freq in range(start_freq, end_freq, bin_size)]
+    
     # Calculate modulation metrics for each band and select the band with the highest modulation
     modulation_metrics = {}
     for band in bands:
         filtered_signal = bandpass_filter(audio_signal, band[0], band[1])
         frequency_weight = band[0] / band[1]
         modulation_metrics[(band[0], band[1])] = estimate_modulation(filtered_signal, frequency_weight)
+    
     # Select band with highest modulation
     best_band = max(modulation_metrics, key=modulation_metrics.get)
+    
     # Calculate peak and background RMS within the selected band
     filtered_signal = bandpass_filter(audio_signal, best_band[0], best_band[1])
-    background_rms = np.percentile(np.abs(filtered_signal), 20)  # Use lower 20% as background noise estimate
-    peak_rms = np.percentile(np.abs(filtered_signal), 80) - background_rms  # Emphasize signal above background
-    # Global noise band definition (2000-8000 Hz) divided by sqrt(3) to accomodate for difference of bin sizes
-    #global_noise_band = (2300, 4300)
-    #global_filtered_signal = bandpass_filter(audio_signal, *global_noise_band)
-    #global_background_rms = np.percentile(np.abs(global_filtered_signal), 20)
+    background_rms = np.mean(np.abs(filtered_signal))  # Use mean as background noise estimate
+    peak_rms = np.std(filtered_signal)  # Use standard deviation as signal strength
+    
     # Compute and return SNR in dB
     snr = 20 * np.log10((peak_rms + 1e-10) / (background_rms + 1e-10))
     band_used = f"{best_band[0]}-{best_band[1]}"
+    
     # Return both SNR and best_band
     return round(snr), best_band
+
 
 def analyzeAudioData(chunks, lat, lon, week, sens, overlap,):
     global INTERPRETER
