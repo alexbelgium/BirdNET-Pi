@@ -9,11 +9,11 @@
  * Contributing: http://www.plupload.com/contributing
  */
 
-#!! IMPORTANT: 
-#!! this file is just an example, it doesn't incorporate any security checks and 
-#!! is not recommended to be used in production environment as it is. Be sure to 
-#!! revise it and customize to your needs.
-die("Make sure that you enable some form of authentication before removing this line.");
+
+define('__ROOT__', dirname(dirname(__FILE__)));
+require_once(__ROOT__.'/scripts/common.php');
+ensure_authenticated('You must be authenticated to upload backup files.');
+$home = get_home();
 
 
 // Make sure file is not cached (as it happens for example on iOS devices)
@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 // usleep(5000);
 
 // Settings
-$targetDir = ini_get("upload_tmp_dir") . DIRECTORY_SEPARATOR . "plupload";
+$targetDir = "$home/BirdNET-Pi/uploads";
 //$targetDir = 'uploads';
 $cleanupTargetDir = true; // Remove old files
 $maxFileAge = 5 * 3600; // Temp file age in seconds
