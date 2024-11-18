@@ -67,7 +67,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
   while($mostrecent = $result4->fetchArray(SQLITE3_ASSOC)) {
     $comname = preg_replace('/ /', '_', $mostrecent['Com_Name']);
     $sciname = preg_replace('/ /', '_', $mostrecent['Sci_Name']);
-    $comname = preg_replace('/\'/', '', $comname);
+    $comname = preg_replace('/\'/', '__', $comname);
     $filename = "By_Date/".$mostrecent['Date']."/".$comname."/".$mostrecent['File_Name'];
 
     // check to make sure the image actually exists, sometimes it takes a minute to be created\

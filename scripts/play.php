@@ -604,7 +604,7 @@ echo "<table>
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
   {
     $comname = preg_replace('/ /', '_', $results['Com_Name']);
-    $comname = preg_replace('/\'/', '', $comname);
+    $comname = preg_replace('/\'/', '__', $comname);
     $date = $results['Date'];
     $filename = "/By_Date/".$date."/".$comname."/".$results['File_Name'];
     $filename_shifted = "/By_Date/shifted/".$date."/".$comname."/".$results['File_Name'];
@@ -679,6 +679,7 @@ echo "<table>
     $statement2 = $db->prepare("SELECT * FROM detections where File_name == \"$name\" ORDER BY Date DESC, Time DESC");
     ensure_db_ok($statement2);
     $result2 = $statement2->execute();
+    $comname = str_replace("__", "'", strtok($name, '-'));
     $comname = str_replace("_", " ", strtok($name, '-'));
     $sciname = get_sci_name($comname);
     $info_url = get_info_url($sciname);
@@ -692,7 +693,7 @@ echo "<table>
       while($results=$result2->fetchArray(SQLITE3_ASSOC))
       {
         $comname = preg_replace('/ /', '_', $results['Com_Name']);
-        $comname = preg_replace('/\'/', '', $comname);
+        $comname = preg_replace('/\'/', '__', $comname);
         $date = $results['Date'];
         $filename = "/By_Date/".$date."/".$comname."/".$results['File_Name'];
         $filename_shifted = "/By_Date/shifted/".$date."/".$comname."/".$results['File_Name'];
