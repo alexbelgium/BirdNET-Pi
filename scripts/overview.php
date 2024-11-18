@@ -424,7 +424,7 @@ function display_species($species_list, $title, $show_last_seen=false) {
                                         <a href="<?php echo $url; ?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="<?php echo $url_title; ?>" src="images/info.png" width="25"></a>
                                         <a href="https://wikipedia.org/wiki/<?php echo $sciname; ?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="25"></a>
                                         <?php if ($show_last_seen): ?>
-                                            <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>')" width="25" src="images/chart.svg">
+                                            <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>', 160)" width="25" src="images/chart.svg">
                                         <?php endif; ?>
                                         <a target="_blank" href="index.php?filename=<?php echo $todaytable['File_Name']; ?>"><img style="height: 1em;cursor:pointer;float:unset;display:inline" class="copyimage-mobile" title="Open in new tab" width="16" src="images/copy.png"></a>
                                     </i><br></form></div>
