@@ -58,6 +58,7 @@ $totalspeciestally = $result6->fetchArray(SQLITE3_ASSOC);
 
 if(isset($_GET['comname'])) {
  $birdName = $_GET['comname'];
+ $birdName = str_replace("__", "'", $birdName);
  $birdName = str_replace("_", " ", $birdName);
 
 
@@ -192,6 +193,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
     $iterations++;
 
     $comname = preg_replace('/ /', '_', $todaytable['Com_Name']);
+    $comnamegraph = preg_replace('/\'/', '__', $comname);
     $comname = preg_replace('/\'/', '', $comname);
     $filename = "/By_Date/".date('Y-m-d')."/".$comname."/".$todaytable['File_Name'];
     $filename_formatted = $todaytable['Date']."/".$comname."/".$todaytable['File_Name'];
@@ -240,7 +242,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
           <i><?php echo $todaytable['Sci_Name'];?></i>
           <a href="<?php echo $url;?>" target="_blank"><img style="cursor:pointer;float:unset;display:inline" title=<?php echo $url_title;?> src="images/info.png" width="20"></a>
           <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style=";cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="20"></a>
-          <img style=";cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comname; ?>')" width=20 src="images/chart.svg"><br>
+          <img style=";cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>')" width=20 src="images/chart.svg"><br>
           <b>Confidence:</b> <?php echo round((float)round($todaytable['Confidence'],2) * 100 ) . '%';?><br></div><br>
           <video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster="<?php echo $filename.".png";?>" preload="none" title="<?php echo $filename;?>"><source preload="none" src="<?php echo $filename;?>"></video>
           </td>
@@ -264,7 +266,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
 	                    <a href="<?php echo $url;?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title=<?php echo $url_title;?> src="images/info.png" width="25"></a>
 			    <?php if($_GET['kiosk'] == false){?>
 	    		    <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="25"></a>
-	                    <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comname; ?>')" width=25 src="images/chart.svg">
+	                    <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>')" width=25 src="images/chart.svg">
 	                    <a target="_blank" href="index.php?filename=<?php echo $todaytable['File_Name']; ?>"><img style="height: 1em;cursor:pointer;float:unset;display:inline" class="copyimage-mobile" title="Open in new tab" width=16 src="images/copy.png"></a>
 		    	    <?php } ?></i>
 	                <br>

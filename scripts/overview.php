@@ -67,6 +67,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
   while($mostrecent = $result4->fetchArray(SQLITE3_ASSOC)) {
     $comname = preg_replace('/ /', '_', $mostrecent['Com_Name']);
     $sciname = preg_replace('/ /', '_', $mostrecent['Sci_Name']);
+    $comnamegraph = preg_replace('/\'/', '__', $comname);
     $comname = preg_replace('/\'/', '', $comname);
     $filename = "By_Date/".$mostrecent['Date']."/".$comname."/".$mostrecent['File_Name'];
 
@@ -133,7 +134,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
                   <a href="<?php $info_url = get_info_url($mostrecent['Sci_Name']); $url = $info_url['URL']; echo $url ?>" target="_blank">
                   <img style="width: unset !important; display: inline; height: 1em; cursor: pointer;" title="Info" src="images/info.png" width="25"></a>
                   <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style="width: unset !important; display: inline; height: 1em; cursor: pointer;" title="Wikipedia" src="images/wiki.png" width="25"></a>
-                  <img style="width: unset !important;display: inline;height: 1em;cursor:pointer" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comname; ?>')" width=25 src="images/chart.svg">
+                  <img style="width: unset !important;display: inline;height: 1em;cursor:pointer" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>')" width=25 src="images/chart.svg">
                   <br>Confidence: <?php echo $percent = round((float)round($mostrecent['Confidence'],2) * 100 ) . '%';?><br></div><br>
                   <video style="margin-top:10px" onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster="<?php echo $filename.".png";?>" preload="none" title="<?php echo $filename;?>"><source src="<?php echo $filename;?>"></video></td>
               </form>
