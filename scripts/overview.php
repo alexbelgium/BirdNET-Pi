@@ -388,7 +388,7 @@ function refreshTopTen() {
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
   if(this.responseText.length > 0 && !this.responseText.includes("Database is busy") && !this.responseText.includes("No Detections") || previous_detection_identifier == undefined) {
-    document.getElementById("chart").src = "Charts/"+this.responseText+"?nocache="+Date.now();
+    if (document.getElementById("chart")) {document.getElementById("chart").src = "Charts/"+this.responseText+"?nocache="+Date.now();}
   }
   }
   xhttp.open("GET", "overview.php?fetch_chart_string=true", true);
