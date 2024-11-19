@@ -1,9 +1,13 @@
 <?php
+error_reporting(E_ERROR);
+ini_set('display_errors',1);
+
 session_start();
 require_once "scripts/common.php";
 $user = get_user();
 $home = get_home();
 
+$restore = "sudo -u $user $home/BirdNET-Pi/scripts/backup_data.sh -a restore -f $backup_file";
 $fetch = shell_exec("sudo -u".$user." git -C ".$home."/BirdNET-Pi fetch 2>&1");
 $str = trim(shell_exec("sudo -u".$user." git -C ".$home."/BirdNET-Pi status"));
 if (preg_match("/behind '.*?' by (\d+) commit(s?)\b/", $str, $matches)) {
@@ -19,6 +23,10 @@ if (stripos($str, "Your branch is up to date") !== false) {
 }
 $_SESSION['behind'] = $num_commits_behind;
 $_SESSION['behind_time'] = time();
+
+$max_upload_size = floor(disk_free_space("$home/BirdNET-Pi/") / 2.001);
+$backup_file = "$home/BirdNET-Pi/uploads/backup-*.tar";
+
 ?><html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <br>
@@ -49,7 +57,10 @@ function update() {
     <button type="submit" name="submit" value="sudo clear_all_data.sh" onclick="return confirm('Clear ALL Data? Note that this cannot be undone and will take up to 90 seconds.')">Clear ALL data</button>
   </div>
 </form>
+<div id="container">
+  <button id="pickfile" type="button" href="javascript:;">Restore data</button>
 </div>
+<div><a href="scripts/backup.php" download ><button onclick="return confirm('Download backup? Note that this could take a long time.')">Backup data</button></a></div>
 <?php
   $cmd="cd ".$home."/BirdNET-Pi && sudo -u ".$user." git rev-list --max-count=1 HEAD";
   $curr_hash = shell_exec($cmd);
@@ -58,4 +69,54 @@ function update() {
   <a href="https://github.com/Nachtzuster/BirdNET-Pi/commit/<?php echo $curr_hash; ?>" target="_blank">
     <p style="font-size:11px;text-align:center;box-sizing: border-box"><?php echo $curr_hash; ?></p>
   </a>
+  <pre id="console" style="text-align:center"></pre>
 </div>
+<script type="text/javascript">
+// based on Custom example logic
+
+var uploader = new plupload.Uploader({
+	runtimes : 'html5',
+	browse_button : 'pickfile', // you can pass an id...
+	container: document.getElementById('container'), // ... or DOM Element itself
+	url : 'scripts/upload.php',
+        chunk_size: '1mb',
+	multi_selection: false,
+	
+	filters : {
+		max_file_size : '<?php echo "$max_upload_size"; ?>',
+		mime_types: [
+			{title : "Tar files", extensions : "tar"}
+		]
+	},
+
+	init: {
+		FilesAdded: function(up, files) {
+                    uploader.start();
+		},
+
+		UploadProgress: function(up, file) {
+			document.getElementById('pickfile').innerHTML = '<span>Uploading: ' + file.percent + "%</span>";
+		},
+
+		FileUploaded: function(up, file, info) {
+                    // Called when file has finished uploading
+                    console.log('[FileUploaded] File:', file, "Info:", info);
+                    setInterval(function(){ if (document.getElementById('pickfile')) { seconds += 1; document.getElementById('pickfile').innerHTML = "Restoring: <pre id='timer' class='bash'>"+new Date(seconds * 1000).toISOString().substring(14, 19)+"</span>"; } }, 1000);
+                    const xhttp = new XMLHttpRequest();
+                    xhttp.onload = function() {
+                      if(this.responseText.length > 0) {
+                          document.body.innerHTML=this.responseText;
+                      }
+                    };
+                    xhttp.open("GET", "views.php?submit=<?php echo "$restore"; ?>");
+                    xhttp.send();
+		},
+
+		Error: function(up, err) {
+			document.getElementById('console').appendChild(document.createTextNode("\nError #" + err.code + ": " + err.message));
+		}
+	}
+});
+
+uploader.init();
+</script>
