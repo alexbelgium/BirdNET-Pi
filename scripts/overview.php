@@ -403,9 +403,9 @@ function display_species($species_list, $title, $show_last_seen=false) {
                             $days_ago = $todaytable['DaysAgo'];
                             if ($days_ago > 30) {
                                 $months_ago = floor($days_ago / 30);
-                                $last_seen_text = "{$todaytable['Time']}<br><i>Last seen: {$months_ago}mo ago</i>";
+                                $last_seen_text = "<br>{$todaytable['Time']}<br><i>Last seen: {$months_ago}mo ago</i>";
                             } else {
-                                $last_seen_text = "{$todaytable['Time']}<br><i>Last seen: {$days_ago}d ago</i>";
+                                $last_seen_text = "<br>{$todaytable['Time']}<br><i>Last seen: {$days_ago}d ago</i>";
                             }
                         } else {
                             $last_seen_text = $todaytable['Time'];
@@ -429,7 +429,7 @@ function display_species($species_list, $title, $show_last_seen=false) {
                                         <a target="_blank" href="index.php?filename=<?php echo $todaytable['File_Name']; ?>"><img style="height: 1em;cursor:pointer;float:unset;display:inline" class="copyimage-mobile" title="Open in new tab" width="16" src="images/copy.png"></a>
                                     </i><br></form></div>
                         </td>
-                        <td><b>Confidence:</b> <?php echo round($todaytable['Confidence'] * 100 ) . '%'; ?><br></td>
+                        <td><b>Confidence:</b> <?php echo round($todaytable['Confidence'] * 100 ) . '%'; echo $last_seen_text; ?><br></td>
                     </tr>
                     <?php endforeach; ?>
                 </table>
