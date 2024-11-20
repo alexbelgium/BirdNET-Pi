@@ -403,16 +403,15 @@ function display_species($species_list, $title, $show_last_seen=false) {
                             $days_ago = $todaytable['DaysAgo'];
                             if ($days_ago > 30) {
                                 $months_ago = floor($days_ago / 30);
-                                $last_seen_text = "<br>{$todaytable['Time']}<br><i>Last seen: {$months_ago}mo ago</i>";
+                                $last_seen_text = "<i>Last seen: {$months_ago}mo ago</i>";
                             } else {
-                                $last_seen_text = "<br>{$todaytable['Time']}<br><i>Last seen: {$days_ago}d ago</i>";
+                                $last_seen_text = "<i>Last seen: {$days_ago}d ago</i>";
                             }
                         } else {
                             $last_seen_text = $todaytable['Time'];
                         }
                     ?>
                     <tr class="relative" id="<?php echo $iterations; ?>">
-                        <td><?php echo $last_seen_text; ?><br></td>
                         <td><?php if (!empty($image_url)): ?>
                           <img onclick='setModalText(<?php echo $iterations; ?>,"<?php echo urlencode($image[2]); ?>", "<?php echo $image[3]; ?>", "<?php echo $image[4]; ?>", "<?php echo $image[1]; ?>", "<?php echo $image[5]; ?>")' src="<?php echo $image_url; ?>" style="max-width: none; height: 50px; width: 50px; border-radius: 5px; cursor: pointer;" class="img1" title="Image from Flickr" />
                         <?php endif; ?></td>
@@ -427,9 +426,10 @@ function display_species($species_list, $title, $show_last_seen=false) {
                                             <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>', 160)" width="25" src="images/chart.svg">
                                         <?php endif; ?>
                                         <a target="_blank" href="index.php?filename=<?php echo $todaytable['File_Name']; ?>"><img style="height: 1em;cursor:pointer;float:unset;display:inline" class="copyimage-mobile" title="Open in new tab" width="16" src="images/copy.png"></a>
-                                    </i><br></form></div>
+                                    </i><br>
+                                    <?php echo $last_seen_text; ?></form></div>
                         </td>
-                        <td><b>Confidence:</b> <?php echo round($todaytable['Confidence'] * 100 ) . '%'; echo $last_seen_text; ?><br></td>
+                        <td><b>Confidence:</b> <?php echo round($todaytable['Confidence'] * 100 ) . '%'; echo $todaytable['Time']; ?><br></td>
                     </tr>
                     <?php endforeach; ?>
                 </table>
