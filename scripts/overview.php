@@ -438,9 +438,9 @@ function display_species($species_list, $title, $show_last_seen=false) {
                                     <?php endif; ?>
                                     <br>Confidence: <?php echo round($todaytable['Confidence'] * 100 ) . '%'; ?><br>
                                 </form>
+                                <td><?php echo $last_seen_text; ?><br></td>
                             </div>
                         </td>
-                        <td><?php echo $last_seen_text; ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </table>
