@@ -429,7 +429,7 @@ function display_species($species_list, $title, $show_last_seen=false) {
                                     </i><br>
                                     <?php echo $last_seen_text; ?></form></div>
                         </td>
-                        <td><b>Confidence:</b> <?php echo round($todaytable['Confidence'] * 100 ) . '%'; echo $todaytable['Time']; ?><br></td>
+                        <td><b>Confidence:</b> <?php echo round($todaytable['Confidence'] * 100 ) . '%'; echo "<br>"; echo $todaytable['Time']; ?><br></td>
                     </tr>
                     <?php endforeach; ?>
                 </table>
