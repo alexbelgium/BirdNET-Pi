@@ -438,7 +438,9 @@ function display_species($species_list, $title, $show_last_seen=false) {
                                     <?php endif; ?>
                                     <br>Confidence: <?php echo round($todaytable['Confidence'] * 100 ) . '%'; ?><br>
                                 </form>
-                                <td><?php echo $last_seen_text; ?><br></td>
+                                <video style="margin-top:10px" onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster="<?php echo $filename.".png";?>" preload="none" title="<?php echo $filename;?>">
+                                    <source src="<?php echo $filename;?>">
+                                </video>
                             </div>
                         </td>
                     </tr>
