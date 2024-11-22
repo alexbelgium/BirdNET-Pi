@@ -413,7 +413,7 @@ function display_species($species_list, $title, $show_last_seen=false) {
                         }
                         
                         $time_occurrence_text = "<br>{$todaytable['Time']}";
-                        if (isset($todaytable['OccurrenceCount']) && $todaytable['OccurrenceCount'] > 1) {
+                        if (isset($todaytable['OccurrenceCount']) && $todaytable['OccurrenceCount'] > 0) {
                             $time_occurrence_text .= " ({$todaytable['OccurrenceCount']}x)";
                         }
                     ?>
