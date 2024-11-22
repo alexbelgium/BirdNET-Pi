@@ -403,17 +403,16 @@ function display_species($species_list, $title, $show_last_seen=false) {
 
                         if ($show_last_seen && isset($todaytable['DaysAgo'])) {
                             $days_ago = $todaytable['DaysAgo'];
+                            $last_seen_text = "";
                             if ($days_ago > 30) {
                                 $months_ago = floor($days_ago / 30);
                                 $last_seen_text = "<br><i>Last : {$months_ago}mo ago</i>";
                             } else {
                                 $last_seen_text = "<br><i>Last : {$days_ago}d ago</i>";
                             }
-                        } else {
-                            $last_seen_text = $todaytable['Time'];
                         }
                         
-                        $time_occurrence_text = "{$todaytable['Time']} ({$todaytable['OccurrenceCount']}x)";
+                        $time_occurrence_text = "<br>{$todaytable['Time']} ({$todaytable['OccurrenceCount']}x)";
                     ?>
                     <tr class="relative" id="<?php echo $iterations; ?>">
                         <td><?php if (!empty($image_url)): ?>
