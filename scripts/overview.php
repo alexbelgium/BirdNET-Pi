@@ -318,15 +318,8 @@ if (get_included_files()[0] === __FILE__) {
 $statement = $db->prepare("
 SELECT d_today.Com_Name, d_today.Sci_Name, d_today.Date, d_today.Time, d_today.Confidence, d_today.File_Name, 
        MAX(d_today.Confidence) as MaxConfidence,
-       (SELECT MAX(Date) 
-        FROM detections d_prev 
-        WHERE d_prev.Com_Name = d_today.Com_Name 
-          AND d_prev.Date < DATE('now', 'localtime')) as LastSeenDate,
-       (SELECT COUNT(*) 
-        FROM detections d_occ 
-        WHERE d_occ.Com_Name = d_today.Com_Name 
-          AND d_occ.Date = DATE('now', 'localtime') 
-          AND d_occ.Time >= d_today.Time) as OccurrenceCount
+       (SELECT MAX(Date) FROM detections d_prev WHERE d_prev.Com_Name = d_today.Com_Name AND d_prev.Date < DATE('now', 'localtime')) as LastSeenDate,
+       (SELECT COUNT(*) FROM detections d_occ WHERE d_occ.Com_Name = d_today.Com_Name AND d_occ.Date = DATE('now', 'localtime') AND d_occ.Time >= d_today.Time) as OccurrenceCount
 FROM detections d_today
 WHERE d_today.Date = DATE('now', 'localtime')
 GROUP BY d_today.Com_Name
@@ -408,8 +401,6 @@ function display_species($species_list, $title, $show_last_seen=false) {
                             $image_url = $image[1] ?? ""; // Get the image URL if available
                         }
 
-                        $occurrence_text = isset($todaytable['OccurrenceCount']) ? " ({$todaytable['OccurrenceCount']}x)" : "";
-
                         if ($show_last_seen && isset($todaytable['DaysAgo'])) {
                             $days_ago = $todaytable['DaysAgo'];
                             if ($days_ago > 30) {
@@ -419,8 +410,10 @@ function display_species($species_list, $title, $show_last_seen=false) {
                                 $last_seen_text = "<br><i>Last seen: {$days_ago}d ago</i>";
                             }
                         } else {
-                            $last_seen_text = $todaytable['Time'] . $occurrence_text;
+                            $last_seen_text = $todaytable['Time'];
                         }
+                        
+                        $occurrence_text = isset($todaytable['OccurrenceCount']) ? " ({$todaytable['OccurrenceCount']}x)" : "";
                     ?>
                     <tr class="relative" id="<?php echo $iterations; ?>">
                         <td><?php if (!empty($image_url)): ?>
@@ -440,7 +433,7 @@ function display_species($species_list, $title, $show_last_seen=false) {
                                     </i>
                             </form></div>
                         </td>
-                        <td style="white-space: nowrap;"><b>Confidence: <?php echo round($todaytable['Confidence'] * 100 ) . '%</b>'; echo $last_seen_text; ?><br></td>
+                        <td style="white-space: nowrap;"><b>Confidence: <?php echo round($todaytable['Confidence'] * 100 ) . '%</b>'; echo $last_seen_text; echo $occurrence_text; ?><br></td>
                     </tr>
                     <?php endforeach; ?>
                 </table>
