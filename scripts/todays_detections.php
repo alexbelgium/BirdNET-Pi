@@ -57,10 +57,7 @@ $result6 = $statement6->execute();
 $totalspeciestally = $result6->fetchArray(SQLITE3_ASSOC);
 
 if(isset($_GET['comname'])) {
- $birdName = $_GET['comname'];
- $birdName = str_replace("__", "'", $birdName);
- $birdName = str_replace("_", " ", $birdName);
-
+ $birdName = htmlspecialchars_decode($_GET['comname'], ENT_QUOTES);
 
 // Set default days to 30 if not provided
 $days = isset($_GET['days']) ? intval($_GET['days']) : 30;
@@ -197,7 +194,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
     $iterations++;
 
     $comname = preg_replace('/ /', '_', $todaytable['Com_Name']);
-    $comnamegraph = preg_replace('/\'/', '__', $comname);
+    $comnamegraph = str_replace("'", "\'", $todaytable['Com_Name']);
     $comname = preg_replace('/\'/', '', $comname);
     $filename = "/By_Date/".date('Y-m-d')."/".$comname."/".$todaytable['File_Name'];
     $filename_formatted = $todaytable['Date']."/".$comname."/".$todaytable['File_Name'];
