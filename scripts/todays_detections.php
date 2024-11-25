@@ -191,7 +191,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
     $iterations++;
 
     $comname = preg_replace('/ /', '_', $todaytable['Com_Name']);
-    $comnamegraph = preg_replace('/\'/', '__', $comname);
+    $comnamegraph = str_replace("'", "\'", $todaytable['Com_Name']);
     $comname = preg_replace('/\'/', '', $comname);
     $filename = "/By_Date/".date('Y-m-d')."/".$comname."/".$todaytable['File_Name'];
     $filename_formatted = $todaytable['Date']."/".$comname."/".$todaytable['File_Name'];
