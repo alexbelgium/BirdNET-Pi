@@ -366,8 +366,8 @@ function display_species($species_list, $title, $show_last_seen=false) {
                     foreach($species_list as $todaytable):
                         $iterations++;
                         $comname = preg_replace('/ /', '_', $todaytable['Com_Name']);
-                        $comnamegraph = preg_replace('/\'/', '__', $comname);
                         $comname = preg_replace('/\'/', '', $comname);
+                        $comnamegraph = str_replace("'", "\'", $mostrecent['Com_Name']);
                         $filename = "/By_Date/".$todaytable['Date']."/".$comname."/".$todaytable['File_Name'];
                         $filename_formatted = $todaytable['Date']."/".$comname."/".$todaytable['File_Name'];
                         $sciname = preg_replace('/ /', '_', $todaytable['Sci_Name']);
