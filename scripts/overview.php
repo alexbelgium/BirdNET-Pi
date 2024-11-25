@@ -67,7 +67,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
   while($mostrecent = $result4->fetchArray(SQLITE3_ASSOC)) {
     $comname = preg_replace('/ /', '_', $mostrecent['Com_Name']);
     $sciname = preg_replace('/ /', '_', $mostrecent['Sci_Name']);
-    $comnamegraph = preg_replace('/\'/', '__', $comname);
+    $comnamegraph = str_replace("'", "\'", $mostrecent['Com_Name']);
     $comname = preg_replace('/\'/', '', $comname);
     $filename = "By_Date/".$mostrecent['Date']."/".$comname."/".$mostrecent['File_Name'];
 
