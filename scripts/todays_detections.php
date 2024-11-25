@@ -57,9 +57,7 @@ $result6 = $statement6->execute();
 $totalspeciestally = $result6->fetchArray(SQLITE3_ASSOC);
 
 if(isset($_GET['comname'])) {
- $birdName = $_GET['comname'];
- $birdName = str_replace("__", "'", $birdName);
- $birdName = str_replace("_", " ", $birdName);
+ $birdName = htmlspecialchars_decode($_GET['comname'], ENT_QUOTES);
 
 
 // Prepare a SQL statement to retrieve the detection data for the specified bird
