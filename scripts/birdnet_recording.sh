@@ -32,6 +32,7 @@ if [ ! -z $RTSP_STREAM ];then
     # Loop over the streams
     for i in "${RTSP_STREAMS_EXPLODED_ARRAY[@]}"
     do
+
       # Map id used to map input to output (first stream being 0), this is 0 based in ffmpeg so decrement our counter (which is more human readable) by 1
       MAP_ID=$((RTSP_STREAMS_STARTED_COUNT-1))
       # Build up the parameters to process the RSTP stream, including mapping for the output

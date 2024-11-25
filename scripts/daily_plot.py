@@ -1,20 +1,106 @@
-import argparse
-import os
-import sqlite3
-import textwrap
-from datetime import datetime
-from time import sleep
+#===============================================================================
+#=== daily_plot.py (adjusted version @jmtmp) ==========================================
+#===============================================================================
+#=== 2024-04-19: new version
+#=== 2024-04-28: new custom formatting for millions (my_int_fmt function)
+#===             new formatting of total occurence in semi-monthly plot
+#=== 2024-09-01: updated suptitle and xlabels formatting
+#=== 2024-09-05: Daemon implementing
+#=== 2024-09-26: transparent first column
+#=== 2024-10-02: code refactor
+#===============================================================================
 
-import matplotlib.font_manager as font_manager
-import matplotlib.pyplot as plt
-import numpy as np
+import argparse
+import sqlite3
+import os
 import pandas as pd
 import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as font_manager
 from matplotlib import rcParams
-from matplotlib.colors import LogNorm
-
+from matplotlib.colors import LogNorm, TwoSlopeNorm
+from matplotlib.ticker import FormatStrFormatter
+from datetime import datetime
+from time import sleep
+from functools import lru_cache
 from utils.helpers import DB_PATH, get_settings
+from utils.interactive_plot import create_plotly_heatmap
 
+# Cache the settings to avoid redundant calls
+@lru_cache(maxsize=None)
+def get_settings_cached():
+    return get_settings()
+
+def load_fonts():
+    # Add every font at the specified location
+    font_dir = [os.path.expanduser('~/BirdNET-Pi/homepage/static')]
+    for font in font_manager.findSystemFonts(font_dir, fontext='ttf'):
+        font_manager.fontManager.addfont(font)
+    # Set font family globally
+    lang = get_settings_cached()['DATABASE_LANG']
+    if lang in ['ja', 'zh']:
+        rcParams['font.family'] = 'Noto Sans JP'
+    elif lang == 'th':
+        rcParams['font.family'] = 'Noto Sans Thai'
+    else:
+        rcParams['font.family'] = 'Roboto Flex'
+
+def my_int_fmt(number, converthundreds=False):
+    try:
+        number = float(number)
+    except (ValueError, TypeError):
+        return str(number)
+    if number >= 9_500_000:
+        return f"{round(number / 1_000_000)}M"
+    elif number >= 950:
+        return f"{round(number / 1_000)}k"
+    elif converthundreds and number >= 100:
+        return f".{round(number / 100)}k"
+    else:
+        return str(int(number))
+
+def clr_plot_facecolor():
+    # Update colors according to color scheme
+    if get_settings_cached()['COLOR_SCHEME'] == "dark":
+        return 'darkgrey'
+    else:
+        return 'none'
+
+def clr_current_ticklabel():
+    # Update colors according to color scheme
+    if get_settings_cached()['COLOR_SCHEME'] == "dark":
+        return 'white'
+    else:
+        return 'red'
+
+def my_heatmap(axis, crosstable, clrmap, clrnorm, annotfmt='', annotsize='medium'):
+    # annotsize: float or {'xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'}
+    hm_axes = sns.heatmap(crosstable, cmap=clrmap, norm=clrnorm, cbar=False, linewidths=0.5, linecolor="Silver", ax=axis,
+                          annot=(annotfmt != ''), fmt=annotfmt, annot_kws={"fontsize": annotsize})
+    # Set border
+    for _, spine in hm_axes.spines.items():
+        spine.set_visible(True)
+    return hm_axes
+
+def get_daily_plot_data(conn, now):
+    sql_fields = "Time, Confidence, COUNT(DISTINCT Com_Name) as Species, COUNT(Com_Name) as Detections, COUNT(DISTINCT Date) as Days"
+    db_entire = pd.read_sql_query(f"SELECT {sql_fields} FROM detections", conn)
+    db_today = pd.read_sql_query(f"SELECT {sql_fields} FROM detections WHERE Date = DATE('now')", conn)
+    # Prepare suptitle
+    avg_daily_detections = round(int(db_entire.Detections[0]) / int(db_entire.Days[0]))
+    plot_suptitle = f"Hourly overview updated at {now.strftime('%Y-%m-%d %H:%M:%S')}\n"
+    plot_suptitle += f"({db_today.Species[0]} species today, {db_entire.Species[0]} in total;  "
+    plot_suptitle += f"{db_today.Detections[0]} detections today, {avg_daily_detections} on average)"
+    # Prepare dataset
+    sql = """
+        SELECT Time, Confidence, Date, CAST(strftime('%H', Time) AS INTEGER) AS Hour, Com_Name,
+               COUNT(Com_Name) AS Count, MAX(Confidence) AS Conf
+        FROM detections
+        WHERE Date = DATE('now', 'localtime')
+        GROUP BY Hour, Com_Name
+    """
+    plot_dataframe = pd.read_sql_query(sql, conn)
+    return plot_suptitle, plot_dataframe
 
 def get_data(now=None):
     conn = sqlite3.connect(DB_PATH)
@@ -32,196 +118,157 @@ def get_data(now=None):
 
     return df, now
 
+def get_yearly_plot_data(conn, now):
+    sql_fields = "COUNT(DISTINCT Com_Name) as Species, COUNT(Com_Name) as Detections, COUNT(DISTINCT Date) as Days"
+    db_entire = pd.read_sql_query(f"SELECT {sql_fields} FROM detections", conn)
+    db_ytd = pd.read_sql_query(f"SELECT {sql_fields} FROM detections WHERE Date >= DATE('now','start of year')", conn)
+    # Prepare suptitle
+    plot_suptitle = (f"Semi-monthly overview updated at {now.strftime('%Y-%m-%d %H:%M:%S')}   "
+                     f"({db_ytd.Species[0]} species this year, {db_entire.Species[0]} in total)")
+    # Prepare dataset
+    sql = """
+        SELECT 2 * (CAST(strftime('%m', Date) AS INTEGER) - 1) +
+               CASE WHEN CAST(strftime('%d', Date) AS INTEGER) < 16 THEN 0 ELSE 1 END AS Period,
+               strftime('%Y', Date) AS Year, Com_Name,
+               COUNT(Com_Name) AS Count, MAX(Confidence) AS Conf
+        FROM detections
+        WHERE Date >= DATE('now','start of year')
+        GROUP BY Period, Com_Name
+    """
+    plot_dataframe = pd.read_sql_query(sql, conn)
+    return plot_suptitle, plot_dataframe
 
-# Function to show value on bars - from https://stackoverflow.com/questions/43214978/seaborn-barplot-displaying-values
-def show_values_on_bars(ax, label):
-    conf = get_settings()
+def create_plot(chart_name, chart_suptitle, df_birds, now, time_unit, period_col, xlabel, xtick_labels):
+    # Common code for data preparation
+    df_birds_summary = df_birds.groupby('Com_Name').agg({'Count': 'sum', 'Conf': 'max'})
+    df_birds_ordered = df_birds_summary.sort_values(by=['Count', 'Conf'], ascending=[False, False])
+    df_birds['Com_Name'] = pd.Categorical(df_birds['Com_Name'], ordered=True, categories=df_birds_ordered.index)
+    no_of_rows = df_birds_summary.shape[0]
+    total_recordings = df_birds['Count'].sum()
+    if no_of_rows == 0:
+        print("No data available for plotting.")
+        return
 
-    for i, p in enumerate(ax.patches):
-        x = p.get_x() + p.get_width() * 0.9
-        y = p.get_y() + p.get_height() / 2
-        # Species confidence
-        # value = '{:.0%}'.format(label.iloc[i])
-        # Species Count Total
-        value = '{:n}'.format(p.get_width())
-        bbox = {'facecolor': 'lightgrey', 'edgecolor': 'none', 'pad': 1.0}
-        if conf['COLOR_SCHEME'] == "dark":
-            color = 'black'
-        else:
-            color = 'darkgreen'
+    # Prepare crosstables
+    df_confidences = pd.crosstab(index=df_birds['Com_Name'], columns=df_birds[time_unit], values=df_birds['Conf'], aggfunc='max')
+    df_detections = pd.crosstab(index=df_birds['Com_Name'], columns=df_birds[time_unit], values=df_birds['Count'], aggfunc='sum')
+    df_perioddata = pd.crosstab(index=df_birds['Com_Name'], columns=df_birds[period_col], values=df_birds['Count'], aggfunc='sum')
 
-        ax.text(x, y, value, bbox=bbox, ha='center', va='center', size=9, color=color)
+    # Prepare empty matrix for periods
+    df_empty_matrix = pd.DataFrame(data=0, index=df_perioddata.index, columns=pd.Series(data=range(len(xtick_labels))))
+    df_perioddata = (df_empty_matrix + df_perioddata).fillna(0)
 
+    # Color palettes
+    color_scheme = get_settings_cached()['COLOR_SCHEME']
+    cmap_confi = 'PiYG' if color_scheme != "dark" else 'Greys'
+    cmap_count = 'Blues' if color_scheme != "dark" else 'Greys'
+    norm_confi = TwoSlopeNorm(vmin=0.25, vmax=1.25, vcenter=0.75)
+    norm_count = LogNorm(vmin=1, vmax=total_recordings)
 
-def wrap_width(txt):
-    # try to estimate wrap width
-    w = 16
-    for c in txt:
-        if c in ['M', 'm', 'W', 'w']:
-            w -= 0.33
-        if c in ['I', 'i', 'j', 'l']:
-            w += 0.33
-    return round(w)
+    # Plot dimensions
+    row_height = 0.28
+    fig_height = row_height * (no_of_rows + 4)
+    row_space = row_height / fig_height
 
+    # Plot setup
+    f, axs = plt.subplots(1, 4, figsize=(10, fig_height), width_ratios=[5, 2, 2, 18], facecolor=clr_plot_facecolor())
+    plt.subplots_adjust(left=0.02, right=0.98, top=(1 - 2 * row_space), bottom=(0 + 2 * row_space), wspace=0, hspace=0)
+    plt.suptitle(chart_suptitle, y=0.99)
 
-def create_plot(df_plt_today, now, is_top=None):
-    if is_top is not None:
-        readings = 10
-        if is_top:
-            plt_selection_today = (df_plt_today['Com_Name'].value_counts()[:readings])
-        else:
-            plt_selection_today = (df_plt_today['Com_Name'].value_counts()[-readings:])
-    else:
-        plt_selection_today = df_plt_today['Com_Name'].value_counts()
-        readings = len(df_plt_today['Com_Name'].value_counts())
+    # Bird name column
+    axs[0].set_xlim(0, 1)
+    axs[0].set_ylim(0, len(df_confidences.index))
+    axs[0].axis('off')
 
-    df_plt_selection_today = df_plt_today[df_plt_today.Com_Name.isin(plt_selection_today.index)]
+    # Confidence column
+    hm_confi = my_heatmap(axs[1], df_confidences, cmap_confi, norm_confi, annotfmt=".0%")
+    hm_confi.tick_params(bottom=True, left=False, labelbottom=True, labeltop=False, labelleft=True, labelrotation=0)
+    hm_confi.set(xlabel=None, ylabel=None, xticklabels=['max\nconfidence'])
 
-    conf = get_settings()
+    # Occurrence column
+    hm_count = my_heatmap(axs[2], df_detections, cmap_count, norm_count, annotfmt="g")
+    hm_count.tick_params(bottom=True, left=False, labelbottom=True, labeltop=False, labelleft=False)
+    hm_count.set(xlabel=None, ylabel=None, xticklabels=['total\ndetections'])
 
-    # Set up plot axes and titles
-    height = max(readings / 3, 0) + 1.06
-    if conf['COLOR_SCHEME'] == "dark":
-        facecolor = 'darkgrey'
-    else:
-        facecolor = 'none'
+    # Apply custom annotation format
+    for t in hm_count.texts:
+        if len(t.get_text()) > 3:
+            t.set_text(my_int_fmt(t.get_text()))
 
-    f, axs = plt.subplots(1, 2, figsize=(10, height), gridspec_kw=dict(width_ratios=[3, 6]), facecolor=facecolor)
+    # Occurrence heatmap
+    hm_data = my_heatmap(axs[3], df_perioddata, cmap_count, norm_count, annotfmt="g", annotsize=9)
+    hm_data.tick_params(bottom=True, top=False, left=False, labelbottom=True, labeltop=False,
+                        labelleft=False, labelrotation=0)
+    hm_data.set(xlabel=None, ylabel=None)
+    hm_data.set_xlabel(xlabel, labelpad=1)
+    hm_data.xaxis.set_major_formatter(FormatStrFormatter('%d'))
+    hm_data.set_xticklabels(xtick_labels)
 
-    # generate y-axis order for all figures based on frequency
-    freq_order = df_plt_selection_today['Com_Name'].value_counts().index
+    # Apply custom annotation format
+    for t in hm_data.texts:
+        if len(t.get_text()) > 2:
+            t.set_text(my_int_fmt(t.get_text(), converthundreds=True))
 
-    # make color for max confidence --> this groups by name and calculates max conf
-    confmax = df_plt_selection_today.groupby('Com_Name')['Confidence'].max()
-    # reorder confmax to detection frequency order
-    confmax = confmax.reindex(freq_order)
+    # Set tick label for current period
+    for idx, label in enumerate(hm_data.get_xticklabels()):
+        if period_col == 'Hour':
+            if int(label.get_text()) == now.hour:
+                label.set_color(clr_current_ticklabel())
+        elif period_col == 'Period':
+            # Map current period to index
+            current_period = 2 * (now.month - 1) + (0 if now.day < 16 else 1)
+            if idx == current_period:
+                label.set_color(clr_current_ticklabel())
 
-    # norm values for color palette
-    norm = plt.Normalize(confmax.values.min(), confmax.values.max())
-    if is_top or is_top is None:
-        # Set Palette for graphics
-        if conf['COLOR_SCHEME'] == "dark":
-            pal = "Greys"
-            colors = plt.cm.Greys(norm(confmax)).tolist()
-        else:
-            pal = "Greens"
-            colors = plt.cm.Greens(norm(confmax)).tolist()
-        if is_top:
-            plot_type = "Top"
-        else:
-            plot_type = 'All'
-        name = "Combo"
-    else:
-        # Set Palette for graphics
-        pal = "Reds"
-        colors = plt.cm.Reds(norm(confmax)).tolist()
-        plot_type = "Bottom"
-        name = "Combo2"
-
-    # Generate frequency plot
-    plot = sns.countplot(y='Com_Name', hue='Com_Name', legend=False, data=df_plt_selection_today,
-                         palette=dict(zip(confmax.index, colors)), order=freq_order, ax=axs[0], edgecolor='lightgrey')
-
-    # Prints Max Confidence on bars
-    show_values_on_bars(axs[0], confmax)
-
-    # Try plot grid lines between bars - problem at the moment plots grid lines on bars - want between bars
-    yticklabels = ['\n'.join(textwrap.wrap(ticklabel.get_text(), wrap_width(ticklabel.get_text()))) for ticklabel in plot.get_yticklabels()]
-    # Next two lines avoid a UserWarning on set_ticklabels() requesting a fixed number of ticks
-    yticks = plot.get_yticks()
-    plot.set_yticks(yticks)
-    plot.set_yticklabels(yticklabels, fontsize=10)
-    plot.set(ylabel=None)
-    plot.set(xlabel="Detections")
-
-    # Generate crosstab matrix for heatmap plot
-    heat = pd.crosstab(df_plt_selection_today['Com_Name'], df_plt_selection_today['Hour of Day'])
-
-    # Order heatmap Birds by frequency of occurrance
-    heat.index = pd.CategoricalIndex(heat.index, categories=freq_order)
-    heat.sort_index(level=0, inplace=True)
-
-    hours_in_day = pd.Series(data=range(0, 24))
-    heat_frame = pd.DataFrame(data=0, index=heat.index, columns=hours_in_day)
-    heat = (heat+heat_frame).fillna(0)
-    # mask out zeros, so they do not show up in the final plot. this happens when max count/h is one
-    heat[heat == 0] = np.nan
-
-    # Generatie heatmap plot
-    plot = sns.heatmap(heat, norm=LogNorm(),  annot=True,  annot_kws={"fontsize": 7}, fmt="g", cmap=pal, square=False,
-                       cbar=False, linewidths=0.5, linecolor="Grey", ax=axs[1], yticklabels=False)
-
-    # Set color and weight of tick label for current hour
-    for label in plot.get_xticklabels():
-        if int(label.get_text()) == now.hour:
-            if conf['COLOR_SCHEME'] == "dark":
-                label.set_color('white')
-            else:
-                label.set_color('yellow')
-
-    plot.set_xticklabels(plot.get_xticklabels(), rotation=0, size=8)
-
-    # Set heatmap border
-    for _, spine in plot.spines.items():
-        spine.set_visible(True)
-
-    plot.set(ylabel=None)
-    plot.set(xlabel="Hour of Day")
-    # Set combined plot layout and titles
-    y = 1 - 8 / (height * 100)
-    plt.suptitle(f"{plot_type} {readings} Last Updated: {now.strftime('%Y-%m-%d %H:%M')}", y=y)
-    f.tight_layout()
-    top = 1 - 40 / (height * 100)
-    f.subplots_adjust(left=0.125, right=0.9, top=top, wspace=0)
-
-    # Save combined plot
-    save_name = os.path.expanduser(f"~/BirdSongs/Extracted/Charts/{name}-{now.strftime('%Y-%m-%d')}.png")
-    plt.savefig(save_name)
+    # Save the plot
+    plt.savefig(os.path.expanduser(f'~/BirdSongs/Extracted/Charts/{chart_name}.png'))
     plt.show()
     plt.close()
 
-
-def load_fonts():
-    conf = get_settings()
-    # Add every font at the specified location
-    font_dir = [os.path.expanduser('~/BirdNET-Pi/homepage/static')]
-    for font in font_manager.findSystemFonts(font_dir, fontext='ttf'):
-        font_manager.fontManager.addfont(font)
-    # Set font family globally
-    if conf['DATABASE_LANG'] in ['ja', 'zh']:
-        rcParams['font.family'] = 'Noto Sans JP'
-    elif conf['DATABASE_LANG'] == 'th':
-        rcParams['font.family'] = 'Noto Sans Thai'
-    else:
-        rcParams['font.family'] = 'Roboto Flex'
-
-
 def main(daemon, sleep_m):
     load_fonts()
-    last_run = None
     while True:
-        now = datetime.now()
-        # now = datetime.strptime('2023-12-13T23:59:59', "%Y-%m-%dT%H:%M:%S")
-        # now = datetime.strptime('2024-01-02T23:59:59', "%Y-%m-%dT%H:%M:%S")
-        # now = datetime.strptime('2024-02-26T23:59:59', "%Y-%m-%dT%H:%M:%S")
-        # now = datetime.strptime('2024-04-03T23:59:59', "%Y-%m-%dT%H:%M:%S")
-        # now = datetime.strptime('2024-04-07T23:59:59', "%Y-%m-%dT%H:%M:%S")
-        if last_run and now.day != last_run.day:
-            print("getting yesterday's dataset")
-            yesterday = last_run.replace(hour=23, minute=59)
-            data, time = get_data(yesterday)
-        else:
-            data, time = get_data(now)
-        if not data.empty:
-            create_plot(data, time)
-        else:
-            print('empty dataset')
+        with sqlite3.connect(DB_PATH) as conn:
+            now = datetime.now()
+
+            # Generate daily plot data and static plot
+            suptitle, dataframe = get_daily_plot_data(conn, now)
+            create_plot(
+                chart_name='Combo-' + now.strftime("%Y-%m-%d"),
+                chart_suptitle=suptitle,
+                df_birds=dataframe,
+                now=now,
+                time_unit='Date',
+                period_col='Hour',
+                xlabel='hourly detections',
+                xtick_labels=list(range(24))
+            )
+
+            try:
+                data, time = get_data(now)
+                create_plotly_heatmap(data, time)
+            except Exception as e:
+                print(f"Failed to create interactive heatmap: {e}")
+
+            # Generate yearly plot data and static plot
+            suptitle, dataframe = get_yearly_plot_data(conn, now)
+            month_labels = ['Jan', '', 'Feb', '', 'Mar', '', 'Apr', '', 'May', '', 'Jun', '', 'Jul', '',
+                            'Aug', '', 'Sep', '', 'Oct', '', 'Nov', '', 'Dec', '']
+            create_plot(
+                chart_name='Combo2-' + now.strftime("%Y-%m-%d"),
+                chart_suptitle=suptitle,
+                df_birds=dataframe,
+                now=now,
+                time_unit='Year',
+                period_col='Period',
+                xlabel='semi-monthly detections',
+                xtick_labels=month_labels
+            )
+
         if daemon:
-            last_run = now
             sleep(60 * sleep_m)
         else:
             break
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
