@@ -406,9 +406,9 @@ function display_species($species_list, $title, $show_last_seen=false) {
                             $days_ago = $todaytable['DaysAgo'];
                             if ($days_ago > 30) {
                                 $months_ago = floor($days_ago / 30);
-                                $last_seen_text = "<br><i>Last <span class='text left'>seen</span>: {$months_ago}mo ago</i>";
+                                $last_seen_text = "<br><i><span class='text left'>Last seen:</span>{$months_ago}mo ago</i>";
                             } else {
-                                $last_seen_text = "<br><i>Last <span class='text left'>seen</span>: {$days_ago}d ago</i>";
+                                $last_seen_text = "<br><i><span class='text left'>Last seen:</span>{$days_ago}d ago</i>";
                             }
                         }
 
