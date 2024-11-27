@@ -409,12 +409,11 @@ function display_species($species_list, $title, $show_last_seen=false) {
                             } else {
                                 $last_seen_text = "<br><i>Last: {$days_ago}d ago</i>";
                             }
-                            
                         }
-                        
-                        $time_occurrence_text = "<br>{$todaytable['Time']}";
+
+                        $occurrence_text = "";
                         if (isset($todaytable['OccurrenceCount']) && $todaytable['OccurrenceCount'] > 1) {
-                            $time_occurrence_text .= " ({$todaytable['OccurrenceCount']}x)";
+                            $occurrence_text = " ({$todaytable['OccurrenceCount']}x)";
                         }
                     ?>
                     <tr class="relative" id="<?php echo $iterations; ?>">
@@ -435,7 +434,7 @@ function display_species($species_list, $title, $show_last_seen=false) {
                                     </i>
                             </form></div>
                         </td>
-                        <td style="white-space: nowrap;">Confidence: <?php echo round($todaytable['Confidence'] * 100 ) . '%'; echo $last_seen_text; echo $time_occurrence_text; ?><br></td>
+                        <td style="white-space: nowrap;">Max Confidence: <?php echo round($todaytable['Confidence'] * 100 ) . '%' . $occurrence_text . "<br>{$todaytable['Time']}" . $last_seen_text; ?><br></td>
                     </tr>
                     <?php endforeach; ?>
                 </table>
