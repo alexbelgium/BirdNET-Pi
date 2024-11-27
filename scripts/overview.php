@@ -405,9 +405,9 @@ function display_species($species_list, $title, $show_last_seen=false) {
                             $days_ago = $todaytable['DaysAgo'];
                             if ($days_ago > 30) {
                                 $months_ago = floor($days_ago / 30);
-                                $last_seen_text = "{$months_ago}mo ago</i>";
+                                $last_seen_text = ": {$months_ago}mo ago</i>";
                             } else {
-                                $last_seen_text = "{$days_ago}d ago</i>";
+                                $last_seen_text = ": {$days_ago}d ago</i>";
                             }
                         }
 
@@ -435,9 +435,9 @@ function display_species($species_list, $title, $show_last_seen=false) {
                             </form></div>
                         </td>
                         <td style="white-space: nowrap;"><?php 
-                                echo '<span class="text left">Max Confidence: </span>' . round($todaytable['Confidence'] * 100 ) . '%';
-                                echo "<br><span class='text left'>First detection: </span>{$todaytable['Time']}" . $occurrence_text;
-                                echo '<br><i><span class="text left">Last seen: </span>' . $last_seen_text; 
+                                echo '<span class="text left">Max Confidence: </span>' . round($todaytable['Confidence'] * 100 ) . '%' . $occurrence_text;;
+                                echo "<br><span class='text left'>First detection: </span>{$todaytable['Time']}"
+                                echo '<br><i>Last <span class="text left">seen</span>' . $last_seen_text; 
                         ?></td>
                       </tr>
                     <?php endforeach; ?>
