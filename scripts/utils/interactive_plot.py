@@ -7,7 +7,6 @@ from plotly.subplots import make_subplots
 import numpy as np
 from utils.helpers import get_settings
 
-
 conf = get_settings()
 color_scheme = conf.get('COLOR_SCHEME', 'light')
 
@@ -36,16 +35,15 @@ else:
 
 ALL_HOURS = list(range(24))
 
-
 def load_fonts():
     conf = get_settings()
     # Define font families based on language settings
     if conf['DATABASE_LANG'] in ['ja', 'zh']:
-        font_family = 'Noto Sans JP'
+        return 'Noto Sans JP'
     elif conf['DATABASE_LANG'] == 'th':
-        font_family = 'Noto Sans Thai'
+        return 'Noto Sans Thai'
     else:
-        font_family = 'Roboto Flex'
+        return 'Roboto Flex'
 
 def normalize_logarithmic(arr):
     """Applies a logarithmic normalization to the array, mapping values between 0.5 and max(arr) to a normalized scale between 0 and 1."""
@@ -60,7 +58,7 @@ def determine_text_color(z, threshold=0.8):
     return np.where(z == 0, PLOT_BGCOLOR, np.where(z > threshold, PLOT_BGCOLOR, '#1A1A1A'))
 
 
-def add_annotations(text_array, text_colors, col, species_list, all_hours, annotations):
+def add_annotations(text_array, text_colors, col, species_list, all_hours, annotations, font_family):
     """Collects annotations for the heatmap without adding them individually, appending them to the provided annotations list."""
     if col in [1, 2]:  # Single-column heatmaps
         for i, species in enumerate(species_list):
@@ -86,7 +84,7 @@ def add_annotations(text_array, text_colors, col, species_list, all_hours, annot
 def create_plotly_heatmap(df_birds, now):
     """Creates a Plotly heatmap with annotations based on bird detection data."""
 
-    load_fonts()
+    font_family = load_fonts()
     
     main_title = f"Hourly Overview Updated at {now.strftime('%Y-%m-%d %H:%M:%S')}"
     subtitle = f"({df_birds['Com_Name'].nunique()} species today; {len(df_birds)} detections today)"
@@ -164,11 +162,11 @@ def create_plotly_heatmap(df_birds, now):
 
     annotations = []
     add_annotations(text_confidence.reshape(-1, 1), determine_text_color(z_confidence, threshold=0.5),
-                    col=1, species_list=species_list, all_hours=ALL_HOURS, annotations=annotations)
+                    col=1, species_list=species_list, all_hours=ALL_HOURS, annotations=annotations, font_family=font_family)
     add_annotations(text_detections.reshape(-1, 1), text_color_detections,
-                    col=2, species_list=species_list, all_hours=ALL_HOURS, annotations=annotations)
+                    col=2, species_list=species_list, all_hours=ALL_HOURS, annotations=annotations, font_family=font_family)
     add_annotations(text_hourly, text_color_hourly,
-                    col=3, species_list=species_list, all_hours=ALL_HOURS, annotations=annotations)
+                    col=3, species_list=species_list, all_hours=ALL_HOURS, annotations=annotations, font_family=font_family)
     fig.update_layout(annotations=annotations)
     annotations_json = json.dumps(annotations)
 
