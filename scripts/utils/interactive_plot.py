@@ -37,6 +37,16 @@ else:
 ALL_HOURS = list(range(24))
 
 
+def load_fonts():
+    conf = get_settings()
+    # Define font families based on language settings
+    if conf['DATABASE_LANG'] in ['ja', 'zh']:
+        font_family = 'Noto Sans JP'
+    elif conf['DATABASE_LANG'] == 'th':
+        font_family = 'Noto Sans Thai'
+    else:
+        font_family = 'Roboto Flex'
+
 def normalize_logarithmic(arr):
     """Applies a logarithmic normalization to the array, mapping values between 0.5 and max(arr) to a normalized scale between 0 and 1."""
     arr = arr.astype(float)
@@ -58,7 +68,7 @@ def add_annotations(text_array, text_colors, col, species_list, all_hours, annot
             if current_text:
                 annotations.append(dict(
                     x=0, y=species, text=current_text, showarrow=False,
-                    font=dict(color=current_color, size=10),
+                    font=dict(family=font_family, color=current_color, size=10),
                     xref=f'x{col}', yref=f'y{col}', xanchor='center', yanchor='middle'
                 ))
     elif col == 3:  # Multi-column heatmap
@@ -68,7 +78,7 @@ def add_annotations(text_array, text_colors, col, species_list, all_hours, annot
                 if current_text:
                     annotations.append(dict(
                         x=hour, y=species, text=current_text, showarrow=False,
-                        font=dict(color=current_color, size=10),
+                        font=dict(family=font_family, color=current_color, size=10),
                         xref='x3', yref='y3', xanchor='center', yanchor='middle'
                     ))
 
@@ -163,13 +173,13 @@ def create_plotly_heatmap(df_birds, now):
         title=dict(
             text=f"<b>{main_title}</b><br><span style='font-size:12px;'>{subtitle}</span>",
             x=0.5, y=0.97, xanchor='center', yanchor='top',
-            font=dict(size=20)
+            font=dict(family=font_family, size=20)
         ),
         autosize=True,
         height=max(600, len(species_list) * 25 + 100),
         yaxis=dict(
             autorange='reversed',
-            tickfont=dict(size=10),
+            tickfont=dict(family=font_family, size=10),
             showticklabels=True,
             ticklabelstandoff=15,
             fixedrange=True
@@ -177,18 +187,18 @@ def create_plotly_heatmap(df_birds, now):
         xaxis1=dict(
             title='Max Confidence',
             showticklabels=False,
-            title_font=dict(size=10),
+            title_font=dict(family=font_family, size=10),
             fixedrange=True
         ),
         xaxis2=dict(
             title='Total Counts',
             showticklabels=False,
-            title_font=dict(size=10),
+            title_font=dict(family=font_family, size=10),
             fixedrange=True
         ),
         xaxis3=dict(
             title='Hour',
-            tickfont=dict(size=10),
+            tickfont=dict(family=font_family, size=10),
             tickmode='linear',
             dtick=1,
             fixedrange=True
@@ -197,7 +207,7 @@ def create_plotly_heatmap(df_birds, now):
         clickmode='event+select',
         plot_bgcolor=PAPER_BGCOLOR,
         paper_bgcolor=PAPER_BGCOLOR,
-        font=dict(size=10, color='#000000'),  # Global font color set to black
+        font=dict(family=font_family, size=10, color='#000000'),  # Global font color set to black
         dragmode=False
     )
     fig.update_xaxes(showgrid=False, zeroline=False)
