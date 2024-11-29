@@ -128,7 +128,7 @@ def create_plotly_heatmap(df_birds, now):
 
     custom_data_hourly = np.dstack((df_hourly_counts.values, (df_hourly_conf.values * 100).astype(int)))
 
-    fig = make_subplots(rows=1, cols=3, shared_yaxes=True, column_widths=[0.1, 0.1, 0.7], horizontal_spacing=0.02)
+    fig = make_subplots(rows=1, cols=3, shared_yaxes=True, column_widths=[0.1, 0.1, 0.7], horizontal_spacing=0.002)
 
     custom_data_confidence = np.array([{'confidence': conf * 100} for conf in df_birds_summary['Conf'].values]).reshape(-1, 1)
     custom_data_count = np.array([{'count': count} for count in df_birds_summary['Count'].values]).reshape(-1, 1)
