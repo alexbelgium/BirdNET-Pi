@@ -58,7 +58,7 @@ def add_annotations(text_array, text_colors, col, species_list, all_hours, annot
             if current_text:
                 annotations.append(dict(
                     x=0, y=species, text=current_text, showarrow=False,
-                    font=dict(color=current_color, size=12),
+                    font=dict(color=current_color, size=10),
                     xref=f'x{col}', yref=f'y{col}', xanchor='center', yanchor='middle'
                 ))
     elif col == 3:  # Multi-column heatmap
@@ -68,7 +68,7 @@ def add_annotations(text_array, text_colors, col, species_list, all_hours, annot
                 if current_text:
                     annotations.append(dict(
                         x=hour, y=species, text=current_text, showarrow=False,
-                        font=dict(color=current_color, size=12),
+                        font=dict(color=current_color, size=10),
                         xref='x3', yref='y3', xanchor='center', yanchor='middle'
                     ))
 
@@ -161,15 +161,15 @@ def create_plotly_heatmap(df_birds, now):
 
     fig.update_layout(
         title=dict(
-            text=f"<b>{main_title}</b><br><span style='font-size:14px;'>{subtitle}</span>",
+            text=f"<b>{main_title}</b><br><span style='font-size:12px;'>{subtitle}</span>",
             x=0.5, y=0.97, xanchor='center', yanchor='top',
-            font=dict(size=24)
+            font=dict(size=20)
         ),
         autosize=True,
         height=max(600, len(species_list) * 25 + 100),
         yaxis=dict(
             autorange='reversed',
-            tickfont=dict(size=12),
+            tickfont=dict(size=10),
             showticklabels=True,
             ticklabelstandoff=15,
             fixedrange=True
@@ -177,18 +177,18 @@ def create_plotly_heatmap(df_birds, now):
         xaxis1=dict(
             title='Max Confidence',
             showticklabels=False,
-            title_font=dict(size=12),
+            title_font=dict(size=10),
             fixedrange=True
         ),
         xaxis2=dict(
             title='Total Counts',
             showticklabels=False,
-            title_font=dict(size=12),
+            title_font=dict(size=10),
             fixedrange=True
         ),
         xaxis3=dict(
             title='Hour',
-            tickfont=dict(size=12),
+            tickfont=dict(size=10),
             tickmode='linear',
             dtick=1,
             fixedrange=True
@@ -197,7 +197,7 @@ def create_plotly_heatmap(df_birds, now):
         clickmode='event+select',
         plot_bgcolor=PAPER_BGCOLOR,
         paper_bgcolor=PAPER_BGCOLOR,
-        font=dict(size=12, color='#000000'),  # Global font color set to black
+        font=dict(size=10, color='#000000'),  # Global font color set to black
         dragmode=False
     )
     fig.update_xaxes(showgrid=False, zeroline=False)
@@ -235,11 +235,11 @@ def create_plotly_heatmap(df_birds, now):
     <div class='chart-container' style='position: relative; max-width: 1000px; width: 98%; margin: 0 auto;'>
         <div style='position: absolute; bottom: 10px; left: 10px; z-index: 10;'>
             <input type='text' id='birdSearch' placeholder='Search...'
-            style='padding: 5px; font-size: 14px; background-color: rgba(255, 255, 255, 0.5); color: #7F7F7F; border: none;
+            style='padding: 5px; font-size: 12px; background-color: rgba(255, 255, 255, 0.5); color: #7F7F7F; border: none;
             border-radius: 3px; width: 150px;' />
-            <button id='filterButton' style='padding: 5px; font-size: 14px; background-color: rgba(255, 255, 255, 0.5);
+            <button id='filterButton' style='padding: 5px; font-size: 12px; background-color: rgba(255, 255, 255, 0.5);
             color: #7F7F7F; border: none; border-radius: 3px; font-weight: normal;'>OK</button>
-            <select id='sortOptions' style='padding: 5px; font-size: 14px; background-color: rgba(255, 255, 255, 0.5);
+            <select id='sortOptions' style='padding: 5px; font-size: 12px; background-color: rgba(255, 255, 255, 0.5);
             color: #7F7F7F; border: none; border-radius: 3px;'>
                 <option value="count" style="color: #7F7F7F;" selected>Count</option>
                 <option value="confidence" style="color: #7F7F7F;">Max Confidence</option>
