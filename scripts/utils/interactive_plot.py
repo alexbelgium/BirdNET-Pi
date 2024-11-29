@@ -85,6 +85,9 @@ def add_annotations(text_array, text_colors, col, species_list, all_hours, annot
 
 def create_plotly_heatmap(df_birds, now):
     """Creates a Plotly heatmap with annotations based on bird detection data."""
+
+    load_fonts()
+    
     main_title = f"Hourly Overview Updated at {now.strftime('%Y-%m-%d %H:%M:%S')}"
     subtitle = f"({df_birds['Com_Name'].nunique()} species today; {len(df_birds)} detections today)"
 
