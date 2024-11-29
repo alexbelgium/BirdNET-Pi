@@ -12,7 +12,7 @@ color_scheme = conf.get('COLOR_SCHEME', 'light')
 
 if color_scheme == 'dark':
     PLOT_BGCOLOR = '#F0F0F0'
-    PAPER_BGCOLOR = '#7F7F7F'
+    PAPER_BGCOLOR = '#aaaaaa'
     CUSTOM_COLOR_SCALE = [
         [0.0, PLOT_BGCOLOR],
         [0.2, '#BDBDBD'],
