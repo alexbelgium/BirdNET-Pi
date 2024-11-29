@@ -35,6 +35,7 @@ else:
 
 ALL_HOURS = list(range(24))
 
+
 def load_fonts():
     conf = get_settings()
     # Define font families based on language settings
@@ -44,6 +45,7 @@ def load_fonts():
         return 'Noto Sans Thai'
     else:
         return 'Roboto Flex'
+
 
 def normalize_logarithmic(arr):
     """Applies a logarithmic normalization to the array, mapping values between 0.5 and max(arr) to a normalized scale between 0 and 1."""
@@ -85,7 +87,7 @@ def create_plotly_heatmap(df_birds, now):
     """Creates a Plotly heatmap with annotations based on bird detection data."""
 
     font_family = load_fonts()
-    
+
     main_title = f"Hourly Overview Updated at {now.strftime('%Y-%m-%d %H:%M:%S')}"
     subtitle = f"({df_birds['Com_Name'].nunique()} species today; {len(df_birds)} detections today)"
 
