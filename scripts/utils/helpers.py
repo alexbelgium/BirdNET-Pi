@@ -42,7 +42,7 @@ def get_settings(settings_path='/etc/birdnet/birdnet.conf', force_reload=False):
 
 
 class Detection:
-    def __init__(self, file_date, start_time, stop_time, species, confidence, snr, snr_band, quality):
+    def __init__(self, file_date, start_time, stop_time, species, confidence):
         self.start = float(start_time)
         self.stop = float(stop_time)
         self.datetime = file_date + datetime.timedelta(seconds=self.start)
@@ -57,9 +57,6 @@ class Detection:
         self.common_name = species.split('_')[1]
         self.common_name_safe = self.common_name.replace("'", "").replace(" ", "_")
         self.file_name_extr = None
-        self.snr = snr
-        self.snr_band = snr_band
-        self.quality = quality
 
 
 class ParseFileName:
