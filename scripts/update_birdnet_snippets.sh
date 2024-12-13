@@ -95,7 +95,7 @@ if ! grep -E '^COLOR_SCHEME=' /etc/birdnet/birdnet.conf &>/dev/null;then
 fi
 
 if ! grep -E '^PURGE_THRESHOLD=' /etc/birdnet/birdnet.conf &>/dev/null;then
-  echo "PURGE_THRESHOLD=\"95\"" >> /etc/birdnet/birdnet.conf
+  echo "PURGE_THRESHOLD=95" >> /etc/birdnet/birdnet.conf
 fi
 
 if ! grep -E '^MAX_FILES_SPECIES=' /etc/birdnet/birdnet.conf &>/dev/null;then
