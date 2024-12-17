@@ -1,4 +1,4 @@
-"""This module generates a Plotly heatmap visualizing bird detection data, with hourly counts, confidence levels"""
+"""This module generates a Plotly heatmap visualizing bird detection data, with hourly counts, confidence levels."""
 import os
 import pandas as pd
 import plotly.graph_objects as go
@@ -6,6 +6,18 @@ import json
 from plotly.subplots import make_subplots
 import numpy as np
 from utils.helpers import get_settings
+
+# Feature added to inject species metadata for external filtering in JavaScript.
+# This ensures species list and their metadata are dynamically added to the HTML.
+def inject_species_metadata(species_list, custom_data):
+    """Generates JavaScript code to inject species metadata."""
+    metadata_js = "var speciesMetadata = [\n"
+    for i, species in enumerate(species_list):
+        metadata_js += f"    {{name: '{species}', confidence: {custom_data[i][0]['confidence']}, count: {custom_data[i][0]['count']}}},\n"
+    metadata_js += "];\n"
+    return metadata_js
+
+# Original code below
 
 conf = get_settings()
 color_scheme = conf.get('COLOR_SCHEME', 'light')
@@ -110,12 +122,19 @@ def create_plotly_heatmap(df_birds, now):
     df_birds_summary.sort_values(by=['Count', 'Conf'], ascending=[False, False], inplace=True)
     species_list = df_birds_summary['Com_Name'].tolist()
 
+    # Custom data injection added here.
+    custom_data = np.array([{'confidence': conf * 100, 'count': count}
+                            for conf, count in zip(df_birds_summary['Conf'].values, df_birds_summary['Count'].values)])
+
     z_confidence = normalize_logarithmic(df_birds_summary['Conf'].values.reshape(-1, 1)) * 100
     text_confidence = np.char.add((df_birds_summary['Conf'].values * 100).round().astype(int).astype(str), ' %')
 
     z_detections = normalize_logarithmic(df_birds_summary['Count'].values.reshape(-1, 1))
     text_detections = df_birds_summary['Count'].astype(str).values
     text_color_detections = determine_text_color(z_detections, threshold=0.5)
+
+    # Inject metadata at this point.
+    metadata_script = inject_species_metadata(species_list, custom_data)
 
     df_hourly_counts = plot_dataframe.pivot_table(index='Com_Name', columns='Hour', values='Count', aggfunc='sum').fillna(0)
     df_hourly_conf = plot_dataframe.pivot_table(index='Com_Name', columns='Hour', values='Conf', aggfunc='max').fillna(0)
