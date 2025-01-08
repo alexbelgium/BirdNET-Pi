@@ -8,7 +8,7 @@ echo "Beginning $0"
 birdnet_conf=$my_dir/birdnet.conf
 
 # Retrieve latitude and longitude from web
-json=$(curl -s4 http://ip-api.com/json)
+json=$(curl -s4 http://ip-api.com/json || true)
 if [ -n "$json" ] && [ "$(echo "$json" | jq -r .status)" = "success" ]; then
   LATITUDE=$(echo "$json" | jq .lat)
   LONGITUDE=$(echo "$json" | jq .lon)

@@ -28,7 +28,7 @@ get_tf_whl () {
       WHL=tflite_runtime-2.11.0-cp312-cp312-linux_x86_64.whl
       ;;
     *)
-      echo "No tflite version found"
+      echo "No tflite version found for ${ARCH}-${PY_VERSION}"
       WHL=''
       ;;
   esac
@@ -57,4 +57,16 @@ Options=mode=1777,nosuid,nodev
 WantedBy=multi-user.target
 EOF
   ln -sf $HOME/BirdNET-Pi/templates/$TMP_MOUNT /usr/lib/systemd/system
+}
+
+install_tmp_mount() {
+  STATE=$(systemctl is-enabled tmp.mount 2>&1 | grep -E '(enabled|disabled)')
+  ! [ -f /usr/share/systemd/tmp.mount ] && echo "Warning: no /usr/share/systemd/tmp.mount found"
+  if [ -z $STATE ]; then
+    cp -f /usr/share/systemd/tmp.mount /etc/systemd/system/tmp.mount
+    systemctl daemon-reload
+    systemctl enable tmp.mount
+  else
+    echo "tmp.mount is $STATE, skipping"
+  fi
 }

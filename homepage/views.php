@@ -13,8 +13,7 @@ $config = get_config();
 $color_scheme = get_color_scheme();
 set_timezone();
 
-$backup_file = "$home/BirdNET-Pi/uploads/backup-*.tar";
-$restore = "sudo -u $user $home/BirdNET-Pi/scripts/backup_data.sh -a restore -f $backup_file";
+$restore = "cat $home/BirdSongs/restore.log";
 
 if(is_authenticated() && (!isset($_SESSION['behind']) || !isset($_SESSION['behind_time']) || time() > $_SESSION['behind_time'] + 86400)) {
   shell_exec("sudo -u".$user." git -C ".$home."/BirdNET-Pi fetch > /dev/null 2>/dev/null &");
