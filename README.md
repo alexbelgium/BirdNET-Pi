@@ -4,6 +4,7 @@ Additional PR vs Nachtzuster, used for HA addon
 - Calculation of signal quality through SNR : https://github.com/alexbelgium/BirdNET-Pi/tree/SNR
 - Shows daily new species on top : https://github.com/alexbelgium/BirdNET-Pi/tree/new_species
 - Interactive graph : https://github.com/alexbelgium/BirdNET-Pi/tree/dynamic_plots
+- Add Purge Treshold (@ChrisLeinbach) https://github.com/ChrisLeinbach/BirdNET-Pi/tree/main
 - Older CPU support : install tensorflow if avx2 not available
 
 <h1 align="center"><a href="https://github.com/mcguirepr89/BirdNET-Pi/blob/main/LICENSE">Review the license!!</a></h1>
