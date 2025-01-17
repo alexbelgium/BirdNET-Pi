@@ -276,6 +276,7 @@ if (get_included_files()[0] === __FILE__) {
     <button onclick="hideDialog()">Close</button>
     <button style="font-weight:bold;color:blue" onclick="if(confirm('Are you sure you want to blacklist this image?')) { blacklistImage(); }">Blacklist this image</button>
   </dialog>
+  <script type="text/javascript" src="static/spectrogram-player.js"></script>
   <script src="static/dialog-polyfill.js"></script>
   <script src="static/Chart.bundle.js"></script>
   <script src="static/chartjs-plugin-trendline.min.js"></script>
