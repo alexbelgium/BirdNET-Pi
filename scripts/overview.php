@@ -271,6 +271,7 @@ if (get_included_files()[0] === __FILE__) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Overview</title>
+  <script type="text/javascript" src="static/spectrogram-player.js"></script>
 </head>';
 }
 ?>
@@ -285,7 +286,6 @@ if (get_included_files()[0] === __FILE__) {
   <script src="static/dialog-polyfill.js"></script>
   <script src="static/Chart.bundle.js"></script>
   <script src="static/chartjs-plugin-trendline.min.js"></script>
-  <script type="text/javascript" src="static/spectrogram-player.js"></script>
   <script>
   var last_photo_link;
   var dialog = document.querySelector('dialog');
