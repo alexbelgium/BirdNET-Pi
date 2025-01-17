@@ -119,7 +119,6 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
           }
         }
         </style>
-        <script type="text/javascript" src="static/spectrogram-player.js"></script>
         <table class="<?php echo ($_GET['previous_detection_identifier'] == 'undefined') ? '' : 'fade-in';  ?>">
           <h3>Most Recent Detection: <span style="font-weight: normal;"><?php echo $mostrecent['Date']." ".$mostrecent['Time'];?></span></h3>
           <tr>
@@ -286,6 +285,7 @@ if (get_included_files()[0] === __FILE__) {
   <script src="static/dialog-polyfill.js"></script>
   <script src="static/Chart.bundle.js"></script>
   <script src="static/chartjs-plugin-trendline.min.js"></script>
+  <script type="text/javascript" src="static/spectrogram-player.js"></script>
   <script>
   var last_photo_link;
   var dialog = document.querySelector('dialog');
