@@ -142,16 +142,14 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
                   <video style="margin-top:10px" onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster="<?php echo $filename.".png";?>" preload="none" title="<?php echo $filename;?>">
                     <source src="<?php echo $filename;?>" type="audio/mpeg">
                   </video>
-                  <!-- Spectrogram player with inline CSS -->
-                  <div class="spectrogram-player" style="position: relative; background-repeat: no-repeat;">
-                    <img src="<?php echo $filename . '.png'; ?>" alt="Spectrogram Image" class="sp-viewer" style="position: relative; background-repeat: no-repeat;">
+                  <!-- Spectrogram player with working animation -->
+                  <div class="spectrogram-player" data-width="600" data-height="200" data-freq-min="0" data-freq-max="20">
+                    <img src="<?php echo $filename . '.png'; ?>" />
                     <audio controls preload="none" title="<?php echo $filename; ?>" 
-                           onplay="setLiveStreamVolume(0)" onended="setLiveStreamVolume(1)" onpause="setLiveStreamVolume(1)" 
-                           class="sp-axis">
+                           onplay="setLiveStreamVolume(0)" onended="setLiveStreamVolume(1)" onpause="setLiveStreamVolume(1)">
                       <source src="<?php echo $filename; ?>" type="audio/mpeg">
                       Your browser does not support the audio element.
                     </audio>
-                    <div class="sp-timeBar" style="width: 1px; height: 100%; position: absolute; left: 50%; background-color: #555;"></div>
                   </div>
               </form>
           </tr>
