@@ -119,6 +119,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
           }
         }
         </style>
+        <script type="text/javascript" src="static/spectrogram-player.js"></script>
         <table class="<?php echo ($_GET['previous_detection_identifier'] == 'undefined') ? '' : 'fade-in';  ?>">
           <h3>Most Recent Detection: <span style="font-weight: normal;"><?php echo $mostrecent['Date']." ".$mostrecent['Time'];?></span></h3>
           <tr>
@@ -137,11 +138,17 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
                   <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style="width: unset !important; display: inline; height: 1em; cursor: pointer;" title="Wikipedia" src="images/wiki.png" width="25"></a>
                   <img style="width: unset !important;display: inline;height: 1em;cursor:pointer" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>')" width=25 src="images/chart.svg">
                   <br>Confidence: <?php echo $percent = round((float)round($mostrecent['Confidence'],2) * 100 ) . '%';?><br></div><br>
-                  <video style="margin-top:10px" onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster="<?php echo $filename.".png";?>" preload="none" title="<?php echo $filename;?>"><source src="<?php echo $filename;?>"></video></td>
+                  <!-- Original video player (optional, can be removed if not needed) -->
+                  <video style="margin-top:10px" onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster="<?php echo $filename.".png";?>" preload="none" title="<?php echo $filename;?>">
+                    <source src="<?php echo $filename;?>" type="audio/mpeg">
+                  </video>
+                  <!-- Spectrogram player with volume controls -->
                   <div class="spectrogram-player">
-                    <img src="<?php echo $filename.".png";?>" />
-                    <audio controls>
-                      <source src="<?php echo $filename;?>" type="audio/wav">
+                    <img src="<?php echo $filename . '.png'; ?>" alt="Spectrogram Image">
+                    <audio controls preload="none" title="<?php echo $filename; ?>" 
+                           onplay="setLiveStreamVolume(0)" onended="setLiveStreamVolume(1)" onpause="setLiveStreamVolume(1)">
+                      <source src="<?php echo $filename; ?>" type="audio/mpeg">
+                      Your browser does not support the audio element.
                     </audio>
                   </div>
               </form>
@@ -276,7 +283,6 @@ if (get_included_files()[0] === __FILE__) {
     <button onclick="hideDialog()">Close</button>
     <button style="font-weight:bold;color:blue" onclick="if(confirm('Are you sure you want to blacklist this image?')) { blacklistImage(); }">Blacklist this image</button>
   </dialog>
-  <script type="text/javascript" src="static/spectrogram-player.js"></script>
   <script src="static/dialog-polyfill.js"></script>
   <script src="static/Chart.bundle.js"></script>
   <script src="static/chartjs-plugin-trendline.min.js"></script>
