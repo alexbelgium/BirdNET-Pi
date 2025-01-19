@@ -397,31 +397,61 @@ function changeDetection(filename,copylink=false) {
 
 
 function initializeSpectrogram(container, barElement, audioElement) {
-  audioElement.addEventListener('loadedmetadata', function() {
+  audioElement.addEventListener('loadedmetadata', function () {
     const duration = audioElement.duration * 1000; // Convert duration to milliseconds
-    const leftMargin = 0.06; // 6% margin
-    const rightMargin = 0.1; // 10% margin
+    const leftMargin = 0.10; // 6% margin
+    const rightMargin = 0.05; // 9% margin
     const containerWidth = container.offsetWidth;
     const effectiveWidth = containerWidth * (1 - leftMargin - rightMargin);
 
-    audioElement.addEventListener('timeupdate', function() {
+    function updateBarPosition() {
       const currentTime = audioElement.currentTime * 1000; // Convert currentTime to milliseconds
       const percent = (currentTime / duration) * 100;
-      const offset = leftMargin * containerWidth + percent / 100 * effectiveWidth;
+      const offset = leftMargin * containerWidth + (percent / 100) * effectiveWidth;
       barElement.style.transform = `translateX(${offset}px)`;
+
+      // Ensure the bar is visible during playback
+      if (!audioElement.paused && barElement.style.display !== 'block') {
+        barElement.style.display = 'block';
+      }
+    }
+
+    audioElement.addEventListener('timeupdate', updateBarPosition);
+
+    audioElement.addEventListener('play', function () {
+      barElement.style.display = 'block'; // Show the bar when audio starts playing
     });
 
-    container.addEventListener('mousedown', function(event) {
+    audioElement.addEventListener('pause', function () {
+      barElement.style.display = 'none'; // Hide the bar when audio is paused
+    });
+
+    audioElement.addEventListener('ended', function () {
+      barElement.style.display = 'none'; // Hide the bar when audio ends
+    });
+
+    // Clicking the spectrogram to move the bar and start playing the audio
+    container.addEventListener('mousedown', function (event) {
       const clickX = event.offsetX;
       if (clickX < containerWidth * leftMargin || clickX > containerWidth * (1 - rightMargin)) return;
+
+      // Calculate the new time for the audio based on the click position
       const newTime = ((clickX - containerWidth * leftMargin) / effectiveWidth) * duration;
       audioElement.currentTime = newTime / 1000; // Convert back to seconds
+
+      // Move the bar smoothly to the new position
+      barElement.style.transition = 'transform 0.5s linear'; // Smooth transition for clicking
       barElement.style.transform = `translateX(${clickX}px)`;
+
+      // Start playing if audio was paused
+      if (audioElement.paused) {
+        audioElement.play();
+      }
     });
   });
 }
 
-window.onload = function() {
+window.onload = function () {
   const spectrograms = document.querySelectorAll('.spectrogram-container');
   spectrograms.forEach(container => {
     const bar = container.querySelector('.vertical-bar');
@@ -776,17 +806,21 @@ echo "<table>
 <img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\">$date $time<br>$values<br>
 <div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'>
     <img src='$filename_png' alt='$filename' style='width: 100%;'>
-    <div class='vertical-bar' style='position: absolute; top: 0; bottom: 30px; width: 2px; background-color: lightgray; pointer-events: none;'></div>
-    <audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'><source src='$filename'></audio>
+    <div class='vertical-bar' style='transition: transform 0.5s linear; position: absolute; top: 7%; bottom: 17%; width: 2px; background-color: rgba(211, 211, 211, 0.5); pointer-events: auto; cursor: pointer; display: none;'></div>
+    <audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'>
+      <source src='$filename'>
+    </audio>
 </div></td></tr>";
-        } else {
+      } else {
           echo "<tr>
       <td class=\"relative\">$date $time<br>$values
 <img style='cursor:pointer' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'><br>
 <div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'>
     <img src='$filename_png' alt='$filename' style='width: 100%;'>
-    <div class='vertical-bar' style='position: absolute; top: 0; bottom: 30px; width: 2px; background-color: lightgray; pointer-events: none;'></div>
-    <audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'><source src='$filename'></audio>
+    <div class='vertical-bar' style='transition: transform 0.5s linear; position: absolute; top: 0; bottom: 15%; width: 2px; background-color: rgba(211, 211, 211, 0.5); pointer-events: auto; cursor: pointer; display: none;'></div>
+    <audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'>
+      <source src='$filename'>
+    </audio>
 </div></td></tr>";
         }
 
