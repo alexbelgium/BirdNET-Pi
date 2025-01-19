@@ -773,12 +773,12 @@ echo "><br><i>$sciname</i></span><br>
     $iter++;
 
     if ($num_rows < 100) {
-        $imageelem = "<div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'><img src='$filename_png' alt='$filename' style='width: 100%;'>
+        $imageelem = "<div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'><img src='$filename_png' alt='$filename' style='width: 100%; border-radius: 5%;'>
             <div class='vertical-bar' style='transition: transform 0.5s linear; position: absolute; top: 0; bottom: 30px; width: 2px; background-color: rgba(211, 211, 211, 0.5); pointer-events: auto; cursor: pointer; display: none;'></div>
             <audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'>
             <source src='$filename'></audio></div>";
     } else {
-        $imageelem = "<div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'><img src='$filename_png' alt='$filename' style='width: 100%;'>
+        $imageelem = "<div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'><img src='$filename_png' alt='$filename' style='width: 100%; border-radius: 5%;'>
             <div class='vertical-bar' style='transition: transform 0.5s linear; position: absolute; top: 0; bottom: 30px; width: 2px; background-color: rgba(211, 211, 211, 0.5); pointer-events: auto; cursor: pointer; display: none;'></div>
             <audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'>
             <source src='$filename'></audio></div>";
@@ -903,7 +903,7 @@ echo "><br><i>$sciname</i></span><br>
 <img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
 <img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\">$date $time<br>$values<br>
 <div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'>
-    <img src='$filename_png' alt='$filename' style='width: 100%;'>
+    <img src='$filename_png' alt='$filename' style='width: 100%; border-radius: 5%;'>
     <div class='vertical-bar' style='transition: transform 0.5s linear; position: absolute; top: 7%; bottom: 17%; width: 2px; background-color: rgba(211, 211, 211, 0.5); pointer-events: auto; cursor: pointer; display: none;'></div>
     <audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'>
       <source src='$filename'>
@@ -914,7 +914,7 @@ echo "><br><i>$sciname</i></span><br>
       <td class=\"relative\">$date $time<br>$values
 <img style='cursor:pointer' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'><br>
 <div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'>
-    <img src='$filename_png' alt='$filename' style='width: 100%;'>
+    <img src='$filename_png' alt='$filename' style='width: 100%; border-radius: 5%;'>
     <div class='vertical-bar' style='transition: transform 0.5s linear; position: absolute; top: 0; bottom: 15%; width: 2px; background-color: rgba(211, 211, 211, 0.5); pointer-events: auto; cursor: pointer; display: none;'></div>
     <audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'>
       <source src='$filename'>
