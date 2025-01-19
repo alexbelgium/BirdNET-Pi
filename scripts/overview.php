@@ -137,10 +137,12 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
                   <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style="width: unset !important; display: inline; height: 1em; cursor: pointer;" title="Wikipedia" src="images/wiki.png" width="25"></a>
                   <img style="width: unset !important;display: inline;height: 1em;cursor:pointer" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>')" width=25 src="images/chart.svg">
                   <br>Confidence: <?php echo $percent = round((float)round($mostrecent['Confidence'],2) * 100 ) . '%';?><br></div><br>
-                  <!-- Original video player (optional, can be removed if not needed) -->
-                  <video style="margin-top:10px" onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster="<?php echo $filename.".png";?>" preload="none" title="<?php echo $filename;?>">
-                    <source src="<?php echo $filename;?>" type="audio/mpeg">
-                  </video>
+                  <div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'>
+                      <img src='<?php echo $filename.".png";?>' alt='<?php echo $filename;?>' style='width: 100%;'>
+                      <audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'>
+                        <source src='<?php echo $filename;?>'>
+                      </audio>
+                  </div>
               </form>
           </tr>
         </table> <?php break;
@@ -551,11 +553,11 @@ function refreshTopTen() {
 }
 function refreshDetection() {
   if (!document.hidden) {
-    var videoelement = document.getElementsByTagName("video")[0];
-    if(typeof videoelement !== "undefined") {
+    var audioelement = document.getElementsByTagName("audio")[0];
+    if(typeof audioelement !== "undefined") {
       // don't refresh the detection if the user is playing the previous one's audio, wait until they're finished
-      if(!!(videoelement.currentTime > 0 && !videoelement.paused && !videoelement.ended && videoelement.readyState > 2) == false) {
-        loadDetectionIfNewExists(videoelement.title);
+      if(!!(audioelement.currentTime > 0 && !audioelement.paused && !audioelement.ended && audioelement.readyState > 2) == false) {
+        loadDetectionIfNewExists(audioelement.title);
       }
     } else{
       // image or audio didn't load for some reason, force a refresh in 5 seconds
