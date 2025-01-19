@@ -290,12 +290,12 @@ function toggleShiftFreq(filename, shiftAction, elem) {
         elem.setAttribute("title", "This file has been shifted down in frequency.");
         elem.setAttribute("onclick", elem.getAttribute("onclick").replace("shift","unshift"));
         console.log("shifted freqs of " + filename);
-          video=elem.parentNode.getElementsByTagName("video");
-          if (video.length > 0) {
-            video[0].setAttribute("title", video[0].getAttribute("title").replace("/By_Date/","/By_Date/shifted/"));
-            source = video[0].getElementsByTagName("source")[0];
+          audio=elem.parentNode.getElementsByTagName("audio");
+          if (audio.length > 0) {
+            audio[0].setAttribute("title", audio[0].getAttribute("title").replace("/By_Date/","/By_Date/shifted/"));
+            source = audio[0].getElementsByTagName("source")[0];
             source.setAttribute("src", source.getAttribute("src").replace("/By_Date/","/By_Date/shifted/"));
-            video[0].load();
+            audio[0].load();
           } else {
             atag=elem.parentNode.getElementsByTagName("a")[0];
             atag.setAttribute("href", atag.getAttribute("href").replace("/By_Date/","/By_Date/shifted/"));
@@ -305,12 +305,12 @@ function toggleShiftFreq(filename, shiftAction, elem) {
         elem.setAttribute("title", "This file is not shifted in frequency.");
         elem.setAttribute("onclick", elem.getAttribute("onclick").replace("unshift","shift"));
         console.log("unshifted freqs of " + filename);
-          video=elem.parentNode.getElementsByTagName("video");
-          if (video.length > 0) {
-            video[0].setAttribute("title", video[0].getAttribute("title").replace("/By_Date/shifted/","/By_Date/"));
-            source = video[0].getElementsByTagName("source")[0];
+          audio=elem.parentNode.getElementsByTagName("audio");
+          if (audio.length > 0) {
+            audio[0].setAttribute("title", audio[0].getAttribute("title").replace("/By_Date/shifted/","/By_Date/"));
+            source = audio[0].getElementsByTagName("source")[0];
             source.setAttribute("src", source.getAttribute("src").replace("/By_Date/shifted/","/By_Date/"));
-            video[0].load();
+            audio[0].load();
           } else {
             atag=elem.parentNode.getElementsByTagName("a")[0];
             atag.setAttribute("href", atag.getAttribute("href").replace("/By_Date/shifted/","/By_Date/"));
@@ -772,10 +772,13 @@ echo "><br><i>$sciname</i></span><br>
     }
     $iter++;
 
-    if($num_rows < 100){
-      $imageelem = "<video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster=\"$filename_png\" preload=\"none\" title=\"$filename\"><source src=\"$filename\"></video>";
+    if ($num_rows < 100) {
+        $imageelem = "<div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'><img src='$filename_png' alt='$filename' style='width: 100%;'>
+            <div class='vertical-bar' style='transition: transform 0.5s linear; position: absolute; top: 8%; bottom: 17%; width: 2px; background-color: lightgray; pointer-events: auto; cursor: pointer; display: none;'></div>
+            <audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'>
+            <source src='$filename'></audio></div>";
     } else {
-      $imageelem = "<a href=\"$filename\"><img src=\"$filename_png\"></a>";
+        $imageelem = "<a href=\"$filename\"><img src=\"$filename_png\"></a>";
     }
 
     if($config["FULL_DISK"] == "purge") {
