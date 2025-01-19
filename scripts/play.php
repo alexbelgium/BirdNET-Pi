@@ -783,8 +783,11 @@ echo "<table>
           echo "<tr>
       <td class=\"relative\">$date $time<br>$values
 <img style='cursor:pointer' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'><br>
-            <video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster=\"$filename_png\" preload=\"none\" title=\"$filename\"><source src=\"$filename\"></video></td>
-            </tr>";
+<div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'>
+    <img src='$filename_png' alt='$filename' style='width: 100%;'>
+    <div class='vertical-bar' style='position: absolute; top: 0; bottom: 30px; width: 2px; background-color: lightgray; pointer-events: none;'></div>
+    <audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'><source src='$filename'></audio>
+</div></td></tr>";
         }
 
       }echo "</table>";}
