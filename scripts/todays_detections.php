@@ -245,7 +245,12 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
           <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style=";cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="20"></a>
           <img style=";cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>')" width=20 src="images/chart.svg"><br>
           <b>Confidence:</b> <?php echo round((float)round($todaytable['Confidence'],2) * 100 ) . '%';?><br></div><br>
-          <video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster="<?php echo $filename.".png";?>" preload="none" title="<?php echo $filename;?>"><source preload="none" src="<?php echo $filename;?>"></video>
+          <div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'>
+          	<img src='<?php echo $filename.".png";?>' alt='<?php echo $filename;?>' style='width: 100%;'>
+          	<audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'>
+          	<source src='<?php echo $filename;?>'>
+          	</audio>
+          </div>
           </td>
         <?php } else { //legacy mode ?>
           <tr class="relative" id="<?php echo $iterations; ?>">
@@ -467,7 +472,7 @@ document.getElementById("searchterm").onkeydown = (function(e) {
         searchDetections(document.getElementById("searchterm").value);
 
         setTimeout(function() {
-            // search auto submitted and now the user is probably scrolling, get the keyboard out of the way & prevent browser from jumping to the top when a video is played
+            // search auto submitted and now the user is probably scrolling, get the keyboard out of the way & prevent browser from jumping to the top when a audio is played
             document.getElementById("searchterm").blur();
         }, 2000);
      }, 1000);
