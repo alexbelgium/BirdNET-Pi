@@ -442,12 +442,11 @@ function changeDetection(filename,copylink=false) {
   xhttp.send();
 }
 
-
 function initializeSpectrogram(container, barElement, audioElement) {
   audioElement.addEventListener('loadedmetadata', function() {
     const duration = audioElement.duration * 1000; // Convert duration to milliseconds
     const leftMargin = 0.06; // 6% margin
-    const rightMargin = 0.1; // 10% margin
+    const rightMargin = 0.09; // 10% margin
     const containerWidth = container.offsetWidth;
     const effectiveWidth = containerWidth * (1 - leftMargin - rightMargin);
 
@@ -455,15 +454,26 @@ function initializeSpectrogram(container, barElement, audioElement) {
       const currentTime = audioElement.currentTime * 1000; // Convert currentTime to milliseconds
       const percent = (currentTime / duration) * 100;
       const offset = leftMargin * containerWidth + percent / 100 * effectiveWidth;
-      barElement.style.transform = `translateX(${offset}px)`;
+      barElement.style.transform = `translateX(${offset}px)`; // Smooth movement of the vertical bar
     });
 
+    // Clicking the spectrogram to move the bar and start playing the audio
     container.addEventListener('mousedown', function(event) {
       const clickX = event.offsetX;
       if (clickX < containerWidth * leftMargin || clickX > containerWidth * (1 - rightMargin)) return;
+      
+      // Calculate the new time for the audio based on the click position
       const newTime = ((clickX - containerWidth * leftMargin) / effectiveWidth) * duration;
       audioElement.currentTime = newTime / 1000; // Convert back to seconds
+
+      // Move the bar smoothly to the new position
+      barElement.style.transition = 'transform 0.5s linear'; // Smooth transition for clicking
       barElement.style.transform = `translateX(${clickX}px)`;
+
+      // Start playing if audio was paused
+      if (audioElement.paused) {
+        audioElement.play();
+      }
     });
   });
 }
@@ -868,15 +878,22 @@ echo "><br><i>$sciname</i></span><br>
 <img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\">$date $time<br>$values<br>
 <div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'>
     <img src='$filename_png' alt='$filename' style='width: 100%;'>
-    <div class='vertical-bar' style='position: absolute; top: 0; bottom: 30px; width: 2px; background-color: lightgray; pointer-events: none;'></div>
-    <audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'><source src='$filename'></audio>
+    <div class='vertical-bar' style='transition: transform 0.5s linear; position: absolute; top: 0; bottom: 30px; width: 2px; background-color: lightgray; pointer-events: auto; cursor: pointer;'></div>
+    <audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'>
+      <source src='$filename'>
+    </audio>
 </div></td></tr>";
-        } else {
+      } else {
           echo "<tr>
       <td class=\"relative\">$date $time<br>$values
 <img style='cursor:pointer' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'><br>
-            <video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster=\"$filename_png\" preload=\"none\" title=\"$filename\"><source src=\"$filename\"></video></td>
-            </tr>";
+<div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'>
+    <img src='$filename_png' alt='$filename' style='width: 100%;'>
+    <div class='vertical-bar' style='transition: transform 0.5s linear; position: absolute; top: 0; bottom: 30px; width: 2px; background-color: lightgray; pointer-events: auto; cursor: pointer;'></div>
+    <audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'>
+      <source src='$filename'>
+    </audio>
+</div></td></tr>";
         }
 
       }echo "</table>";}
