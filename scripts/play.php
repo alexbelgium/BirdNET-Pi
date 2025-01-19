@@ -442,6 +442,40 @@ function changeDetection(filename,copylink=false) {
   xhttp.send();
 }
 
+
+function initializeSpectrogram(container, barElement, audioElement) {
+  audioElement.addEventListener('loadedmetadata', function() {
+    const duration = audioElement.duration * 1000; // Convert duration to milliseconds
+    const leftMargin = 0.06; // 6% margin
+    const rightMargin = 0.1; // 10% margin
+    const containerWidth = container.offsetWidth;
+    const effectiveWidth = containerWidth * (1 - leftMargin - rightMargin);
+
+    audioElement.addEventListener('timeupdate', function() {
+      const currentTime = audioElement.currentTime * 1000; // Convert currentTime to milliseconds
+      const percent = (currentTime / duration) * 100;
+      const offset = leftMargin * containerWidth + percent / 100 * effectiveWidth;
+      barElement.style.transform = `translateX(${offset}px)`;
+    });
+
+    container.addEventListener('mousedown', function(event) {
+      const clickX = event.offsetX;
+      if (clickX < containerWidth * leftMargin || clickX > containerWidth * (1 - rightMargin)) return;
+      const newTime = ((clickX - containerWidth * leftMargin) / effectiveWidth) * duration;
+      audioElement.currentTime = newTime / 1000; // Convert back to seconds
+      barElement.style.transform = `translateX(${clickX}px)`;
+    });
+  });
+}
+
+window.onload = function() {
+  const spectrograms = document.querySelectorAll('.spectrogram-container');
+  spectrograms.forEach(container => {
+    const bar = container.querySelector('.vertical-bar');
+    const audio = container.querySelector('audio');
+    initializeSpectrogram(container, bar, audio);
+  });
+};
 </script>
 
 <?php
@@ -832,9 +866,11 @@ echo "><br><i>$sciname</i></span><br>
 <img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
 <img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
 <img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\">$date $time<br>$values<br>
-
-<video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster=\"$filename_png\" preload=\"none\" title=\"$filename\"><source src=\"$filename\"></video></td>
-            </tr>";
+<div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'>
+    <img src='$filename_png' alt='$filename' style='width: 100%;'>
+    <div class='vertical-bar' style='position: absolute; top: 0; bottom: 30px; width: 2px; background-color: lightgray; pointer-events: none;'></div>
+    <audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'><source src='$filename'></audio>
+</div></td></tr>";
         } else {
           echo "<tr>
       <td class=\"relative\">$date $time<br>$values
