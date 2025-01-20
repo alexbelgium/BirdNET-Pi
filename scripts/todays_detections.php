@@ -243,7 +243,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
           <img style=";cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>')" width=20 src="images/chart.svg"><br>
           <b>Confidence:</b> <?php echo round((float)round($todaytable['Confidence'],2) * 100 ) . '%';?><br></div><br>
           <div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'>
-          	<img src='<?php echo $filename.".png";?>' alt='<?php echo $filename;?>' style='width: 100%;'>
+          	<img src='<?php echo $filename.".png";?>' alt='<?php echo $filename;?>' style='width: 100%; border-radius: 5px;'>
           	<audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'>
           	<source src='<?php echo $filename;?>'>
           	</audio>
