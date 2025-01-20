@@ -5,36 +5,97 @@ document.addEventListener("DOMContentLoaded", () => {
     PROGRESS_BAR_UPDATE_INTERVAL: 20,
   };
 
-  const audioPlayers = document.querySelectorAll(".custom-audio-player");
+  // Helper: merges style objects into an element's style
+  const applyStyles = (elem, styles) => {
+    Object.assign(elem.style, styles);
+  };
 
-  audioPlayers.forEach((player) => {
+  // Helper: style for icon buttons
+  const styleIconBtn = (btn) => {
+    applyStyles(btn, {
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      width: "36px",
+      height: "36px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "0",
+      marginRight: "0.6rem",
+    });
+  };
+
+  // Helper: style for menu buttons
+  const styleMenuBtn = (btn) => {
+    applyStyles(btn, {
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      color: "white",
+      fontSize: "14px",
+      textAlign: "right",
+      width: "100%",
+      padding: "6px 12px",
+      margin: "2px 0",
+      borderRadius: "4px",
+    });
+    btn.addEventListener("mouseover", () => (btn.style.background = "rgba(255,255,255,0.2)"));
+    btn.addEventListener("mouseout", () => (btn.style.background = "none"));
+  };
+
+  // SVG icons
+  const icons = {
+    play: `
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 24 24">
+        <path d="M8 5v14l11-7z"/>
+      </svg>
+    `,
+    pause: `
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 24 24">
+        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+      </svg>
+    `,
+    dots: `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 14a2 2 0 1 0 0-4 
+                 2 2 0 0 0 0 4zM12 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+      </svg>
+    `,
+  };
+
+  // For each custom-audio-player:
+  document.querySelectorAll(".custom-audio-player").forEach((player) => {
     const audioSrc = player.dataset.audioSrc;
     const imageSrc = player.dataset.imageSrc;
 
-    // Create audio
+    // Create <audio>
     const audioEl = document.createElement("audio");
     audioEl.src = audioSrc;
     audioEl.preload = "metadata";
     player.appendChild(audioEl);
 
-    // Create wrapper + image
+    // Main wrapper
     const wrapper = document.createElement("div");
-    wrapper.style.position = "relative";
+    applyStyles(wrapper, { position: "relative" });
     player.appendChild(wrapper);
 
+    // Spectrogram image
     const img = document.createElement("img");
     img.src = imageSrc;
-    img.style.width = "100%";
-    img.style.borderRadius = "8px";
+    applyStyles(img, {
+      width: "100%",
+      borderRadius: "8px",
+    });
     wrapper.appendChild(img);
 
-    // Vertical progress bar
+    // Vertical indicator
     const indicator = document.createElement("div");
-    Object.assign(indicator.style, {
+    applyStyles(indicator, {
       position: "absolute",
       top: "0",
-      bottom: "5%", // slightly above bottom
-      left: CONFIG.LEFT_MARGIN_PERCENT + "%",
+      bottom: "5%",
+      left: `${CONFIG.LEFT_MARGIN_PERCENT}%`,
       width: "3px",
       background: "rgba(0,0,0,0.5)",
       pointerEvents: "none",
@@ -44,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Controls overlay
     const overlay = document.createElement("div");
-    Object.assign(overlay.style, {
+    applyStyles(overlay, {
       position: "absolute",
       left: "0",
       bottom: "0",
@@ -62,67 +123,34 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     wrapper.appendChild(overlay);
 
-    // Icons
-    const icons = {
-      play: `
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 24 24">
-          <path d="M8 5v14l11-7z"/>
-        </svg>
-      `,
-      pause: `
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 24 24">
-          <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-        </svg>
-      `,
-      dots: `
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
-        </svg>
-      `,
-    };
-
-    // Helper: style an icon button
-    const styleIconBtn = (btn) => {
-      Object.assign(btn.style, {
-        background: "none",
-        border: "none",
-        cursor: "pointer",
-        width: "36px",
-        height: "36px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "0",
-        marginRight: "0.6rem",
-      });
-    };
-
-    // Create controls
+    // Play/Pause button
     const playBtn = document.createElement("button");
     styleIconBtn(playBtn);
     playBtn.innerHTML = icons.play;
     overlay.appendChild(playBtn);
 
+    // Progress bar
     const progress = document.createElement("input");
     progress.type = "range";
+    progress.value = "0";
     progress.min = "0";
     progress.max = "100";
-    progress.value = "0";
-    Object.assign(progress.style, {
+    applyStyles(progress, {
       flex: "1",
       margin: "0 0.5rem",
       verticalAlign: "middle",
     });
     overlay.appendChild(progress);
 
+    // 3-dots button
     const dotsBtn = document.createElement("button");
     styleIconBtn(dotsBtn);
     dotsBtn.innerHTML = icons.dots;
     overlay.appendChild(dotsBtn);
 
-    // Dots menu
+    // 3-dots menu container
     const menu = document.createElement("div");
-    Object.assign(menu.style, {
+    applyStyles(menu, {
       position: "absolute",
       right: "10px",
       bottom: "15%",
@@ -133,63 +161,122 @@ document.addEventListener("DOMContentLoaded", () => {
       borderRadius: "6px",
       padding: "0.5rem",
       visibility: "hidden",
-      display: "inline-block",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "flex-end",
+      minWidth: "160px",
     });
     wrapper.appendChild(menu);
 
-    const styleMenuBtn = (btn) => {
-      Object.assign(btn.style, {
-        background: "none",
-        border: "none",
-        cursor: "pointer",
-        color: "white",
-        fontSize: "14px",
-        textAlign: "left",
-        width: "100%",
-        padding: "6px 12px",
-      });
-      btn.addEventListener("mouseover", () => (btn.style.background = "rgba(255,255,255,0.2)"));
-      btn.addEventListener("mouseout", () => (btn.style.background = "none"));
-    };
-
-    const dlBtn = document.createElement("button");
-    dlBtn.textContent = "Download Audio";
-    styleMenuBtn(dlBtn);
-    menu.appendChild(dlBtn);
-
+    // Info button
     const infoBtn = document.createElement("button");
     infoBtn.textContent = "Info";
     styleMenuBtn(infoBtn);
+    infoBtn.style.alignSelf = "flex-end";
     menu.appendChild(infoBtn);
 
-    // Toggle overlay
+    // Download button
+    const dlBtn = document.createElement("button");
+    dlBtn.textContent = "Download";
+    styleMenuBtn(dlBtn);
+    dlBtn.style.alignSelf = "flex-end";
+    menu.appendChild(dlBtn);
+
+    // Gain container
+    const gainContainer = document.createElement("div");
+    applyStyles(gainContainer, {
+      display: "flex",
+      alignItems: "center",
+      padding: "4px 0",
+      borderTop: "1px solid rgba(255,255,255,0.2)",
+      width: "100%",
+      justifyContent: "flex-end",
+    });
+    menu.appendChild(gainContainer);
+
+    // Gain label
+    const gainLabel = document.createElement("div");
+    gainLabel.textContent = "Gain:";
+    applyStyles(gainLabel, {
+      marginRight: "8px",
+      fontSize: "14px",
+      color: "#cccccc",
+      flexShrink: "0",
+    });
+    gainContainer.appendChild(gainLabel);
+
+    // Gains
+    const gainOptions = ["Off", "x2", "x4", "x8"];
+    const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8 };
+    let activeGain = "Off";
+    let audioCtx, gainNode, sourceNode;
+
+    // Prepare gain context if needed
+    const initGainContext = () => {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        sourceNode = audioCtx.createMediaElementSource(audioEl);
+        gainNode = audioCtx.createGain();
+        gainNode.gain.value = gainValues[activeGain];
+        sourceNode.connect(gainNode).connect(audioCtx.destination);
+      }
+    };
+
+    // Toggle gain style
+    const setActiveGain = (key) => {
+      if (key === activeGain) return;
+      activeGain = key;
+      initGainContext();
+      gainNode.gain.value = gainValues[key] || 1;
+      gainButtons.forEach((b) => {
+        b.style.textDecoration = b.dataset.gain === key ? "underline" : "none";
+        b.style.textDecorationColor = b.dataset.gain === key ? "white" : "";
+      });
+    };
+
+    // Gain Buttons
+    const gainButtons = [];
+    gainOptions.forEach((opt) => {
+      const b = document.createElement("button");
+      b.textContent = opt;
+      b.dataset.gain = opt;
+      styleMenuBtn(b);
+      applyStyles(b, {
+        marginRight: "6px",
+        flex: "1",
+        border: "none",
+        padding: "6px 0",
+        textAlign: "center",
+      });
+      b.addEventListener("click", () => setActiveGain(opt));
+      gainContainer.appendChild(b);
+      gainButtons.push(b);
+    });
+
+    // Initialize gain
+    setActiveGain(activeGain);
+
+    // Overlay events
     wrapper.addEventListener("mouseenter", () => (overlay.style.visibility = "visible"));
     wrapper.addEventListener("mouseleave", () => (overlay.style.visibility = "hidden"));
 
-    // Play/Pause
+    // Play/Pause logic
     playBtn.addEventListener("click", () => {
       audioEl.paused ? audioEl.play() : audioEl.pause();
     });
     audioEl.addEventListener("play", () => (playBtn.innerHTML = icons.pause));
     audioEl.addEventListener("pause", () => (playBtn.innerHTML = icons.play));
 
-    // Update bar
+    // Progress updates
     let intervalId = null;
     const updateProgress = () => {
       if (!audioEl.duration) return;
       const frac = audioEl.currentTime / audioEl.duration;
       const pc = frac * 100;
       progress.value = pc;
-      setBarPosition(pc);
-    };
-
-    function setBarPosition(percentage) {
-      const leftPos =
-        CONFIG.LEFT_MARGIN_PERCENT +
-        (percentage * (100 - CONFIG.LEFT_MARGIN_PERCENT - CONFIG.RIGHT_MARGIN_PERCENT)) / 100;
+      const leftPos = CONFIG.LEFT_MARGIN_PERCENT + (pc * (100 - CONFIG.LEFT_MARGIN_PERCENT - CONFIG.RIGHT_MARGIN_PERCENT)) / 100;
       indicator.style.left = leftPos + "%";
-    }
-
+    };
     audioEl.addEventListener("play", () => {
       intervalId = setInterval(updateProgress, CONFIG.PROGRESS_BAR_UPDATE_INTERVAL);
     });
@@ -201,25 +288,22 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!audioEl.duration) return;
       const frac = parseFloat(progress.value) / 100;
       audioEl.currentTime = frac * audioEl.duration;
-      setBarPosition(progress.value);
+      updateProgress();
     });
 
     // Spectrogram click => seek + play
     wrapper.addEventListener("click", (e) => {
-      if (menu.style.visibility === "visible") return;
-      if (overlay.contains(e.target)) return;
-      if (!audioEl.duration) return;
-
-      const r = wrapper.getBoundingClientRect();
-      const x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
-      const pc = x * 100;
+      if (menu.style.visibility === "visible" || overlay.contains(e.target) || !audioEl.duration) return;
+      const rect = wrapper.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const pc = Math.max(0, Math.min(1, x)) * 100;
       progress.value = pc;
       audioEl.currentTime = (pc / 100) * audioEl.duration;
-      setBarPosition(pc);
+      updateProgress();
       audioEl.play();
     });
 
-    // Dots menu toggle
+    // Menu toggle
     let menuOpen = false;
     dotsBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -233,7 +317,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // Download Audio
+    // Download
     dlBtn.addEventListener("click", async () => {
       try {
         const blob = await fetch(audioSrc).then((r) => r.blob());
@@ -252,27 +336,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Info
     infoBtn.addEventListener("click", async () => {
-      let size = "unknown";
-      let enc = "unknown";
+      let size = "unknown", enc = "unknown", sampleRate = "unknown";
+      let channels = "unknown", bitDepth = "unknown";
       try {
-        const head = await fetch(audioSrc, { method: "HEAD" });
-        if (head.ok) {
-          const cl = head.headers.get("content-length");
+        const resp = await fetch(audioSrc, { method: "HEAD" });
+        if (resp.ok) {
+          const cl = resp.headers.get("content-length");
           if (cl) {
-            const kb = parseInt(cl, 10) / 1024;
-            size = kb >= 1024 ? (kb / 1024).toFixed(2) + " MB" : kb.toFixed(2) + " KB";
+            const sizeKB = parseInt(cl, 10) / 1024;
+            size = sizeKB >= 1024 ? `${(sizeKB / 1024).toFixed(2)} MB` : `${sizeKB.toFixed(2)} KB`;
           }
-          const ct = head.headers.get("content-type");
-          if (ct) {
-            const parts = ct.split("/");
-            if (parts[1]) enc = parts[1].toUpperCase();
-          }
+          const ct = resp.headers.get("content-type");
+          if (ct) enc = ct.split("/")[1]?.toUpperCase() || "unknown";
         }
+        // Decode audio data
+        const audioData = await fetch(audioSrc).then((r) => r.arrayBuffer());
+        const decoded = await new (window.AudioContext || window.webkitAudioContext)().decodeAudioData(audioData);
+        sampleRate = decoded.sampleRate;
+        channels = decoded.numberOfChannels;
+        // Bit depth placeholder
+        bitDepth = "16 bits";
       } catch {}
+      const duration = audioEl.duration ? `${audioEl.duration.toFixed(2)} seconds` : "unknown";
 
-      const dur = audioEl.duration ? audioEl.duration.toFixed(2) + " seconds" : "unknown";
-      alert(`Duration: ${dur}\nSize: ${size}\nEncoding: ${enc}`);
-
+      alert(`Duration: ${duration}
+Type: ${enc}
+Size: ${size}
+Sampling Rate: ${sampleRate} Hz
+Channels: ${channels}
+Bit Depth: ${bitDepth}`);
       menuOpen = false;
       menu.style.visibility = "hidden";
     });
