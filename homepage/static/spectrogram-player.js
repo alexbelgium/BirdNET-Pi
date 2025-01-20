@@ -1,266 +1,280 @@
-/*
-  Spectrogram Player
+document.addEventListener("DOMContentLoaded", () => {
+  const CONFIG = {
+    LEFT_MARGIN_PERCENT: 6,
+    RIGHT_MARGIN_PERCENT: 9,
+    PROGRESS_BAR_UPDATE_INTERVAL: 20,
+  };
 
-  Author: Mike Brady
+  const audioPlayers = document.querySelectorAll(".custom-audio-player");
 
-  Version: 2.0.0
+  audioPlayers.forEach((player) => {
+    const audioSrc = player.dataset.audioSrc;
+    const imageSrc = player.dataset.imageSrc;
 
-  Description:
-    Spectrogram Player is a custom media player for synchronizing playback of
-    an audio file with its spectrogram.
+    // Create audio
+    const audioEl = document.createElement("audio");
+    audioEl.src = audioSrc;
+    audioEl.preload = "metadata";
+    player.appendChild(audioEl);
 
-  License:
-    MIT License
+    // Create wrapper + image
+    const wrapper = document.createElement("div");
+    wrapper.style.position = "relative";
+    player.appendChild(wrapper);
 
-    Copyright (c) 2018 Mike Brady
+    const img = document.createElement("img");
+    img.src = imageSrc;
+    img.style.width = "100%";
+    img.style.borderRadius = "8px";
+    wrapper.appendChild(img);
 
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
+    // Vertical progress bar
+    const indicator = document.createElement("div");
+    Object.assign(indicator.style, {
+      position: "absolute",
+      top: "0",
+      bottom: "5%", // slightly above bottom
+      left: CONFIG.LEFT_MARGIN_PERCENT + "%",
+      width: "3px",
+      background: "rgba(0,0,0,0.5)",
+      pointerEvents: "none",
+      borderRadius: "2px",
+    });
+    wrapper.appendChild(indicator);
 
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
+    // Controls overlay
+    const overlay = document.createElement("div");
+    Object.assign(overlay.style, {
+      position: "absolute",
+      left: "0",
+      bottom: "0",
+      width: "100%",
+      height: "15%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "0 10px",
+      borderRadius: "0 0 8px 8px",
+      background: "rgba(0,0,0,0.5)",
+      backdropFilter: "blur(8px)",
+      WebkitBackdropFilter: "blur(8px)",
+      visibility: "hidden",
+    });
+    wrapper.appendChild(overlay);
 
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
+    // Icons
+    const icons = {
+      play: `
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 24 24">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      `,
+      pause: `
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 24 24">
+          <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+        </svg>
+      `,
+      dots: `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+        </svg>
+      `,
+    };
 
-Custom Settings
-    Custom Settings on a per player basis
-      To change the settings for a specific player, add a "data-[setting-name]"
-      attribute to the parent <div> of the player with desired setting value as
-      the value of the attribute.
+    // Helper: style an icon button
+    const styleIconBtn = (btn) => {
+      Object.assign(btn.style, {
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        width: "36px",
+        height: "36px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "0",
+        marginRight: "0.6rem",
+      });
+    };
 
-      Example:
-      <div class="spectrogram-player" data-width="300" data-height="150">
-      ...
-      </div>
+    // Create controls
+    const playBtn = document.createElement("button");
+    styleIconBtn(playBtn);
+    playBtn.innerHTML = icons.play;
+    overlay.appendChild(playBtn);
 
-    Default settings for all players
-      To change the default settings for all players, adjust the values of
-      default variables below.
+    const progress = document.createElement("input");
+    progress.type = "range";
+    progress.min = "0";
+    progress.max = "100";
+    progress.value = "0";
+    Object.assign(progress.style, {
+      flex: "1",
+      margin: "0 0.5rem",
+      verticalAlign: "middle",
+    });
+    overlay.appendChild(progress);
 
-    Custom settings in the HTML will override the default settings for that
-    specific player.
+    const dotsBtn = document.createElement("button");
+    styleIconBtn(dotsBtn);
+    dotsBtn.innerHTML = icons.dots;
+    overlay.appendChild(dotsBtn);
 
-    SETTING             HTML ATTRIBUTE NAME         DESCRIPTION
-    width               data-width                  The width of the player in pixels
+    // Dots menu
+    const menu = document.createElement("div");
+    Object.assign(menu.style, {
+      position: "absolute",
+      right: "10px",
+      bottom: "15%",
+      background: "rgba(0,0,0,0.5)",
+      backdropFilter: "blur(8px)",
+      WebkitBackdropFilter: "blur(8px)",
+      color: "white",
+      borderRadius: "6px",
+      padding: "0.5rem",
+      visibility: "hidden",
+      display: "inline-block",
+    });
+    wrapper.appendChild(menu);
 
-    height              data-height                 The height of the player in pixels
+    const styleMenuBtn = (btn) => {
+      Object.assign(btn.style, {
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        color: "white",
+        fontSize: "14px",
+        textAlign: "left",
+        width: "100%",
+        padding: "6px 12px",
+      });
+      btn.addEventListener("mouseover", () => (btn.style.background = "rgba(255,255,255,0.2)"));
+      btn.addEventListener("mouseout", () => (btn.style.background = "none"));
+    };
 
-    freqMin             data-freq-min               The minimum frequency of the spectrogram in kHz
+    const dlBtn = document.createElement("button");
+    dlBtn.textContent = "Download Audio";
+    styleMenuBtn(dlBtn);
+    menu.appendChild(dlBtn);
 
-    freqMax             data-freq-max               The maximum frequency of the spectrogram in kHz
+    const infoBtn = document.createElement("button");
+    infoBtn.textContent = "Info";
+    styleMenuBtn(infoBtn);
+    menu.appendChild(infoBtn);
 
-    axisWidth           data-axis-width             The width of the frequency axis in pixels.
-                                                    Setting a value < 1 will prevent the axis from
-                                                    showing.
+    // Toggle overlay
+    wrapper.addEventListener("mouseenter", () => (overlay.style.visibility = "visible"));
+    wrapper.addEventListener("mouseleave", () => (overlay.style.visibility = "hidden"));
 
-    axisDivisionHeight  data-axis-division-height   The minimum height of each division in the axis
-                                                    in pixels
+    // Play/Pause
+    playBtn.addEventListener("click", () => {
+      audioEl.paused ? audioEl.play() : audioEl.pause();
+    });
+    audioEl.addEventListener("play", () => (playBtn.innerHTML = icons.pause));
+    audioEl.addEventListener("pause", () => (playBtn.innerHTML = icons.play));
 
-    axisSmoothing       data-axis-smoothing         The amount of smoothing to apply to the axis
+    // Update bar
+    let intervalId = null;
+    const updateProgress = () => {
+      if (!audioEl.duration) return;
+      const frac = audioEl.currentTime / audioEl.duration;
+      const pc = frac * 100;
+      progress.value = pc;
+      setBarPosition(pc);
+    };
 
-                                                    Smoothing attempts to divide the frequency range
-                                                    into increments that are mutliples of .25
-
-                                                    Example: A frequency range of 0 - 15kHz divided
-                                                    into 7 increments would result in the following
-                                                    increments:
-                                                    0, 2.14.., 4.29.., 6.43.., 8.57.., 10.71.., 12.86.., 15
-
-                                                    With smoothing turned on and set to 1, the frequency
-                                                    will be divided into 6 increments instead, resulting
-                                                    in the following increments: 0, 2.5, 5, 7.5, 10, 12.5, 15
-
-                                                    The smoothing value determines how much higher/lower
-                                                    than the calculated number of divisions to look for a
-                                                    nice increment for the axis.
-
-                                                    A smoothing value of 0 will apply no smoothing.
-*/
-
-var spectrogram_player = {
-  defaultWidth: 500,
-  defaultHeight: 200,
-  defaultFreqMin: 0,
-  defaultFreqMax: 20,
-  defaultAxisWidth: 30,
-  defaultAxisDivisionHeight: 40,
-  defaultAxisSmoothing: 2,
-
-  playerIDs: [],
-
-  init: function() {
-    players = document.getElementsByClassName("spectrogram-player");
-    for(i=0;i<players.length;i++) {
-      player = players[i];
-
-      imgElms = player.getElementsByTagName("img");
-      if(imgElms.length == 0) {
-        console.log('Spectrogram Player: Missing image element');
-        continue;
-      } else if(imgElms.length > 1) {
-        console.log('Spectrogram Player: Found multiple images in player. First image element is assumed to be the spectrogram.')
-      }
-
-      audioElms = player.getElementsByTagName("audio");
-      if(audioElms.length == 0) {
-        console.log('Spectrogram Player: Missing audio element');
-        continue;
-      } else if(audioElms.length != 1) {
-        console.log('Spectrogram Player: Found multiple audio elements in player. First audio element is assumed to be the audio file.')
-      }
-
-      width = (player.getAttribute('data-width')) ? player.getAttribute('data-width') : this.defaultWidth;
-      height = (player.getAttribute('data-height')) ? player.getAttribute('data-height') : this.defaultHeight;
-      freqMin = (player.getAttribute('data-freq-min')) ? player.getAttribute('data-freq-min') : this.defaultFreqMin;
-      freqMax = (player.getAttribute('data-freq-max')) ? player.getAttribute('data-freq-max') : this.defaultFreqMax;
-      axisWidth = (player.getAttribute('data-axis-width')) ? player.getAttribute('data-axis-width') : this.defaultAxisWidth;
-      axisDivisionHeight = (player.getAttribute('data-axis-division-height')) ? player.getAttribute('data-axis-division-height') : this.defaultAxisDivisionHeight;
-      axisSmoothing = (player.getAttribute('data-axis-smoothing')) ? player.getAttribute('data-axis-smoothing') : this.defaultAxisSmoothing;
-
-      spectrogram = imgElms[0].src;
-      imgElms[0].parentNode.removeChild(imgElms[0]);
-
-      audio = audioElms[0];
-      audio.id = "sp-audio"+i;
-      audio.style.width = width+"px";
-
-      //Create viewer element
-      viewer = document.createElement('div');
-      viewer.className = "sp-viewer";
-      viewer.id = "sp-viewer"+i;
-
-      viewer.style.width = width+"px";
-      viewer.style.height = height+"px";
-
-      viewer.style.backgroundImage = "url('"+spectrogram+"')";
-      viewer.style.backgroundPosition = width/2+"px";
-      viewer.style.backgroundSize = "auto "+height+"px";
-
-      if(axisWidth > 0) {
-        divisions = Math.floor(height/axisDivisionHeight);
-        if(axisSmoothing != 0)
-          divisions = this.smoothAxis(freqMax-freqMin, divisions, [0,.5,.25], axisSmoothing);
-
-        axis = this.drawAxis(axisWidth,height,freqMin,freqMax,divisions,"kHz");
-        axis.className = "sp-axis";
-        viewer.appendChild(axis);
-      }
-
-      timeBar = document.createElement('div');
-      timeBar.className = "sp-timeBar";
-      viewer.appendChild(timeBar);
-
-      player.insertBefore(viewer, player.firstChild);
-
-      this.playerIDs.push(i);
+    function setBarPosition(percentage) {
+      const leftPos =
+        CONFIG.LEFT_MARGIN_PERCENT +
+        (percentage * (100 - CONFIG.LEFT_MARGIN_PERCENT - CONFIG.RIGHT_MARGIN_PERCENT)) / 100;
+      indicator.style.left = leftPos + "%";
     }
 
-    setInterval(function() { spectrogram_player.moveSpectrograms(); },33);
-  },
+    audioEl.addEventListener("play", () => {
+      intervalId = setInterval(updateProgress, CONFIG.PROGRESS_BAR_UPDATE_INTERVAL);
+    });
+    audioEl.addEventListener("pause", () => clearInterval(intervalId));
+    audioEl.addEventListener("ended", () => clearInterval(intervalId));
 
-  moveSpectrograms: function() {
-    for(i=0;i<this.playerIDs.length;i++) {
-      id = this.playerIDs[i];
-      audio = document.getElementById("sp-audio"+id);
-      if(audio.paused)
-        continue;
+    // Progress bar seeking
+    progress.addEventListener("input", () => {
+      if (!audioEl.duration) return;
+      const frac = parseFloat(progress.value) / 100;
+      audioEl.currentTime = frac * audioEl.duration;
+      setBarPosition(progress.value);
+    });
 
-      viewer = document.getElementById("sp-viewer"+id);
-      viewerWidth = viewer.offsetWidth;
-      duration = audio.duration;
+    // Spectrogram click => seek + play
+    wrapper.addEventListener("click", (e) => {
+      if (menu.style.visibility === "visible") return;
+      if (overlay.contains(e.target)) return;
+      if (!audioEl.duration) return;
 
-      viewerStyle = viewer.currentStyle || window.getComputedStyle(viewer, false);
-      img = new Image();
-      //remove url(" and ") from backgroundImage string
-      img.src = viewerStyle.backgroundImage.replace(/url\(\"|\"\)$/ig, '');
-      //get the width of the spectrogram image based on its scaled size * its native size
-      spectWidth = viewer.offsetHeight/img.height*img.width;
+      const r = wrapper.getBoundingClientRect();
+      const x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+      const pc = x * 100;
+      progress.value = pc;
+      audioEl.currentTime = (pc / 100) * audioEl.duration;
+      setBarPosition(pc);
+      audioEl.play();
+    });
 
-      viewer.style.backgroundPosition = viewerWidth/2 - audio.currentTime/duration*spectWidth + "px";
-    }
-  },
-
-  smoothAxis: function(range, baseDivision, allowedDecimals, distance) {
-    if(distance==0)
-      return baseDivision;
-
-    subtractFirst = (distance<0) ? false : true;
-
-    for(var i=0;i<=distance;i++) {
-      d1 = (subtractFirst) ? baseDivision-i : baseDivision+i;
-      d2 = (subtractFirst) ? baseDivision+i : baseDivision-i;
-
-      if(d1 > 0) {
-        decimal = this.qoutientDecimal(range, d1, 4)
-        if(allowedDecimals.indexOf(decimal) > -1)
-          return d1;
+    // Dots menu toggle
+    let menuOpen = false;
+    dotsBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      menuOpen = !menuOpen;
+      menu.style.visibility = menuOpen ? "visible" : "hidden";
+    });
+    document.addEventListener("click", (e) => {
+      if (!menu.contains(e.target) && e.target !== dotsBtn) {
+        menuOpen = false;
+        menu.style.visibility = "hidden";
       }
+    });
 
-      if(d2 > 0) {
-        decimal = this.qoutientDecimal(range, d2, 4)
-        if(allowedDecimals.indexOf(decimal) > -1)
-          return d2;
+    // Download Audio
+    dlBtn.addEventListener("click", async () => {
+      try {
+        const blob = await fetch(audioSrc).then((r) => r.blob());
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = audioSrc.split("/").pop() || "audio_file";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch {
+        alert("Failed to download audio.");
       }
-    }
+    });
 
-    return baseDivision;
-  },
+    // Info
+    infoBtn.addEventListener("click", async () => {
+      let size = "unknown";
+      let enc = "unknown";
+      try {
+        const head = await fetch(audioSrc, { method: "HEAD" });
+        if (head.ok) {
+          const cl = head.headers.get("content-length");
+          if (cl) {
+            const kb = parseInt(cl, 10) / 1024;
+            size = kb >= 1024 ? (kb / 1024).toFixed(2) + " MB" : kb.toFixed(2) + " KB";
+          }
+          const ct = head.headers.get("content-type");
+          if (ct) {
+            const parts = ct.split("/");
+            if (parts[1]) enc = parts[1].toUpperCase();
+          }
+        }
+      } catch {}
 
-  drawAxis: function(width,height,min,max,divisions,unit) {
-    axis = document.createElement('canvas');
-    axis.width = width;
-    axis.height = height;
+      const dur = audioEl.duration ? audioEl.duration.toFixed(2) + " seconds" : "unknown";
+      alert(`Duration: ${dur}\nSize: ${size}\nEncoding: ${enc}`);
 
-    ctx = axis.getContext("2d");
-
-    ctx.fillStyle ="rgba(0,0,0,.1)";
-    ctx.fillRect(0,0,width,height);
-
-    ctx.font = "12px Arial";
-    ctx.textAlign = "right";
-    ctx.textBaseline = "top";
-    ctx.fillStyle ="rgb(100,100,100)";
-    ctx.strokeStyle ="rgb(100,100,100)";
-
-    range = max-min;
-
-    for(var i=0;i<divisions;i++) {
-      y = Math.round(height/divisions*i);
-      ctx.moveTo(0,y+.5);
-      ctx.lineTo(width,y+.5);
-      ctx.stroke();
-
-      curVal = (divisions-i) * range/divisions + min*1;
-
-      ctx.fillText(Math.round(curVal*100)/100,width,y);
-    }
-
-    ctx.textBaseline = "bottom";
-    ctx.fillText(unit,width,height);
-
-    return axis;
-  },
-
-  qoutientDecimal: function(dividend, divisor, precision) {
-    quotient = dividend/divisor;
-
-    if(precision === undefined)
-      b = 1;
-    else
-      b = Math.pow(10,precision);
-
-    return Math.round(quotient%1 *b)/b;
-  }
-};
-
-window.onload = function() { spectrogram_player.init(); };
+      menuOpen = false;
+      menu.style.visibility = "hidden";
+    });
+  });
+});
