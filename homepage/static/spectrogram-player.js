@@ -30,7 +30,6 @@ document.addEventListener("DOMContentLoaded", () => {
     savedGain = "Off";
     savedFilter = "Off";
   }
-  console.log("Saved Gain:", savedGain, "Saved Filter:", savedFilter);
 
   document.querySelectorAll(".custom-audio-player").forEach((player) => {
     const audioSrc = player.dataset.audioSrc;
@@ -370,7 +369,10 @@ document.addEventListener("DOMContentLoaded", () => {
     wrapper.addEventListener("mouseleave", () => (overlay.style.visibility = "hidden"));
 
     // =============== Play/Pause Button ===============
-    playBtn.addEventListener("click", () => {
+    playBtn.addEventListener("click", async () => {
+      if (audioCtx && audioCtx.state === "suspended") {
+        await audioCtx.resume();
+      }
       audioEl.paused ? audioEl.play() : audioEl.pause();
     });
     audioEl.addEventListener("play", () => (playBtn.innerHTML = icons.pause));
@@ -402,11 +404,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // =============== Click Seek on the Image ===============
-    wrapper.addEventListener("click", (e) => {
+    wrapper.addEventListener("click", async (e) => {
       // If menu is open or user clicked on controls, skip
       if (menu.style.visibility === "visible" || overlay.contains(e.target) || !audioEl.duration) {
         return;
       }
+      // Resume AudioContext if suspended
+      if (audioCtx && audioCtx.state === "suspended") {
+        await audioCtx.resume();
+      }
+    
       const rect = wrapper.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width;
       const pc = Math.max(0, Math.min(1, x)) * 100;
