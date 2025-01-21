@@ -19,6 +19,18 @@ document.addEventListener("DOMContentLoaded", () => {
     dots: `<svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>`,
   };
 
+  // Attempt to get saved settings from localStorage, fallback to "Off"
+  let savedGain = "Off";
+  let savedFilter = "Off";
+  try {
+    savedGain = localStorage.getItem("customAudioPlayerGain") || "Off";
+    savedFilter = localStorage.getItem("customAudioPlayerFilter") || "Off";
+  } catch (e) {
+    // In case localStorage is blocked or throws, just use defaults
+    savedGain = "Off";
+    savedFilter = "Off";
+  }
+
   document.querySelectorAll(".custom-audio-player").forEach((player) => {
     const audioSrc = player.dataset.audioSrc;
     const imageSrc = player.dataset.imageSrc;
@@ -161,16 +173,17 @@ document.addEventListener("DOMContentLoaded", () => {
     let sourceNode = null;
     let gainNode = null;
     let filterNode = null; // For the HighPass option
-    let activeFilter = "Off";
 
     // Gain configuration
     const gainOptions = ["Off", "x2", "x4", "x8"];
     const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8 };
-    let activeGain = "Off";
+    // Initialize activeGain with the *globally* saved one if available
+    let activeGain = gainOptions.includes(savedGain) ? savedGain : "Off";
 
     // HighPass filter options
     const filterOptions = ["Off", "250", "500", "1000"];
-    let activeFilterOption = "Off";
+    // Initialize activeFilterOption with the *globally* saved one if available
+    let activeFilterOption = filterOptions.includes(savedFilter) ? savedFilter : "Off";
 
     // =============== Initialization / Chain Handling ===============
     function initAudioContext() {
@@ -200,7 +213,6 @@ document.addEventListener("DOMContentLoaded", () => {
         sourceNode.connect(filterNode);
         filterNode.connect(gainNode);
       } else {
-        // No filter
         sourceNode.connect(gainNode);
       }
       gainNode.connect(audioCtx.destination);
@@ -216,6 +228,12 @@ document.addEventListener("DOMContentLoaded", () => {
         b.style.textDecoration = b.dataset.gain === key ? "underline" : "none";
         b.style.textDecorationColor = b.dataset.gain === key ? "white" : "";
       });
+      // Save choice in localStorage
+      try {
+        localStorage.setItem("customAudioPlayerGain", key);
+      } catch (e) {
+        // No-op if storage fails
+      }
     }
 
     // =============== HighPass Filter Management ===============
@@ -235,16 +253,23 @@ document.addEventListener("DOMContentLoaded", () => {
         initAudioContext();
         if (!filterNode) {
           filterNode = audioCtx.createBiquadFilter();
-          filterNode.type = "highpass"; // Changed to HighPass
+          filterNode.type = "highpass"; // HighPass filter
         }
         filterNode.frequency.value = parseFloat(value);
         rebuildAudioChain();
       }
 
       filterButtons.forEach((b) => {
-        b.style.textDecoration = (b.dataset.filter === value) ? "underline" : "none";
-        b.style.textDecorationColor = (b.dataset.filter === value) ? "white" : "";
+        b.style.textDecoration = b.dataset.filter === value ? "underline" : "none";
+        b.style.textDecorationColor = b.dataset.filter === value ? "white" : "";
       });
+
+      // Save choice in localStorage
+      try {
+        localStorage.setItem("customAudioPlayerFilter", value);
+      } catch (e) {
+        // No-op if storage fails
+      }
     }
 
     // =============== Create Container for GAIN ===============
@@ -302,7 +327,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const filterLabel = filterContainer.appendChild(document.createElement("div"));
-    filterLabel.textContent = "HighPass (Hz):"; // Updated label
+    filterLabel.textContent = "HighPass (Hz):";
     applyStyles(filterLabel, {
       marginRight: "8px",
       fontSize: "14px",
@@ -331,7 +356,7 @@ document.addEventListener("DOMContentLoaded", () => {
       filterButtons.push(b);
     });
 
-    // Initialize underline for "Off" by default
+    // Initialize underline for whichever was saved or defaults to "Off"
     setActiveGain(activeGain);
     setActiveFilter(activeFilterOption);
 
@@ -353,7 +378,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const frac = audioEl.currentTime / audioEl.duration;
       const pc = frac * 100;
       progress.value = pc;
-      const leftPos = CONFIG.LEFT_MARGIN_PERCENT +
+      const leftPos =
+        CONFIG.LEFT_MARGIN_PERCENT +
         (pc * (100 - CONFIG.LEFT_MARGIN_PERCENT - CONFIG.RIGHT_MARGIN_PERCENT)) / 100;
       indicator.style.left = leftPos + "%";
     };
@@ -416,16 +442,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // =============== Info Handler ===============
     infoBtn.addEventListener("click", async () => {
-      let size = "unknown", enc = "unknown", sampleRate = "unknown", channels = "unknown", bitDepth = "unknown";
+      let size = "unknown",
+        enc = "unknown",
+        sampleRate = "unknown",
+        channels = "unknown",
+        bitDepth = "unknown";
       try {
         const resp = await fetch(audioSrc, { method: "HEAD" });
         if (resp.ok) {
           const cl = resp.headers.get("content-length");
           if (cl) {
             const sizeKB = parseInt(cl, 10) / 1024;
-            size = sizeKB >= 1024
-              ? `${(sizeKB / 1024).toFixed(2)} MB`
-              : `${sizeKB.toFixed(2)} KB`;
+            size =
+              sizeKB >= 1024
+                ? `${(sizeKB / 1024).toFixed(2)} MB`
+                : `${sizeKB.toFixed(2)} KB`;
           }
           const ct = resp.headers.get("content-type");
           if (ct) enc = ct.split("/")[1]?.toUpperCase() || "unknown";
