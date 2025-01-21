@@ -285,49 +285,52 @@ function toggleLock(filename, type, elem) {
 function toggleShiftFreq(filename, shiftAction, elem) {
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
-    if(this.responseText == "OK"){
-      if(shiftAction == "shift") {
-        elem.setAttribute("src","images/unshift.svg");
+    if (this.responseText == "OK") {
+      if (shiftAction == "shift") {
+        elem.setAttribute("src", "images/unshift.svg");
         elem.setAttribute("title", "This file has been shifted down in frequency.");
-        elem.setAttribute("onclick", elem.getAttribute("onclick").replace("shift","unshift"));
+        elem.setAttribute("onclick", elem.getAttribute("onclick").replace("shift", "unshift"));
         console.log("shifted freqs of " + filename);
-          audio=elem.parentNode.getElementsByTagName("audio");
-          if (audio.length > 0) {
-            audio[0].setAttribute("title", audio[0].getAttribute("title").replace("/By_Date/","/By_Date/shifted/"));
-            source = audio[0].getElementsByTagName("source")[0];
-            source.setAttribute("src", source.getAttribute("src").replace("/By_Date/","/By_Date/shifted/"));
-            audio[0].load();
-          } else {
-            atag=elem.parentNode.getElementsByTagName("a")[0];
-            atag.setAttribute("href", atag.getAttribute("href").replace("/By_Date/","/By_Date/shifted/"));
+
+        const audioDiv = elem.parentNode.querySelector(".custom-audio-player");
+        if (audioDiv) {
+          audioDiv.setAttribute("data-audio-src", audioDiv.getAttribute("data-audio-src").replace("/By_Date/", "/By_Date/shifted/"));
+          // Reload the custom audio player if necessary
+        } else {
+          const atag = elem.parentNode.querySelector("a");
+          if (atag) {
+            atag.setAttribute("href", atag.getAttribute("href").replace("/By_Date/", "/By_Date/shifted/"));
           }
+        }
       } else {
-        elem.setAttribute("src","images/shift.svg");
+        elem.setAttribute("src", "images/shift.svg");
         elem.setAttribute("title", "This file is not shifted in frequency.");
-        elem.setAttribute("onclick", elem.getAttribute("onclick").replace("unshift","shift"));
+        elem.setAttribute("onclick", elem.getAttribute("onclick").replace("unshift", "shift"));
         console.log("unshifted freqs of " + filename);
-          audio=elem.parentNode.getElementsByTagName("audio");
-          if (audio.length > 0) {
-            audio[0].setAttribute("title", audio[0].getAttribute("title").replace("/By_Date/shifted/","/By_Date/"));
-            source = audio[0].getElementsByTagName("source")[0];
-            source.setAttribute("src", source.getAttribute("src").replace("/By_Date/shifted/","/By_Date/"));
-            audio[0].load();
-          } else {
-            atag=elem.parentNode.getElementsByTagName("a")[0];
-            atag.setAttribute("href", atag.getAttribute("href").replace("/By_Date/shifted/","/By_Date/"));
+
+        const audioDiv = elem.parentNode.querySelector(".custom-audio-player");
+        if (audioDiv) {
+          audioDiv.setAttribute("data-audio-src", audioDiv.getAttribute("data-audio-src").replace("/By_Date/shifted/", "/By_Date/"));
+          // Reload the custom audio player if necessary
+        } else {
+          const atag = elem.parentNode.querySelector("a");
+          if (atag) {
+            atag.setAttribute("href", atag.getAttribute("href").replace("/By_Date/shifted/", "/By_Date/"));
           }
+        }
       }
     }
-  }
-  if(shiftAction == "shift") {
+  };
+
+  if (shiftAction == "shift") {
     console.log("shifting freqs of " + filename);
-    xhttp.open("GET", "play.php?shiftfile="+filename+"&doshift=true", true);
+    xhttp.open("GET", "play.php?shiftfile=" + filename + "&doshift=true", true);
   } else {
     console.log("unshifting freqs of " + filename);
-    xhttp.open("GET", "play.php?shiftfile="+filename, true);  
+    xhttp.open("GET", "play.php?shiftfile=" + filename, true);
   }
   xhttp.send();
-  elem.setAttribute("src","images/spinner.gif");
+  elem.setAttribute("src", "images/spinner.gif");
 }
 
 function changeDetection(filename,copylink=false) {
