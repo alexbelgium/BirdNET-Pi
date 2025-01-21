@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
     applyStyles(overlay, {
       position: "absolute",
       left: "0",
-      bottom: "5%",
+      bottom: "0",
       width: "100%",
       height: "15%",
       display: "flex",
