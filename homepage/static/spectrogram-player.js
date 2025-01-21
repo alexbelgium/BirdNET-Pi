@@ -39,6 +39,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const audioEl = document.createElement("audio");
     audioEl.src = audioSrc;
     audioEl.preload = "metadata";
+    audioEl.setAttribute("onplay", "setLiveStreamVolume(0)");
+    audioEl.setAttribute("onended", "setLiveStreamVolume(1)");
+    audioEl.setAttribute("onpause", "setLiveStreamVolume(1)");
     player.appendChild(audioEl);
 
     // =============== Wrapper & Styles ===============
