@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
       bottom: "5%",
       left: `${CONFIG.LEFT_MARGIN_PERCENT}%`,
       width: "3px",
-      background: "rgba(0,0,0,0.5)",
+      background: "rgba(0,0,0,0.25)", // Halved transparency
       pointerEvents: "none",
       borderRadius: "2px",
     });
@@ -73,9 +73,9 @@ document.addEventListener("DOMContentLoaded", () => {
       justifyContent: "space-between",
       padding: "0 10px",
       borderRadius: "0 0 8px 8px",
-      background: "rgba(0,0,0,0.5)",
+      background: "rgba(0,0,0,0.25)", // Halved transparency
       backdropFilter: "blur(8px)",
-      visibility: "hidden",
+      visibility: "visible", // Ensure the overlay is always visible
     });
 
     const playBtn = overlay.appendChild(document.createElement("button"));
@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
       position: "absolute",
       right: "10px",
       bottom: "15%",
-      background: "rgba(0,0,0,0.5)",
+      background: "rgba(0,0,0,0.25)", // Halved transparency
       backdropFilter: "blur(8px)",
       color: "white",
       borderRadius: "6px",
@@ -366,7 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // =============== Hover Show/Hide Overlay ===============
     wrapper.addEventListener("mouseenter", () => (overlay.style.visibility = "visible"));
-    wrapper.addEventListener("mouseleave", () => (overlay.style.visibility = "hidden"));
+    wrapper.addEventListener("mouseleave", () => (overlay.style.visibility = "visible")); // Ensure the overlay is always visible
 
     // =============== Play/Pause Button ===============
     playBtn.addEventListener("click", async () => {
