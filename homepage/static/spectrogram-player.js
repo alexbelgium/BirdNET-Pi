@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", () => {
   const CONFIG = {
     LEFT_MARGIN_PERCENT: 6,
