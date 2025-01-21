@@ -272,9 +272,16 @@ document.addEventListener("DOMContentLoaded", () => {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         sourceNode = audioCtx.createMediaElementSource(audioEl);
         gainNode = audioCtx.createGain();
-        gainNode.gain.value = 1; // default, updated below if needed
-        // connect default chain
-        sourceNode.connect(gainNode).connect(audioCtx.destination);
+        gainNode.gain.value = gainValues[activeGain] || 1;
+        // Connect default chain
+        if (activeFilterOption !== "Off") {
+          filterNode = audioCtx.createBiquadFilter();
+          filterNode.type = "highpass";
+          filterNode.frequency.value = parseFloat(activeFilterOption);
+          sourceNode.connect(filterNode).connect(gainNode).connect(audioCtx.destination);
+        } else {
+          sourceNode.connect(gainNode).connect(audioCtx.destination);
+        }
       }
     }
 
@@ -284,13 +291,20 @@ document.addEventListener("DOMContentLoaded", () => {
       gainNode.disconnect();
       if (filterNode) filterNode.disconnect();
 
-      if (filterNode) {
-        sourceNode.connect(filterNode);
-        filterNode.connect(gainNode);
+      if (activeFilterOption !== "Off") {
+        if (!filterNode) {
+          filterNode = audioCtx.createBiquadFilter();
+          filterNode.type = "highpass";
+        }
+        filterNode.frequency.value = parseFloat(activeFilterOption);
+        sourceNode.connect(filterNode).connect(gainNode).connect(audioCtx.destination);
       } else {
-        sourceNode.connect(gainNode);
+        if (filterNode) {
+          filterNode.disconnect();
+          filterNode = null;
+        }
+        sourceNode.connect(gainNode).connect(audioCtx.destination);
       }
-      gainNode.connect(audioCtx.destination);
     }
 
     // GAIN
@@ -299,18 +313,22 @@ document.addEventListener("DOMContentLoaded", () => {
       if (activeGain !== "Off") {
         initAudioContext();
         gainNode.gain.value = gainValues[activeGain];
-      } else if (audioCtx) {
+      } else if (audioCtx && gainNode) {
         // "Off" means no extra gain => set to 1
         gainNode.gain.value = 1;
       }
       // Update underline
       gainButtons.forEach((b) => {
-        b.style.textDecoration = (b.dataset.gain === activeGain) ? "underline" : "none";
+        b.style.textDecoration = b.dataset.gain === activeGain ? "underline" : "none";
       });
       // Save in localStorage
       try {
         localStorage.setItem("customAudioPlayerGain", activeGain);
-      } catch(e) {}
+      } catch (e) {
+        console.warn("Could not access localStorage:", e);
+      }
+      // Rebuild audio chain to apply changes
+      rebuildAudioChain();
     }
 
     // FILTER
@@ -323,37 +341,38 @@ document.addEventListener("DOMContentLoaded", () => {
           filterNode.type = "highpass";
         }
         filterNode.frequency.value = parseFloat(activeFilterOption);
-        rebuildAudioChain();
       } else {
         if (filterNode) {
           filterNode.disconnect();
           filterNode = null;
-          rebuildAudioChain();
         }
       }
       // Update underline
       filterButtons.forEach((b) => {
-        b.style.textDecoration = (b.dataset.filter === activeFilterOption) ? "underline" : "none";
+        b.style.textDecoration = b.dataset.filter === activeFilterOption ? "underline" : "none";
       });
-      // Save
+      // Save in localStorage
       try {
         localStorage.setItem("customAudioPlayerFilter", activeFilterOption);
-      } catch(e) {}
+      } catch (e) {
+        console.warn("Could not access localStorage:", e);
+      }
+      // Rebuild audio chain to apply changes
+      rebuildAudioChain();
     }
 
     // Helper to do underline for OFF if needed
     function underlineDefaults() {
       gainButtons.forEach((b) => {
-        b.style.textDecoration = (b.dataset.gain === activeGain) ? "underline" : "none";
+        b.style.textDecoration = b.dataset.gain === activeGain ? "underline" : "none";
       });
       filterButtons.forEach((b) => {
-        b.style.textDecoration = (b.dataset.filter === activeFilterOption) ? "underline" : "none";
+        b.style.textDecoration = b.dataset.filter === activeFilterOption ? "underline" : "none";
       });
     }
 
     // If saved settings are not "Off", activate them. Otherwise underline "Off".
     if (activeGain !== "Off") {
-      // This call sets underline & loads the module
       setActiveGain(activeGain);
     } else {
       underlineDefaults();
@@ -371,7 +390,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // =============== Play/Pause Button ===============
     playBtn.addEventListener("click", () => {
-      audioEl.paused ? audioEl.play() : audioEl.pause();
+      initAudioContext(); // Initialize AudioContext within user interaction
+      if (audioEl.paused) {
+        audioEl.play();
+      } else {
+        audioEl.pause();
+      }
     });
     audioEl.addEventListener("play", () => (playBtn.innerHTML = icons.pause));
     audioEl.addEventListener("pause", () => (playBtn.innerHTML = icons.play));
