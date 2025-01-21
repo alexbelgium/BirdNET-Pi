@@ -76,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
       justifyContent: "space-between",
       padding: "0 10px",
       borderRadius: "0 0 8px 8px",
-      background: "rgba(0,0,0,0.10)", // Halved transparency
+      background: "rgba(0,0,0,0.05)", // Halved transparency
       backdropFilter: "blur(8px)",
       visibility: "visible", // Ensure the overlay is always visible
     });
