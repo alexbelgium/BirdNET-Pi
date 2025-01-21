@@ -55,8 +55,8 @@ document.addEventListener("DOMContentLoaded", () => {
       top: "0",
       bottom: "5%",
       left: `${CONFIG.LEFT_MARGIN_PERCENT}%`,
-      width: "3px",
-      background: "rgba(0,0,0,0.25)", // Halved transparency
+      width: "2px",
+      background: "rgba(0,0,0)", // Halved transparency
       pointerEvents: "none",
       borderRadius: "2px",
     });
@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
     applyStyles(overlay, {
       position: "absolute",
       left: "0",
-      bottom: "0",
+      bottom: "5%",
       width: "100%",
       height: "15%",
       display: "flex",
@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
       justifyContent: "space-between",
       padding: "0 10px",
       borderRadius: "0 0 8px 8px",
-      background: "rgba(0,0,0,0.25)", // Halved transparency
+      background: "rgba(0,0,0,0.10)", // Halved transparency
       backdropFilter: "blur(8px)",
       visibility: "visible", // Ensure the overlay is always visible
     });
@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
       position: "absolute",
       right: "10px",
       bottom: "15%",
-      background: "rgba(0,0,0,0.25)", // Halved transparency
+      background: "rgba(0,0,0,0.3)", // Halved transparency
       backdropFilter: "blur(8px)",
       color: "white",
       borderRadius: "6px",
