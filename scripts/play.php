@@ -839,16 +839,14 @@ echo "><br><i>$sciname</i></span><br>
 <img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
 <img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
 <img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\">$date $time<br>$values<br>
-<div 
-  class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'>
-</div></td></tr>";
+<div class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'></div>
+</td></tr>";
       } else {
           echo "<tr>
       <td class=\"relative\">$date $time<br>$values
 <img style='cursor:pointer' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'><br>
-<div 
-  class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'>
-</div></td></tr>";
+<div class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'></div>
+</td></tr>";
         }
 
       }echo "</table>";}
