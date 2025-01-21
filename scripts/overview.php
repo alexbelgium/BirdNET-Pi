@@ -273,6 +273,7 @@ if (get_included_files()[0] === __FILE__) {
   <script src="static/dialog-polyfill.js"></script>
   <script src="static/Chart.bundle.js"></script>
   <script src="static/chartjs-plugin-trendline.min.js"></script>
+  <script src="static/spectrogram-player.js" defer></script>
   <script>
   var last_photo_link;
   var dialog = document.querySelector('dialog');
