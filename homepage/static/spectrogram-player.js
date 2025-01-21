@@ -23,11 +23,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const audioSrc = player.dataset.audioSrc;
     const imageSrc = player.dataset.imageSrc;
 
+    // =============== Create Audio Element ===============
     const audioEl = document.createElement("audio");
     audioEl.src = audioSrc;
     audioEl.preload = "metadata";
     player.appendChild(audioEl);
 
+    // =============== Wrapper & Styles ===============
     const wrapper = player.appendChild(document.createElement("div"));
     applyStyles(wrapper, { position: "relative" });
 
@@ -105,6 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     dotsBtn.innerHTML = icons.dots;
 
+    // =============== Menu ===============
     const menu = wrapper.appendChild(document.createElement("div"));
     applyStyles(menu, {
       position: "absolute",
@@ -122,6 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
       minWidth: "160px",
     });
 
+    // =============== Info & Download Buttons ===============
     const infoBtn = menu.appendChild(document.createElement("button"));
     infoBtn.textContent = "Info";
     styleButton(infoBtn, {
@@ -152,6 +156,98 @@ document.addEventListener("DOMContentLoaded", () => {
       borderRadius: "4px",
     });
 
+    // =============== Lazy AudioContext / Nodes ===============
+    let audioCtx = null;
+    let sourceNode = null;
+    let gainNode = null;
+    let filterNode = null; // For the HighPass option
+    let activeFilter = "Off";
+
+    // Gain configuration
+    const gainOptions = ["Off", "x2", "x4", "x8"];
+    const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8 };
+    let activeGain = "Off";
+
+    // HighPass filter options
+    const filterOptions = ["Off", "250", "500", "1000"];
+    let activeFilterOption = "Off";
+
+    // =============== Initialization / Chain Handling ===============
+    function initAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        sourceNode = audioCtx.createMediaElementSource(audioEl);
+        gainNode = audioCtx.createGain();
+        gainNode.gain.value = gainValues[activeGain];
+        // Default chain: source -> gain -> destination
+        sourceNode.connect(gainNode).connect(audioCtx.destination);
+      }
+    }
+
+    // Rebuild the audio node chain to reflect filter usage
+    function rebuildAudioChain() {
+      if (!audioCtx) return;
+      // Disconnect everything
+      sourceNode.disconnect();
+      gainNode.disconnect();
+      if (filterNode) {
+        filterNode.disconnect();
+      }
+
+      // Reconnect step by step
+      // Order: source -> (filter?) -> gain -> destination
+      if (filterNode) {
+        sourceNode.connect(filterNode);
+        filterNode.connect(gainNode);
+      } else {
+        // No filter
+        sourceNode.connect(gainNode);
+      }
+      gainNode.connect(audioCtx.destination);
+    }
+
+    // =============== Gain Management ===============
+    function setActiveGain(key) {
+      if (key === activeGain) return;
+      activeGain = key;
+      initAudioContext();
+      gainNode.gain.value = gainValues[key] || 1;
+      gainButtons.forEach((b) => {
+        b.style.textDecoration = b.dataset.gain === key ? "underline" : "none";
+        b.style.textDecorationColor = b.dataset.gain === key ? "white" : "";
+      });
+    }
+
+    // =============== HighPass Filter Management ===============
+    function setActiveFilter(value) {
+      if (value === activeFilterOption) return;
+      activeFilterOption = value;
+
+      if (value === "Off") {
+        // Turn off filter if it exists
+        if (filterNode) {
+          filterNode.disconnect();
+          filterNode = null;
+          rebuildAudioChain();
+        }
+      } else {
+        // Lazy init if not present
+        initAudioContext();
+        if (!filterNode) {
+          filterNode = audioCtx.createBiquadFilter();
+          filterNode.type = "highpass"; // Changed to HighPass
+        }
+        filterNode.frequency.value = parseFloat(value);
+        rebuildAudioChain();
+      }
+
+      filterButtons.forEach((b) => {
+        b.style.textDecoration = (b.dataset.filter === value) ? "underline" : "none";
+        b.style.textDecorationColor = (b.dataset.filter === value) ? "white" : "";
+      });
+    }
+
+    // =============== Create Container for GAIN ===============
     const gainContainer = menu.appendChild(document.createElement("div"));
     applyStyles(gainContainer, {
       display: "flex",
@@ -160,6 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
       borderTop: "1px solid rgba(255,255,255,0.2)",
       width: "100%",
       justifyContent: "flex-end",
+      flexWrap: "wrap",
     });
 
     const gainLabel = gainContainer.appendChild(document.createElement("div"));
@@ -170,32 +267,6 @@ document.addEventListener("DOMContentLoaded", () => {
       color: "#cccccc",
       flexShrink: "0",
     });
-
-    const gainOptions = ["Off", "x2", "x4", "x8"];
-    const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8 };
-    let activeGain = "Off";
-    let audioCtx, gainNode, sourceNode;
-
-    const initGainContext = () => {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        sourceNode = audioCtx.createMediaElementSource(audioEl);
-        gainNode = audioCtx.createGain();
-        gainNode.gain.value = gainValues[activeGain];
-        sourceNode.connect(gainNode).connect(audioCtx.destination);
-      }
-    };
-
-    const setActiveGain = (key) => {
-      if (key === activeGain) return;
-      activeGain = key;
-      initGainContext();
-      gainNode.gain.value = gainValues[key] || 1;
-      gainButtons.forEach((b) => {
-        b.style.textDecoration = b.dataset.gain === key ? "underline" : "none";
-        b.style.textDecorationColor = b.dataset.gain === key ? "white" : "";
-      });
-    };
 
     const gainButtons = [];
     gainOptions.forEach((opt) => {
@@ -208,41 +279,82 @@ document.addEventListener("DOMContentLoaded", () => {
         cursor: "pointer",
         color: "white",
         fontSize: "14px",
-        textAlign: "right",
-        width: "100%",
-        padding: "6px 12px",
-        margin: "2px 0",
-        borderRadius: "4px",
-      });
-      applyStyles(b, {
-        marginRight: "6px",
-        flex: "1",
-        border: "none",
-        padding: "6px 0",
         textAlign: "center",
+        width: "auto",
+        padding: "6px 8px",
+        margin: "2px 4px",
+        borderRadius: "4px",
       });
       b.addEventListener("click", () => setActiveGain(opt));
       gainButtons.push(b);
     });
 
-    setActiveGain(activeGain);
+    // =============== Create Container for HighPass Filter ===============
+    const filterContainer = menu.appendChild(document.createElement("div"));
+    applyStyles(filterContainer, {
+      display: "flex",
+      alignItems: "center",
+      padding: "4px 0",
+      borderTop: "1px solid rgba(255,255,255,0.2)",
+      width: "100%",
+      justifyContent: "flex-end",
+      flexWrap: "wrap",
+    });
 
+    const filterLabel = filterContainer.appendChild(document.createElement("div"));
+    filterLabel.textContent = "HighPass (Hz):"; // Updated label
+    applyStyles(filterLabel, {
+      marginRight: "8px",
+      fontSize: "14px",
+      color: "#cccccc",
+      flexShrink: "0",
+    });
+
+    const filterButtons = [];
+    filterOptions.forEach((opt) => {
+      const b = filterContainer.appendChild(document.createElement("button"));
+      b.textContent = opt;
+      b.dataset.filter = opt;
+      styleButton(b, {
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        color: "white",
+        fontSize: "14px",
+        textAlign: "center",
+        width: "auto",
+        padding: "6px 8px",
+        margin: "2px 4px",
+        borderRadius: "4px",
+      });
+      b.addEventListener("click", () => setActiveFilter(opt));
+      filterButtons.push(b);
+    });
+
+    // Initialize underline for "Off" by default
+    setActiveGain(activeGain);
+    setActiveFilter(activeFilterOption);
+
+    // =============== Hover Show/Hide Overlay ===============
     wrapper.addEventListener("mouseenter", () => (overlay.style.visibility = "visible"));
     wrapper.addEventListener("mouseleave", () => (overlay.style.visibility = "hidden"));
 
+    // =============== Play/Pause Button ===============
     playBtn.addEventListener("click", () => {
       audioEl.paused ? audioEl.play() : audioEl.pause();
     });
     audioEl.addEventListener("play", () => (playBtn.innerHTML = icons.pause));
     audioEl.addEventListener("pause", () => (playBtn.innerHTML = icons.play));
 
+    // =============== Progress Bar ===============
     let intervalId = null;
     const updateProgress = () => {
       if (!audioEl.duration) return;
       const frac = audioEl.currentTime / audioEl.duration;
       const pc = frac * 100;
       progress.value = pc;
-      const leftPos = CONFIG.LEFT_MARGIN_PERCENT + (pc * (100 - CONFIG.LEFT_MARGIN_PERCENT - CONFIG.RIGHT_MARGIN_PERCENT)) / 100;
+      const leftPos = CONFIG.LEFT_MARGIN_PERCENT +
+        (pc * (100 - CONFIG.LEFT_MARGIN_PERCENT - CONFIG.RIGHT_MARGIN_PERCENT)) / 100;
       indicator.style.left = leftPos + "%";
     };
     audioEl.addEventListener("play", () => {
@@ -258,7 +370,9 @@ document.addEventListener("DOMContentLoaded", () => {
       updateProgress();
     });
 
+    // =============== Click Seek on the Image ===============
     wrapper.addEventListener("click", (e) => {
+      // If menu is open or user clicked on controls, skip
       if (menu.style.visibility === "visible" || overlay.contains(e.target) || !audioEl.duration) return;
       const rect = wrapper.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width;
@@ -269,6 +383,7 @@ document.addEventListener("DOMContentLoaded", () => {
       audioEl.play();
     });
 
+    // =============== Menu Open/Close ===============
     let menuOpen = false;
     dotsBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -282,6 +397,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
+    // =============== Download Handler ===============
     dlBtn.addEventListener("click", async () => {
       try {
         const blob = await fetch(audioSrc).then((r) => r.blob());
@@ -298,6 +414,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
+    // =============== Info Handler ===============
     infoBtn.addEventListener("click", async () => {
       let size = "unknown", enc = "unknown", sampleRate = "unknown", channels = "unknown", bitDepth = "unknown";
       try {
@@ -306,7 +423,9 @@ document.addEventListener("DOMContentLoaded", () => {
           const cl = resp.headers.get("content-length");
           if (cl) {
             const sizeKB = parseInt(cl, 10) / 1024;
-            size = sizeKB >= 1024 ? `${(sizeKB / 1024).toFixed(2)} MB` : `${sizeKB.toFixed(2)} KB`;
+            size = sizeKB >= 1024
+              ? `${(sizeKB / 1024).toFixed(2)} MB`
+              : `${sizeKB.toFixed(2)} KB`;
           }
           const ct = resp.headers.get("content-type");
           if (ct) enc = ct.split("/")[1]?.toUpperCase() || "unknown";
@@ -315,6 +434,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const decoded = await new (window.AudioContext || window.webkitAudioContext)().decodeAudioData(audioData);
         sampleRate = decoded.sampleRate;
         channels = decoded.numberOfChannels;
+        // Common guess if it isn't easily determined
         bitDepth = "16 bits";
       } catch {}
       const duration = audioEl.duration ? `${audioEl.duration.toFixed(2)} seconds` : "unknown";
