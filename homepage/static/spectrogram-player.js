@@ -366,7 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // =============== Hover Show/Hide Overlay ===============
     wrapper.addEventListener("mouseenter", () => (overlay.style.visibility = "visible"));
-    wrapper.addEventListener("mouseleave", () => (overlay.style.visibility = "visible")); // Ensure the overlay is always visible
+    wrapper.addEventListener("mouseleave", () => (overlay.style.visibility = "hidden"));
 
     // =============== Play/Pause Button ===============
     playBtn.addEventListener("click", async () => {
