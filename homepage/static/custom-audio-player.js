@@ -213,6 +213,7 @@ function initCustomAudioPlayers() {
     const gainButtons = [];
     gainOptions.forEach((opt) => {
       const b = gainContainer.appendChild(document.createElement("button"));
+      b.type = "button";
       b.textContent = opt;
       b.dataset.gain = opt;
       styleButton(b, {
@@ -254,6 +255,7 @@ function initCustomAudioPlayers() {
     const filterButtons = [];
     filterOptions.forEach((opt) => {
       const b = filterContainer.appendChild(document.createElement("button"));
+      b.type = "button";
       b.textContent = opt;
       b.dataset.filter = opt;
       styleButton(b, {
