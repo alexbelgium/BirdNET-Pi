@@ -135,7 +135,7 @@ function initCustomAudioPlayers() {
       left: "0",
       bottom: "0",
       width: "100%",
-      height: "15%",
+      height: "30%",
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
