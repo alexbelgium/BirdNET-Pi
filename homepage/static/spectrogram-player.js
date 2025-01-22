@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+function initCustomAudioPlayers() {
   const CONFIG = {
     LEFT_MARGIN_PERCENT: 6,
     RIGHT_MARGIN_PERCENT: 9,
@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
     applyStyles(overlay, {
       position: "absolute",
       left: "0",
-      bottom: "5%",
+      bottom: "0",
       width: "100%",
       height: "15%",
       display: "flex",
@@ -76,8 +76,8 @@ document.addEventListener("DOMContentLoaded", () => {
       justifyContent: "space-between",
       padding: "0 10px",
       borderRadius: "0 0 8px 8px",
-      background: "rgba(0,0,0,0.10)", // Halved transparency
-      backdropFilter: "blur(8px)",
+      background: "rgba(0,0,0,0.1)", // Halved transparency
+      backdropFilter: "blur(2px)",
       visibility: "visible", // Ensure the overlay is always visible
     });
 
@@ -502,4 +502,6 @@ Bit Depth: ${bitDepth}`);
       menu.style.visibility = "hidden";
     });
   });
-});
+};
+// Run once at DOMContentLoaded
+document.addEventListener("DOMContentLoaded", initCustomAudioPlayers);
