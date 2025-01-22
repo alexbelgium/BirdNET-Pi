@@ -82,6 +82,7 @@ function initCustomAudioPlayers() {
     });
 
     const playBtn = overlay.appendChild(document.createElement("button"));
+    playBtn.type = "button";
     applyStyles(playBtn, {
       background: "none",
       border: "none",
@@ -108,6 +109,7 @@ function initCustomAudioPlayers() {
     });
 
     const dotsBtn = overlay.appendChild(document.createElement("button"));
+    dotsBtn.type = "button";
     applyStyles(dotsBtn, {
       background: "none",
       border: "none",
@@ -142,6 +144,7 @@ function initCustomAudioPlayers() {
 
     // =============== Info & Download Buttons ===============
     const infoBtn = menu.appendChild(document.createElement("button"));
+    infoBtn.type = "button";
     infoBtn.textContent = "Info";
     styleButton(infoBtn, {
       background: "none",
@@ -157,6 +160,7 @@ function initCustomAudioPlayers() {
     });
 
     const dlBtn = menu.appendChild(document.createElement("button"));
+    dlBtn.type = "button";
     dlBtn.textContent = "Download";
     styleButton(dlBtn, {
       background: "none",
