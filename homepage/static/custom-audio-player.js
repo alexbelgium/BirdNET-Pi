@@ -500,6 +500,20 @@ Bit Depth: ${bitDepth}`);
     // =============== Hover & Touch for Overlay ===============
     wrapper.addEventListener("mouseenter", () => (overlay.style.visibility = "visible"));
     wrapper.addEventListener("mouseleave", () => (overlay.style.visibility = "hidden"));
+    wrapper.addEventListener("mousemove", () => (overlay.style.visibility = "visible"));
+
+    // Show overlay if the mouse moves over the wrapper
+    wrapper.addEventListener("mousemove", () => {
+      overlay.style.visibility = "visible";
+      overlay.style.opacity = "1";
+    
+      // Reset the auto-hide timeout if the mouse is still moving
+      clearTimeout(hideTimeout);
+      hideTimeout = setTimeout(() => {
+        overlay.style.visibility = "hidden";
+        overlay.style.opacity = "0";
+      }, 2000); // Delay before hiding the overlay again (2 seconds in this example)
+    });
 
     document.addEventListener("touchstart", (event) => {
       if (!wrapper.contains(event.target)) {
