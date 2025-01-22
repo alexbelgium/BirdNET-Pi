@@ -149,7 +149,7 @@ if (get_included_files()[0] === __FILE__) {
   <button onclick="hideDialog()">Close</button>
 </dialog>
 <script src="static/dialog-polyfill.js"></script>
-<script src="static/custom-audio-player.js"></script>
+<script src="static/custom-audio-player.js" defer></script>
 <script>
 var dialog = document.querySelector('dialog');
 dialogPolyfill.registerDialog(dialog);
