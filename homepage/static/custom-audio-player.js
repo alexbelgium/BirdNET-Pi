@@ -31,6 +31,9 @@ function initCustomAudioPlayers() {
     savedFilter = "Off";
   }
 
+  // Keep track of all player wrappers for global event handling
+  const playerWrappers = [];
+
   document.querySelectorAll(".custom-audio-player").forEach((player) => {
     const audioSrc = player.dataset.audioSrc;
     const imageSrc = player.dataset.imageSrc;
@@ -47,10 +50,11 @@ function initCustomAudioPlayers() {
     // =============== Wrapper & Styles ===============
     const wrapper = player.appendChild(document.createElement("div"));
     applyStyles(wrapper, { position: "relative" });
+    playerWrappers.push(wrapper); // Add to the wrappers array
 
     const img = wrapper.appendChild(document.createElement("img"));
     img.src = imageSrc;
-    applyStyles(img, { width: "100%", borderRadius: "8px" });
+    applyStyles(img, { width: "100%", borderRadius: "8px", cursor: "pointer" });
 
     const indicator = wrapper.appendChild(document.createElement("div"));
     applyStyles(indicator, {
@@ -59,7 +63,7 @@ function initCustomAudioPlayers() {
       bottom: "5%",
       left: `${CONFIG.LEFT_MARGIN_PERCENT}%`,
       width: "2px",
-      background: "rgba(0,0,0)", // Halved transparency
+      background: "rgba(0,0,0)", // Solid color; adjust opacity if needed
       pointerEvents: "none",
       borderRadius: "2px",
     });
@@ -76,11 +80,15 @@ function initCustomAudioPlayers() {
       justifyContent: "space-between",
       padding: "0 10px",
       borderRadius: "0 0 8px 8px",
-      background: "rgba(0,0,0,0.3)", // Halved transparency
-      backdropFilter: "blur(1px)",
-      visibility: "visible", // Ensure the overlay is always visible
+      background: "rgba(0,0,0,0.6)", // Increased opacity for better visibility
+      backdropFilter: "blur(2px)",
+      visibility: "hidden", // Initially hidden
+      opacity: "0",
+      transition: "visibility 0s, opacity 0.3s linear",
+      zIndex: "1", // Ensure overlay is above other elements
     });
 
+    // =============== Play/Pause Button ===============
     const playBtn = overlay.appendChild(document.createElement("button"));
     playBtn.type = "button";
     applyStyles(playBtn, {
@@ -97,6 +105,20 @@ function initCustomAudioPlayers() {
     });
     playBtn.innerHTML = icons.play;
 
+    // Event listener for play/pause
+    playBtn.addEventListener("click", async (e) => {
+      e.stopPropagation(); // Prevent event from bubbling to wrapper or document
+      if (audioCtx && audioCtx.state === "suspended") {
+        await audioCtx.resume();
+      }
+      audioEl.paused ? audioEl.play() : audioEl.pause();
+      // Optionally, toggle overlay visibility on play/pause
+      // toggleOverlay();
+    });
+    audioEl.addEventListener("play", () => (playBtn.innerHTML = icons.pause));
+    audioEl.addEventListener("pause", () => (playBtn.innerHTML = icons.play));
+
+    // =============== Progress Bar ===============
     const progress = overlay.appendChild(document.createElement("input"));
     progress.type = "range";
     progress.value = "0";
@@ -108,6 +130,35 @@ function initCustomAudioPlayers() {
       verticalAlign: "middle",
     });
 
+    const indicatorUpdate = () => {
+      if (!audioEl.duration) return;
+      const frac = audioEl.currentTime / audioEl.duration;
+      const pc = frac * 100;
+      progress.value = pc;
+      const leftPos =
+        CONFIG.LEFT_MARGIN_PERCENT +
+        (pc * (100 - CONFIG.LEFT_MARGIN_PERCENT - CONFIG.RIGHT_MARGIN_PERCENT)) / 100;
+      indicator.style.left = leftPos + "%";
+    };
+
+    let intervalId = null;
+    const updateProgress = () => {
+      indicatorUpdate();
+    };
+    audioEl.addEventListener("play", () => {
+      intervalId = setInterval(updateProgress, CONFIG.PROGRESS_BAR_UPDATE_INTERVAL);
+    });
+    audioEl.addEventListener("pause", () => clearInterval(intervalId));
+    audioEl.addEventListener("ended", () => clearInterval(intervalId));
+
+    progress.addEventListener("input", () => {
+      if (!audioEl.duration) return;
+      const frac = parseFloat(progress.value) / 100;
+      audioEl.currentTime = frac * audioEl.duration;
+      indicatorUpdate();
+    });
+
+    // =============== Dots Button and Menu ===============
     const dotsBtn = overlay.appendChild(document.createElement("button"));
     dotsBtn.type = "button";
     applyStyles(dotsBtn, {
@@ -124,22 +175,50 @@ function initCustomAudioPlayers() {
     });
     dotsBtn.innerHTML = icons.dots;
 
-    // =============== Menu ===============
     const menu = wrapper.appendChild(document.createElement("div"));
     applyStyles(menu, {
       position: "absolute",
       right: "10px",
       bottom: "15%",
-      background: "rgba(0,0,0,0.3)", // Halved transparency
+      background: "rgba(0,0,0,0.8)", // Increased opacity for better visibility
       backdropFilter: "blur(8px)",
       color: "white",
       borderRadius: "6px",
       padding: "0.5rem",
       visibility: "hidden",
+      opacity: "0",
+      transition: "visibility 0s, opacity 0.3s linear",
       display: "flex",
       flexDirection: "column",
       alignItems: "flex-end",
       minWidth: "160px",
+      zIndex: "2", // Ensure menu is above overlay
+    });
+
+    // Function to show menu
+    const showMenu = () => {
+      menu.style.visibility = "visible";
+      menu.style.opacity = "1";
+    };
+
+    // Function to hide menu
+    const hideMenu = () => {
+      menu.style.opacity = "0";
+      setTimeout(() => {
+        menu.style.visibility = "hidden";
+      }, 300); // Match the transition duration
+    };
+
+    // Toggle menu visibility
+    let menuOpen = false;
+    dotsBtn.addEventListener("click", (e) => {
+      e.stopPropagation(); // Prevent event from bubbling to document
+      menuOpen = !menuOpen;
+      if (menuOpen) {
+        showMenu();
+      } else {
+        hideMenu();
+      }
     });
 
     // =============== Info & Download Buttons ===============
@@ -182,8 +261,8 @@ function initCustomAudioPlayers() {
     let filterNode = null;
 
     // Gain
-    const gainOptions = ["Off", "x2", "x4", "x8", "x16"];
-    const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8, x16: 16 };
+    const gainOptions = ["Off", "x2", "x4", "x8"];
+    const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8 };
     let activeGain = gainOptions.includes(savedGain) ? savedGain : "Off";
 
     // Filter
@@ -213,7 +292,6 @@ function initCustomAudioPlayers() {
     const gainButtons = [];
     gainOptions.forEach((opt) => {
       const b = gainContainer.appendChild(document.createElement("button"));
-      b.type = "button";
       b.textContent = opt;
       b.dataset.gain = opt;
       styleButton(b, {
@@ -228,7 +306,10 @@ function initCustomAudioPlayers() {
         margin: "2px 4px",
         borderRadius: "4px",
       });
-      b.addEventListener("click", () => setActiveGain(opt));
+      b.addEventListener("click", (e) => {
+        e.stopPropagation(); // Prevent event from bubbling to menu
+        setActiveGain(opt);
+      });
       gainButtons.push(b);
     });
 
@@ -255,7 +336,6 @@ function initCustomAudioPlayers() {
     const filterButtons = [];
     filterOptions.forEach((opt) => {
       const b = filterContainer.appendChild(document.createElement("button"));
-      b.type = "button";
       b.textContent = opt;
       b.dataset.filter = opt;
       styleButton(b, {
@@ -270,7 +350,10 @@ function initCustomAudioPlayers() {
         margin: "2px 4px",
         borderRadius: "4px",
       });
-      b.addEventListener("click", () => setActiveFilter(opt));
+      b.addEventListener("click", (e) => {
+        e.stopPropagation(); // Prevent event from bubbling to menu
+        setActiveFilter(opt);
+      });
       filterButtons.push(b);
     });
 
@@ -280,7 +363,7 @@ function initCustomAudioPlayers() {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         sourceNode = audioCtx.createMediaElementSource(audioEl);
         gainNode = audioCtx.createGain();
-        gainNode.gain.value = 1; // default, updated below if needed
+        gainNode.gain.value = 1; // default, updated below
         // connect default chain
         sourceNode.connect(gainNode).connect(audioCtx.destination);
       }
@@ -373,93 +456,14 @@ function initCustomAudioPlayers() {
       underlineDefaults();
     }
 
-    // =============== Hover Show/Hide Overlay ===============
-    wrapper.addEventListener("mouseenter", () => (overlay.style.visibility = "visible"));
-    wrapper.addEventListener("mouseleave", () => (overlay.style.visibility = "hidden"));
-
-    // =============== Manage Overlay Visibility for Touch ===============
-    let overlayVisible = true; // Tracks current visibility state
-
-    // Handle overlay visibility on touch events
-    const toggleOverlay = () => {
-      overlayVisible = !overlayVisible;
-      overlay.style.visibility = overlayVisible ? "visible" : "hidden";
-    };
-
-    const showOverlay = () => {
-      overlayVisible = true;
-      overlay.style.visibility = "visible";
-    };
-
-    const hideOverlay = () => {
-      overlayVisible = false;
-      overlay.style.visibility = "hidden";
-    };
-
-    // Handle touchstart for the wrapper (image area)
-    wrapper.addEventListener("touchstart", (e) => {
-      e.preventDefault(); // Prevent default touch behavior
-      toggleOverlay();
-    });
-
-    // Handle touchstart for the entire document to detect touches outside the wrapper
-    document.addEventListener("touchstart", (e) => {
-      playerWrappers.forEach((pWrapper) => {
-        if (!pWrapper.contains(e.target)) {
-          const pOverlay = pWrapper.querySelector("div > div"); // Assuming first div inside wrapper is overlay
-          pOverlay.style.visibility = "hidden";
-        }
-      });
-    }, { passive: false });
-
-    // Prevent touch events on overlay from propagating to the document
-    overlay.addEventListener("touchstart", (e) => {
-      e.stopPropagation();
-    });
-
-    // Collect all player wrappers for the document touch listener
-    // This assumes all players share the same class; adjust if necessary
-    const playerWrappers = Array.from(document.querySelectorAll(".custom-audio-player > div"));
-
-    // =============== Play/Pause Button ===============
-    playBtn.addEventListener("click", async () => {
-      if (audioCtx && audioCtx.state === "suspended") {
-        await audioCtx.resume();
-      }
-      audioEl.paused ? audioEl.play() : audioEl.pause();
-    });
-    audioEl.addEventListener("play", () => (playBtn.innerHTML = icons.pause));
-    audioEl.addEventListener("pause", () => (playBtn.innerHTML = icons.play));
-
-    // =============== Progress Bar ===============
-    let intervalId = null;
-    const updateProgress = () => {
-      if (!audioEl.duration) return;
-      const frac = audioEl.currentTime / audioEl.duration;
-      const pc = frac * 100;
-      progress.value = pc;
-      const leftPos =
-        CONFIG.LEFT_MARGIN_PERCENT +
-        (pc * (100 - CONFIG.LEFT_MARGIN_PERCENT - CONFIG.RIGHT_MARGIN_PERCENT)) / 100;
-      indicator.style.left = leftPos + "%";
-    };
-    audioEl.addEventListener("play", () => {
-      intervalId = setInterval(updateProgress, CONFIG.PROGRESS_BAR_UPDATE_INTERVAL);
-    });
-    audioEl.addEventListener("pause", () => clearInterval(intervalId));
-    audioEl.addEventListener("ended", () => clearInterval(intervalId));
-
-    progress.addEventListener("input", () => {
-      if (!audioEl.duration) return;
-      const frac = parseFloat(progress.value) / 100;
-      audioEl.currentTime = frac * audioEl.duration;
-      updateProgress();
-    });
-
     // =============== Click Seek on the Image ===============
     wrapper.addEventListener("click", async (e) => {
       // If menu is open or user clicked on controls, skip
-      if (menu.style.visibility === "visible" || overlay.contains(e.target) || !audioEl.duration) {
+      if (
+        menu.style.visibility === "visible" ||
+        overlay.contains(e.target) ||
+        !audioEl.duration
+      ) {
         return;
       }
       // Resume AudioContext if suspended
@@ -472,26 +476,19 @@ function initCustomAudioPlayers() {
       const pc = Math.max(0, Math.min(1, x)) * 100;
       progress.value = pc;
       audioEl.currentTime = (pc / 100) * audioEl.duration;
-      updateProgress();
+      indicatorUpdate();
       audioEl.play();
+
+      // Show overlay when seeking
+      showOverlay();
     });
 
     // =============== Menu Open/Close ===============
-    let menuOpen = false;
-    dotsBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      menuOpen = !menuOpen;
-      menu.style.visibility = menuOpen ? "visible" : "hidden";
-    });
-    document.addEventListener("click", (e) => {
-      if (!menu.contains(e.target) && e.target !== dotsBtn) {
-        menuOpen = false;
-        menu.style.visibility = "hidden";
-      }
-    });
+    // Menu toggle is already handled above
 
     // =============== Download Handler ===============
-    dlBtn.addEventListener("click", async () => {
+    dlBtn.addEventListener("click", async (e) => {
+      e.stopPropagation(); // Prevent event from bubbling to menu
       try {
         const blob = await fetch(audioSrc).then((r) => r.blob());
         const url = URL.createObjectURL(blob);
@@ -505,10 +502,12 @@ function initCustomAudioPlayers() {
       } catch {
         alert("Failed to download audio.");
       }
+      hideMenu();
     });
 
     // =============== Info Handler ===============
-    infoBtn.addEventListener("click", async () => {
+    infoBtn.addEventListener("click", async (e) => {
+      e.stopPropagation(); // Prevent event from bubbling to menu
       let size = "unknown",
         enc = "unknown",
         sampleRate = "unknown",
@@ -537,7 +536,6 @@ function initCustomAudioPlayers() {
         sampleRate = decoded.sampleRate;
         channels = decoded.numberOfChannels;
         bitDepth = "16 bits"; // typical guess
-
       } catch {}
       const duration = audioEl.duration ? `${audioEl.duration.toFixed(2)} s` : "unknown";
 
@@ -548,25 +546,132 @@ Sampling Rate: ${sampleRate} Hz
 Channels: ${channels}
 Bit Depth: ${bitDepth}`);
 
-      menuOpen = false;
-      menu.style.visibility = "hidden";
+      hideMenu();
+    });
+
+    // =============== Overlay Visibility Handling for Both Mouse and Touch ===============
+    // Function to show overlay
+    const showOverlay = () => {
+      overlay.style.visibility = "visible";
+      overlay.style.opacity = "1";
+    };
+
+    // Function to hide overlay
+    const hideOverlay = () => {
+      overlay.style.opacity = "0";
+      setTimeout(() => {
+        overlay.style.visibility = "hidden";
+      }, 300); // Match the transition duration
+    };
+
+    // Toggle overlay visibility
+    const toggleOverlay = () => {
+      if (overlay.style.visibility === "visible") {
+        hideOverlay();
+      } else {
+        showOverlay();
+      }
+    };
+
+    // =============== Event Listeners for Mouse and Touch ===============
+    // Mouse Events
+    wrapper.addEventListener("mouseenter", () => {
+      showOverlay();
+    });
+    wrapper.addEventListener("mouseleave", () => {
+      hideOverlay();
+    });
+
+    // Touch Events
+    wrapper.addEventListener("touchstart", (e) => {
+      // Prevent multiple toggles on touch devices
+      toggleOverlay();
+      // Prevent default to avoid triggering click events
+      e.preventDefault();
+    });
+
+    // Prevent touch events from triggering mouse events
+    overlay.addEventListener("touchstart", (e) => {
+      e.stopPropagation();
+    });
+    playBtn.addEventListener("touchstart", (e) => {
+      e.stopPropagation();
+    });
+    dotsBtn.addEventListener("touchstart", (e) => {
+      e.stopPropagation();
+    });
+    menu.addEventListener("touchstart", (e) => {
+      e.stopPropagation();
+    });
+
+    // Ensure clicks on the image toggle the overlay
+    img.addEventListener("click", (e) => {
+      e.stopPropagation(); // Prevent event from bubbling to document
+      toggleOverlay();
+    });
+
+    // Ensure touches on the image toggle the overlay
+    img.addEventListener("touchstart", (e) => {
+      e.stopPropagation(); // Prevent event from bubbling to document
+      toggleOverlay();
     });
   });
 
-  // =============== Global Touch Listener to Hide Overlays When Touching Outside ===============
-  // This ensures that touching outside any player hides all overlays
-  document.addEventListener("touchstart", (e) => {
-    document.querySelectorAll(".custom-audio-player").forEach((player) => {
-      const wrapper = player.querySelector("div"); // Assuming first div is the wrapper
+  // =============== Global Event Listener to Hide Overlays When Clicking or Touching Outside ===============
+  // Function to hide all overlays
+  const hideAllOverlays = () => {
+    playerWrappers.forEach((wrapper) => {
+      const overlay = wrapper.querySelector("div > div"); // Assuming overlay is the first div inside wrapper
+      if (overlay) {
+        overlay.style.opacity = "0";
+        overlay.style.visibility = "hidden";
+      }
+      // Also hide all menus
+      const menu = wrapper.querySelector("div > div > div"); // Assuming menu is a child of overlay
+      if (menu) {
+        menu.style.opacity = "0";
+        menu.style.visibility = "hidden";
+      }
+    });
+  };
+
+  // Click outside to hide overlays
+  document.addEventListener("click", (e) => {
+    playerWrappers.forEach((wrapper) => {
       if (!wrapper.contains(e.target)) {
-        const overlay = player.querySelector("div > div"); // Assuming first div inside wrapper is overlay
+        const overlay = wrapper.querySelector("div > div"); // Adjust selector as needed
         if (overlay) {
+          overlay.style.opacity = "0";
           overlay.style.visibility = "hidden";
+        }
+        // Hide menus as well
+        const menu = wrapper.querySelector("div > div > div"); // Adjust selector as needed
+        if (menu) {
+          menu.style.opacity = "0";
+          menu.style.visibility = "hidden";
         }
       }
     });
-  }, { passive: true });
-}
+  });
 
+  // Touch outside to hide overlays
+  document.addEventListener("touchstart", (e) => {
+    playerWrappers.forEach((wrapper) => {
+      if (!wrapper.contains(e.target)) {
+        const overlay = wrapper.querySelector("div > div"); // Adjust selector as needed
+        if (overlay) {
+          overlay.style.opacity = "0";
+          overlay.style.visibility = "hidden";
+        }
+        // Hide menus as well
+        const menu = wrapper.querySelector("div > div > div"); // Adjust selector as needed
+        if (menu) {
+          menu.style.opacity = "0";
+          menu.style.visibility = "hidden";
+        }
+      }
+    });
+  });
+}
 // Run once at DOMContentLoaded
 document.addEventListener("DOMContentLoaded", initCustomAudioPlayers);
