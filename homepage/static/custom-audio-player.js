@@ -380,8 +380,15 @@ function initCustomAudioPlayers() {
       }
       audioEl.paused ? audioEl.play() : audioEl.pause();
     });
-    audioEl.addEventListener("play", () => (playBtn.innerHTML = icons.pause));
-    audioEl.addEventListener("pause", () => (playBtn.innerHTML = icons.play));
+    audioEl.addEventListener("play", () => {
+      overlay.style.visibility = "hidden"; // Hide overlay when playback starts
+      playBtn.innerHTML = icons.pause;
+    });
+    audioEl.addEventListener("pause", () => {
+      overlay.style.visibility = "visible"; // Show overlay when playback is paused
+      playBtn.innerHTML = icons.play;
+    });
+
 
     // =============== Progress Bar ===============
     let intervalId = null;
