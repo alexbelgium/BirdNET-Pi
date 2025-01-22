@@ -182,8 +182,8 @@ function initCustomAudioPlayers() {
     let filterNode = null;
 
     // Gain
-    const gainOptions = ["Off", "x2", "x4", "x8"];
-    const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8 };
+    const gainOptions = ["Off", "x2", "x4", "x8", "x16"];
+    const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8, x16:16 };
     let activeGain = gainOptions.includes(savedGain) ? savedGain : "Off";
 
     // Filter
