@@ -76,8 +76,8 @@ function initCustomAudioPlayers() {
       justifyContent: "space-between",
       padding: "0 10px",
       borderRadius: "0 0 8px 8px",
-      background: "rgba(0,0,0,0.1)", // Halved transparency
-      backdropFilter: "blur(2px)",
+      background: "rgba(0,0,0,0.3)", // Halved transparency
+      backdropFilter: "blur(1px)",
       visibility: "visible", // Ensure the overlay is always visible
     });
 
