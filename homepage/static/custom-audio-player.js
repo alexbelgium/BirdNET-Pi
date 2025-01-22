@@ -373,10 +373,6 @@ function initCustomAudioPlayers() {
       underlineDefaults();
     }
 
-    // =============== Hover Show/Hide Overlay ===============
-    wrapper.addEventListener("mouseenter", () => (overlay.style.visibility = "visible"));
-    wrapper.addEventListener("mouseleave", () => (overlay.style.visibility = "hidden"));
-
     // =============== Play/Pause Button ===============
     playBtn.addEventListener("click", async () => {
       if (audioCtx && audioCtx.state === "suspended") {
@@ -444,6 +440,21 @@ function initCustomAudioPlayers() {
         menuOpen = false;
         menu.style.visibility = "hidden";
       }
+    });
+
+    // Hover functionality for desktop
+    wrapper.addEventListener("mouseenter", () => (overlay.style.visibility = "visible"));
+    wrapper.addEventListener("mouseleave", () => (overlay.style.visibility = "hidden"));
+    
+    // Touch functionality for mobile
+    document.addEventListener("touchstart", (event) => {
+        if (!wrapper.contains(event.target)) {
+            // Hide overlay if the touch is outside the wrapper
+            overlay.style.visibility = "hidden";
+        } else {
+            // Show overlay if the touch is inside the wrapper
+            overlay.style.visibility = "visible";
+        }
     });
 
     // =============== Download Handler ===============
