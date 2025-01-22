@@ -245,7 +245,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
           <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style=";cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="20"></a>
           <img style=";cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>')" width=20 src="images/chart.svg"><br>
           <b>Confidence:</b> <?php echo round((float)round($todaytable['Confidence'],2) * 100 ) . '%';?><br></div><br>
-          <div class='custom-audio-player' data-audio-src='<?php echo $filename; ?>' data-image-src='<?php echo $filename_png; ?>'></div>
+          <div class='custom-audio-player' data-audio-src='<?php echo $filename; ?>' data-image-src='<?php echo $filename.".png";?>'></div>
           </td>
         <?php } else { //legacy mode ?>
           <tr class="relative" id="<?php echo $iterations; ?>">
@@ -348,7 +348,7 @@ if (get_included_files()[0] === __FILE__) {
   <script src="static/dialog-polyfill.js"></script>
   <script src="static/Chart.bundle.js"></script>
   <script src="static/chartjs-plugin-trendline.min.js"></script>
-  <script src="static/spectrogram-player.js" defer></script>
+  <script src="static/custom-audio-player.js"></script>
 
   <script>
     function deleteDetection(filename,copylink=false) {
