@@ -220,7 +220,7 @@ if (get_included_files()[0] === __FILE__) {
 }
 
 ?>
-<script src="static/spectrogram-player.js" defer></script>
+<script src="static/custom-audio-player.js"></script>
 <script>
 
 function deleteDetection(filename,copylink=false) {
