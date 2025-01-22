@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+function initCustomAudioPlayers() {
   const CONFIG = {
     LEFT_MARGIN_PERCENT: 6,
     RIGHT_MARGIN_PERCENT: 9,
@@ -502,4 +502,6 @@ Bit Depth: ${bitDepth}`);
       menu.style.visibility = "hidden";
     });
   });
-});
+};
+// Run once at DOMContentLoaded
+document.addEventListener("DOMContentLoaded", initCustomAudioPlayers);
