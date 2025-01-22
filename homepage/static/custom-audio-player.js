@@ -183,7 +183,7 @@ function initCustomAudioPlayers() {
 
     // Gain
     const gainOptions = ["Off", "x2", "x4", "x8", "x16"];
-    const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8, x16:16 };
+    const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8, x16: 16 };
     let activeGain = gainOptions.includes(savedGain) ? savedGain : "Off";
 
     // Filter
@@ -313,12 +313,12 @@ function initCustomAudioPlayers() {
       }
       // Update underline
       gainButtons.forEach((b) => {
-        b.style.textDecoration = (b.dataset.gain === activeGain) ? "underline" : "none";
+        b.style.textDecoration = b.dataset.gain === activeGain ? "underline" : "none";
       });
       // Save in localStorage
       try {
         localStorage.setItem("customAudioPlayerGain", activeGain);
-      } catch(e) {}
+      } catch (e) {}
     }
 
     // FILTER
@@ -341,21 +341,21 @@ function initCustomAudioPlayers() {
       }
       // Update underline
       filterButtons.forEach((b) => {
-        b.style.textDecoration = (b.dataset.filter === activeFilterOption) ? "underline" : "none";
+        b.style.textDecoration = b.dataset.filter === activeFilterOption ? "underline" : "none";
       });
       // Save
       try {
         localStorage.setItem("customAudioPlayerFilter", activeFilterOption);
-      } catch(e) {}
+      } catch (e) {}
     }
 
     // Helper to do underline for OFF if needed
     function underlineDefaults() {
       gainButtons.forEach((b) => {
-        b.style.textDecoration = (b.dataset.gain === activeGain) ? "underline" : "none";
+        b.style.textDecoration = b.dataset.gain === activeGain ? "underline" : "none";
       });
       filterButtons.forEach((b) => {
-        b.style.textDecoration = (b.dataset.filter === activeFilterOption) ? "underline" : "none";
+        b.style.textDecoration = b.dataset.filter === activeFilterOption ? "underline" : "none";
       });
     }
 
@@ -376,6 +376,50 @@ function initCustomAudioPlayers() {
     // =============== Hover Show/Hide Overlay ===============
     wrapper.addEventListener("mouseenter", () => (overlay.style.visibility = "visible"));
     wrapper.addEventListener("mouseleave", () => (overlay.style.visibility = "hidden"));
+
+    // =============== Manage Overlay Visibility for Touch ===============
+    let overlayVisible = true; // Tracks current visibility state
+
+    // Handle overlay visibility on touch events
+    const toggleOverlay = () => {
+      overlayVisible = !overlayVisible;
+      overlay.style.visibility = overlayVisible ? "visible" : "hidden";
+    };
+
+    const showOverlay = () => {
+      overlayVisible = true;
+      overlay.style.visibility = "visible";
+    };
+
+    const hideOverlay = () => {
+      overlayVisible = false;
+      overlay.style.visibility = "hidden";
+    };
+
+    // Handle touchstart for the wrapper (image area)
+    wrapper.addEventListener("touchstart", (e) => {
+      e.preventDefault(); // Prevent default touch behavior
+      toggleOverlay();
+    });
+
+    // Handle touchstart for the entire document to detect touches outside the wrapper
+    document.addEventListener("touchstart", (e) => {
+      playerWrappers.forEach((pWrapper) => {
+        if (!pWrapper.contains(e.target)) {
+          const pOverlay = pWrapper.querySelector("div > div"); // Assuming first div inside wrapper is overlay
+          pOverlay.style.visibility = "hidden";
+        }
+      });
+    }, { passive: false });
+
+    // Prevent touch events on overlay from propagating to the document
+    overlay.addEventListener("touchstart", (e) => {
+      e.stopPropagation();
+    });
+
+    // Collect all player wrappers for the document touch listener
+    // This assumes all players share the same class; adjust if necessary
+    const playerWrappers = Array.from(document.querySelectorAll(".custom-audio-player > div"));
 
     // =============== Play/Pause Button ===============
     playBtn.addEventListener("click", async () => {
@@ -422,7 +466,7 @@ function initCustomAudioPlayers() {
       if (audioCtx && audioCtx.state === "suspended") {
         await audioCtx.resume();
       }
-    
+
       const rect = wrapper.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width;
       const pc = Math.max(0, Math.min(1, x)) * 100;
@@ -508,6 +552,21 @@ Bit Depth: ${bitDepth}`);
       menu.style.visibility = "hidden";
     });
   });
-};
+
+  // =============== Global Touch Listener to Hide Overlays When Touching Outside ===============
+  // This ensures that touching outside any player hides all overlays
+  document.addEventListener("touchstart", (e) => {
+    document.querySelectorAll(".custom-audio-player").forEach((player) => {
+      const wrapper = player.querySelector("div"); // Assuming first div is the wrapper
+      if (!wrapper.contains(e.target)) {
+        const overlay = player.querySelector("div > div"); // Assuming first div inside wrapper is overlay
+        if (overlay) {
+          overlay.style.visibility = "hidden";
+        }
+      }
+    });
+  }, { passive: true });
+}
+
 // Run once at DOMContentLoaded
 document.addEventListener("DOMContentLoaded", initCustomAudioPlayers);
