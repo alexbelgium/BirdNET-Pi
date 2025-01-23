@@ -97,7 +97,6 @@ function initCustomAudioPlayers() {
 
   // =============== Main Query Selector ===============
   document.querySelectorAll(".custom-audio-player").forEach((player) => {
-    let hideTimeout = null;
     const audioSrc = player.dataset.audioSrc;
     const imageSrc = player.dataset.imageSrc;
 
@@ -497,10 +496,7 @@ Channels: ${channels}`);
     });
 
     // =============== Hover & Touch for Overlay ===============
-    player.addEventListener("mouseenter", () => {
-      clearTimeout(hideTimeout); // Clear any previous timeout
-      overlay.style.visibility = "visible";
-    });
+    player.addEventListener("mouseenter", () => (overlay.style.visibility = "visible"));
     wrapper.addEventListener("mouseleave", () => (overlay.style.visibility = "hidden"));
     wrapper.addEventListener("mousemove", () => (overlay.style.visibility = "visible"));
 
@@ -509,12 +505,6 @@ Channels: ${channels}`);
       overlay.style.visibility = "visible";
       overlay.style.opacity = "1";
     
-      // Reset the auto-hide timeout if the mouse is still moving
-      clearTimeout(hideTimeout);
-      hideTimeout = setTimeout(() => {
-        overlay.style.visibility = "hidden";
-        overlay.style.opacity = "0";
-      }, 2000); // Delay before hiding the overlay again (2 seconds in this example)
     });
 
     document.addEventListener("touchstart", (event) => {
