@@ -295,7 +295,6 @@ function toggleShiftFreq(filename, shiftAction, elem) {
         const audioDiv = elem.parentNode.querySelector(".custom-audio-player");
         if (audioDiv) {
           audioDiv.setAttribute("data-audio-src", audioDiv.getAttribute("data-audio-src").replace("/By_Date/", "/By_Date/shifted/"));
-          // Reload the custom audio player if necessary
         } else {
           const atag = elem.parentNode.querySelector("a");
           if (atag) {
@@ -311,7 +310,6 @@ function toggleShiftFreq(filename, shiftAction, elem) {
         const audioDiv = elem.parentNode.querySelector(".custom-audio-player");
         if (audioDiv) {
           audioDiv.setAttribute("data-audio-src", audioDiv.getAttribute("data-audio-src").replace("/By_Date/shifted/", "/By_Date/"));
-          // Reload the custom audio player if necessary
         } else {
           const atag = elem.parentNode.querySelector("a");
           if (atag) {
@@ -713,7 +711,7 @@ echo "><br><i>$sciname</i></span><br>
     $iter++;
 
     if($num_rows < 100) {
-      $imageelem = "<div class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'></div>";
+      $imageelem = "<div class='custom-audio-player' data-audio-src=\"$filename\" data-image-src=\"$filename_png\"></div>";
     } else {
       $imageelem = "<a href=\"$filename\"><img src=\"$filename_png\"></a>";
     }
@@ -838,7 +836,7 @@ echo "><br><i>$sciname</i></span><br>
 <img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\">$date $time<br>$values<br>
 <div class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'></div>
 </td></tr>";
-      } else {
+        } else {
           echo "<tr>
       <td class=\"relative\">$date $time<br>$values
 <img style='cursor:pointer' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'><br>
