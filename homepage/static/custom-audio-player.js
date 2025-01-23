@@ -227,7 +227,6 @@ function initCustomAudioPlayers() {
           const decoded = await decCtx.decodeAudioData(audioData);
           sampleRate = decoded.sampleRate;
           channels = decoded.numberOfChannels;
-          bitDepth = "16 bits"; // typical guess
         } catch {}
         const duration = audioEl.duration ? `${audioEl.duration.toFixed(2)} s` : "unknown";
 
@@ -235,8 +234,7 @@ function initCustomAudioPlayers() {
 Type: ${enc}
 Size: ${size}
 Sampling Rate: ${sampleRate} Hz
-Channels: ${channels}
-Bit Depth: ${bitDepth}`);
+Channels: ${channels}`);
 
         menuOpen = false;
         menu.style.visibility = "hidden";
