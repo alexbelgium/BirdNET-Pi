@@ -712,11 +712,11 @@ echo "><br><i>$sciname</i></span><br>
     }
     $iter++;
 
-    # if ($num_rows < 100) {
-        $imageelem = "<div class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'></div>";
-    # } else {
-    #     $imageelem = "<audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'><source src='$filename'></audio>";
-    # }
+    if($num_rows < 100) {
+      $imageelem = "<div class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'></div>";
+    } else {
+      $imageelem = "<a href=\"$filename\"><img src=\"$filename_png\"></a>";
+    }
 
     if($config["FULL_DISK"] == "purge") {
       if(!in_array($filename_formatted, $disk_check_exclude_arr)) {
