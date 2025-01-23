@@ -138,7 +138,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
                   <img style="width: unset !important;display: inline;height: 1em;cursor:pointer" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>')" width=25 src="images/chart.svg">
                   <br>Confidence: <?php echo $percent = round((float)round($mostrecent['Confidence'],2) * 100 ) . '%';?><br></div><br>
                   <div class='custom-audio-player' data-audio-src="<?php echo $filename; ?>" data-image-src="<?php echo $filename.".png";?>"></div>
-              </form>
+              </td></form>
           </tr>
         </table> <?php break;
       }
@@ -273,7 +273,6 @@ if (get_included_files()[0] === __FILE__) {
   <script src="static/dialog-polyfill.js"></script>
   <script src="static/Chart.bundle.js"></script>
   <script src="static/chartjs-plugin-trendline.min.js"></script>
-  <script src="static/custom-audio-player.js"></script>
   <script>
   var last_photo_link;
   var dialog = document.querySelector('dialog');
@@ -500,24 +499,24 @@ echo "<img id=\"spectrogramimage\" src=\"spectrogram.png?nocache=$time\">";
 </div>
 <script>
 // we're passing a unique ID of the currently displayed detection to our script, which checks the database to see if the newest detection entry is that ID, or not. If the IDs don't match, it must mean we have a new detection and it's loaded onto the page
-function loadDetectionIfNewExists(previous_detection_identifier=undefined) {
+function loadDetectionIfNewExists(previous_detection_identifier = undefined) {
   const xhttp = new XMLHttpRequest();
-  xhttp.onload = function() {
-    // if there's a new detection that needs to be updated to the page
-    if(this.responseText.length > 0 && !this.responseText.includes("Database is busy") && !this.responseText.includes("No Detections") || previous_detection_identifier == undefined) {
+  xhttp.onload = function () {
+    if (this.responseText.length > 0 && !this.responseText.includes("Database is busy") && !this.responseText.includes("No Detections") || previous_detection_identifier === undefined) {
+      // Update the most recent detection area
       document.getElementById("most_recent_detection").innerHTML = this.responseText;
 
-      // only going to load left chart & 5 most recents if there's a new detection
+      // Update charts and recent detections
       loadLeftChart();
       loadFiveMostRecentDetections();
       refreshTopTen();
-      
-      // Now that new HTML is inserted, re-run player init:
-      initCustomAudioPlayers();
 
-  }
-  }
-  xhttp.open("GET", "overview.php?ajax_detections=true&previous_detection_identifier="+previous_detection_identifier, true);
+      // Reinitialize custom audio players for newly loaded elements
+      initCustomAudioPlayers();
+    }
+  };
+
+  xhttp.open("GET", "overview.php?ajax_detections=true&previous_detection_identifier=" + previous_detection_identifier, true);
   xhttp.send();
 }
 function loadLeftChart() {
@@ -553,15 +552,27 @@ function refreshTopTen() {
 }
 function refreshDetection() {
   if (!document.hidden) {
-    var audioelement = document.getElementsByTagName("audio")[0];
-    if(typeof audioelement !== "undefined") {
-      // don't refresh the detection if the user is playing the previous one's audio, wait until they're finished
-      if(!!(audioelement.currentTime > 0 && !audioelement.paused && !audioelement.ended && audioelement.readyState > 2) == false) {
-        loadDetectionIfNewExists(audioelement.title);
-      }
-    } else{
-      // image or audio didn't load for some reason, force a refresh in 5 seconds
+    const audioPlayers = document.querySelectorAll(".custom-audio-player");
+
+    // If no custom-audio-player elements are found, refresh
+    if (audioPlayers.length === 0) {
       loadDetectionIfNewExists();
+      return;
+    }
+
+    // Check if any custom audio player is currently playing
+    let isPlaying = false;
+    audioPlayers.forEach((player) => {
+      const audioEl = player.querySelector("audio");
+      if (audioEl && audioEl.currentTime > 0 && !audioEl.paused && !audioEl.ended && audioEl.readyState > 2) {
+        isPlaying = true;
+      }
+    });
+
+    // If none are playing, refresh detections
+    if (!isPlaying) {
+      const currentIdentifier = audioPlayers[0]?.dataset.audioSrc || undefined;
+      loadDetectionIfNewExists(currentIdentifier);
     }
   }
 }
