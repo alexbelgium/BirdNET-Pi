@@ -97,6 +97,7 @@ function initCustomAudioPlayers() {
 
   // =============== Main Query Selector ===============
   document.querySelectorAll(".custom-audio-player").forEach((player) => {
+    let hideTimeout = null;
     const audioSrc = player.dataset.audioSrc;
     const imageSrc = player.dataset.imageSrc;
 
@@ -496,7 +497,10 @@ Channels: ${channels}`);
     });
 
     // =============== Hover & Touch for Overlay ===============
-    wrapper.addEventListener("mouseenter", () => (overlay.style.visibility = "visible"));
+    player.addEventListener("mouseenter", () => {
+      clearTimeout(hideTimeout); // Clear any previous timeout
+      overlay.style.visibility = "visible";
+    });
     wrapper.addEventListener("mouseleave", () => (overlay.style.visibility = "hidden"));
     wrapper.addEventListener("mousemove", () => (overlay.style.visibility = "visible"));
 
