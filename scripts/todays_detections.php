@@ -348,8 +348,6 @@ if (get_included_files()[0] === __FILE__) {
   <script src="static/dialog-polyfill.js"></script>
   <script src="static/Chart.bundle.js"></script>
   <script src="static/chartjs-plugin-trendline.min.js"></script>
-  <script src="static/custom-audio-player.js"></script>
-
   <script>
     function deleteDetection(filename,copylink=false) {
     if (confirm("Are you sure you want to delete this detection from the database?") == true) {
@@ -562,6 +560,7 @@ window.addEventListener("load", function(){
 }
 </style>
 
+<script src="static/custom-audio-player.js"></script>
 <script>
 function generateMiniGraph(elem, comname) {
   // Make an AJAX call to fetch the number of detections for the bird species
