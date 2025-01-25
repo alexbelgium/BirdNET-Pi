@@ -2,9 +2,7 @@ Additional PR vs Nachtzuster, used for HA addon
 - New daily and yearly graph : https://github.com/alexbelgium/BirdNET-Pi/tree/new_daily_graph
 - Confirmed species : https://github.com/alexbelgium/BirdNET-Pi/tree/confirmed_species_feature
 - Calculation of signal quality through SNR : https://github.com/alexbelgium/BirdNET-Pi/tree/SNR
-- Shows daily new species on top : https://github.com/alexbelgium/BirdNET-Pi/tree/new_species
 - Interactive graph : https://github.com/alexbelgium/BirdNET-Pi/tree/dynamic_plots
-- Add Purge Treshold (@ChrisLeinbach) https://github.com/ChrisLeinbach/BirdNET-Pi/tree/main
 - New audio player with progress bar and that still shows the spectrogram on mobile
 - Older CPU support : install tensorflow if avx2 not available
 
