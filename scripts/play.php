@@ -621,14 +621,6 @@ for ($row = 0; $row < $num_rows; $row++) {
 if(isset($_GET['species'])){ ?>
 <div style="width: auto;
    text-align: center">
-   <form action="views.php" method="GET"><input type="hidden" name="view" value="Recordings"><input type="hidden" name="species" value="<?php echo $_GET['species']; ?>"><input type="hidden" name="sort" value="<?php echo $_GET['sort']; ?>">
-	   <label style="cursor: pointer; margin-top: 10px; margin-bottom: 10px; font-weight: normal; display: inline-flex; align-items: center; justify-content: center;">
-	   <input type="checkbox" name="show_all" <?= isset($_GET['show_all']) ? 'checked' : '' ?> onchange="this.form.submit()" style="display: none;">
-           <span style="width: 40px; height: 20px; background: <?= isset($_GET['show_all']) ? 'rgba(85, 85, 85, 0.3)' : '#555555' ?>; border: 1px solid #777777; border-radius: 20px; display: inline-block; position: relative; margin-right: 8px; transition: background 0.4s, border 0.4s; box-sizing: border-box;">
-           <span style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 1.5px; left: 2px; transition: 0.4s; display: flex; align-items: center; justify-content: center; font-size: 14px; color: black; <?= isset($_GET['show_all']) ? '' : 'transform: translateX(20px);' ?>">
-           <?= isset($_GET['show_all']) ? '' : '✓' ?>
-           </span></span>Top 50 recordings</label>
-   </form>
    <form action="views.php" method="GET">
       <input type="hidden" name="view" value="Recordings">
       <input type="hidden" name="species" value="<?php echo $_GET['species']; ?>">
@@ -639,6 +631,12 @@ if(isset($_GET['species'])){ ?>
       <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "confidence"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="confidence">
          <img src="images/sort_conf.svg" title="Sort by confidence" alt="Sort by confidence">
       </button><br>
+      <label style="cursor: pointer; margin-top: 10px; margin-bottom: 10px; font-weight: normal; display: inline-flex; align-items: center; justify-content: center;">
+        <input type="checkbox" name="show_all" <?= isset($_GET['show_all']) ? 'checked' : '' ?> onchange="this.form.submit()" style="display: none;">
+        <span style="width: 40px; height: 20px; background: <?= isset($_GET['show_all']) ? 'rgba(85, 85, 85, 0.3)' : '#555555' ?>; border: 1px solid #777777; border-radius: 20px; display: inline-block; position: relative; margin-right: 8px; transition: background 0.4s, border 0.4s; box-sizing: border-box;">
+        <span style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 1.5px; left: 2px; transition: 0.4s; display: flex; align-items: center; justify-content: center; font-size: 14px; color: black; <?= isset($_GET['show_all']) ? '' : 'transform: translateX(20px);' ?>">
+        <?= isset($_GET['show_all']) ? '' : '✓' ?>
+      </span></span>Top 50 recordings</label><br>
       <label style="cursor: pointer; margin-top: 10px; margin-bottom: 10px;font-weight: normal; display: inline-flex; align-items: center; justify-content: center;">
         <input type="checkbox" name="only_excluded" <?= isset($_GET['only_excluded']) ? 'checked' : '' ?> onchange="submit()" style="display:none;">
         <span style="width: 40px; height: 20px; background: <?= isset($_GET['only_excluded']) ? '#555555' : 'rgba(85, 85, 85, 0.3)' ?>; border: 1px solid #777777; border-radius: 20px; display: inline-block; position: relative; margin-right: 8px; transition: background 0.4s, border 0.4s; box-sizing: border-box;">
