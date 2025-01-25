@@ -11,13 +11,15 @@ function initCustomAudioPlayers(){
   // Options with their numeric multipliers
   const gainOptions = ["Off","x2","x4","x8","x16"];
   const gainValues = {Off:1,x2:2,x4:4,x8:8,x16:16};
-  const filterOptions = ["Off","250","500","1000"];
+  const highpassOptions = ["Off","250","500","1000"];
+  const lowpassOptions = ["Off","2000","4000","8000"]; // Renamed from filterOptions
 
   // Safe localStorage helpers
   const safeGet = (key, fb) => { try{ return localStorage.getItem(key) || fb; } catch(_){ return fb; } };
   const safeSet = (key,val)=> { try{ localStorage.setItem(key,val); } catch(_){} };
   const savedGain = safeGet("customAudioPlayerGain","Off");
-  const savedFilter = safeGet("customAudioPlayerFilter","Off");
+  const savedLowpass = safeGet("customAudioPlayerLowpass","Off"); // Renamed from savedFilter
+  const savedHighpass = safeGet("customAudioPlayerHighpass","Off");
 
   // Helper: apply multiple style properties at once
   const applyStyles = (elem,styles) => Object.assign(elem.style, styles);
@@ -89,11 +91,12 @@ function initCustomAudioPlayers(){
     wrapper.appendChild(overlay);
 
     // ---- Web Audio chain references ----
-    let audioCtx=null, sourceNode=null, gainNode=null, filterNode=null;
+    let audioCtx=null, sourceNode=null, gainNode=null, lowpassNode=null, highpassNode=null; // Renamed filterNode to lowpassNode
 
     // ---- Track active user selections for gain/filter ----
     let activeGain = gainOptions.includes(savedGain) ? savedGain : "Off";
-    let activeFilter = filterOptions.includes(savedFilter) ? savedFilter : "Off";
+    let activeLowpass = lowpassOptions.includes(savedLowpass) ? savedLowpass : "Off"; // Renamed activeFilter to activeLowpass
+    let activeHighpass = highpassOptions.includes(savedHighpass) ? savedHighpass : "Off";
 
     // Create or resume an AudioContext on demand
     async function initAudioContext(){
@@ -114,11 +117,13 @@ function initCustomAudioPlayers(){
       if(!audioCtx) return;
       sourceNode.disconnect(); 
       gainNode.disconnect(); 
-      if(filterNode) filterNode.disconnect();
-      // If we have a filterNode, chain: source -> filter -> gain -> destination
-      // If not, just source -> gain -> destination
-      if(filterNode) sourceNode.connect(filterNode).connect(gainNode);
-      else           sourceNode.connect(gainNode);
+      if(lowpassNode) lowpassNode.disconnect(); // Renamed filterNode to lowpassNode
+      if(highpassNode) highpassNode.disconnect();
+      // If we have lowpass and highpass nodes, chain: source -> lowpass -> highpass -> gain -> destination
+      if(lowpassNode && highpassNode) sourceNode.connect(lowpassNode).connect(highpassNode).connect(gainNode);
+      else if(lowpassNode) sourceNode.connect(lowpassNode).connect(gainNode);
+      else if(highpassNode) sourceNode.connect(highpassNode).connect(gainNode);
+      else sourceNode.connect(gainNode);
       gainNode.connect(audioCtx.destination);
     }
 
@@ -138,25 +143,46 @@ function initCustomAudioPlayers(){
       safeSet("customAudioPlayerGain", val);
     }
 
-    // -------- HighPass filter setting function --------
-    async function setActiveFilter(val){
-      activeFilter = val;
+    // -------- Highpass filter setting function --------
+    async function setActiveHighpass(val){
+      activeHighpass = val;
       if(val!=="Off"){
         await initAudioContext();
-        if(!filterNode){
-          filterNode = audioCtx.createBiquadFilter();
-          filterNode.type="highpass";
+        if(!highpassNode){
+          highpassNode = audioCtx.createBiquadFilter();
+          highpassNode.type="highpass";
         }
-        filterNode.frequency.value = parseFloat(val);
-      } else if(filterNode){
-        filterNode.disconnect();
-        filterNode = null;
+        highpassNode.frequency.value = parseFloat(val);
+      } else if(highpassNode){
+        highpassNode.disconnect();
+        highpassNode = null;
       }
       rebuildAudioChain();
-      filterButtons.forEach(b=>{
-        b.style.textDecoration = (b.dataset.filter===val)?"underline":"none";
+      highpassButtons.forEach(b=>{
+        b.style.textDecoration = (b.dataset.highpass===val)?"underline":"none";
       });
-      safeSet("customAudioPlayerFilter", val);
+      safeSet("customAudioPlayerHighpass", val);
+    }
+
+    // -------- Lowpass filter setting function --------
+    async function setActiveLowpass(val){ // Renamed from setActiveFilter
+      activeLowpass = val;
+      if(val!=="Off"){
+        await initAudioContext();
+        if(!lowpassNode){ // Renamed filterNode to lowpassNode
+          lowpassNode = audioCtx.createBiquadFilter();
+          lowpassNode.type="lowpass";
+        }
+        lowpassNode.frequency.value = parseFloat(val);
+      } else if(lowpassNode){ // Renamed filterNode to lowpassNode
+        lowpassNode.disconnect();
+        lowpassNode = null;
+      }
+      rebuildAudioChain();
+      lowpassButtons.forEach(b=>{
+        b.style.textDecoration = (b.dataset.lowpass===val)?"underline":"none"; // Renamed data-filter to data-lowpass
+      });
+      safeSet("customAudioPlayerLowpass", val); // Renamed customAudioPlayerFilter to customAudioPlayerLowpass
     }
 
     // 6. Create play/pause button
@@ -276,7 +302,7 @@ Channels: ${channels}`);
       }
     });
 
-    // 12. Helper function to create a sub-section (Gain / Filter)
+    // 12. Helper function to create a sub-section (Gain / Filter / Highpass)
     function createOptionSection(labelText){
       const c=document.createElement("div");
       applyStyles(c,{
@@ -291,9 +317,10 @@ Channels: ${channels}`);
       return c;
     }
 
-    // 13. Gain & Filter option sections
+    // 13. Gain, Lowpass & Highpass option sections
     const gainSection   = createOptionSection("Gain:");
-    const filterSection = createOptionSection("HighPass (Hz):");
+    const highpassSection = createOptionSection("HighPass (Hz):");
+    const lowpassSection = createOptionSection("LowPass (Hz):"); // Renamed filterSection to lowpassSection
 
     // 14. Create gain buttons
     const gainButtons = gainOptions.map(opt =>
@@ -309,23 +336,38 @@ Channels: ${channels}`);
       })
     );
 
-    // 15. Create filter buttons
-    const filterButtons = filterOptions.map(opt =>
-      createButton(filterSection,{
+    // 15. Create lowpass buttons
+    const lowpassButtons = lowpassOptions.map(opt => // Renamed filterButtons to lowpassButtons
+      createButton(lowpassSection,{
         text:opt,
-        data:{filter:opt},
+        data:{lowpass:opt}, // Renamed data-filter to data-lowpass
         styles:{
           background:"none",border:"none",cursor:"pointer",
           color:"white",fontSize:"14px",textAlign:"center",
           width:"auto",padding:"6px 8px",margin:"2px 4px",borderRadius:"4px"
         },
-        onClick:()=>setActiveFilter(opt)
+        onClick:()=>setActiveLowpass(opt) // Renamed setActiveFilter to setActiveLowpass
       })
     );
 
-    // Initialize gain/filter from saved values or default
+    // 16. Create highpass buttons
+    const highpassButtons = highpassOptions.map(opt =>
+      createButton(highpassSection,{
+        text:opt,
+        data:{highpass:opt},
+        styles:{
+          background:"none",border:"none",cursor:"pointer",
+          color:"white",fontSize:"14px",textAlign:"center",
+          width:"auto",padding:"6px 8px",margin:"2px 4px",borderRadius:"4px"
+        },
+        onClick:()=>setActiveHighpass(opt)
+      })
+    );
+
+    // Initialize gain/filter/highpass from saved values or default
     setActiveGain(activeGain);
-    setActiveFilter(activeFilter);
+    setActiveLowpass(activeLowpass); // Renamed setActiveFilter to setActiveLowpass
+    setActiveHighpass(activeHighpass);
 
     // ---------------- Progress tracking w/ setInterval ----------------
     let intervalId=null; // store reference to the setInterval
