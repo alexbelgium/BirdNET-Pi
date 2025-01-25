@@ -522,7 +522,7 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
     }
     $num_rows = ceil(count($birds) / $num_cols);
 
-    for ($row = 0; $row < min($num_rows, 50); $row++) {
+    for ($row = 0; $row < $num_rows; $row++) {
       echo "<tr>";
 
       for ($col = 0; $col < $num_cols; $col++) {
@@ -652,15 +652,15 @@ $name = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
 if(isset($_SESSION['date'])) {
   $date = $_SESSION['date'];
   if(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Confidence DESC");
+    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Confidence DESC LIMIT 50");
   } else {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Time DESC");
+    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Time DESC LIMIT 50");
   }
 } else {
   if(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Confidence DESC");
+    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Confidence DESC LIMIT 50");
   } else {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Date DESC, Time DESC");
+    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Date DESC, Time DESC LIMIT 50");
   }
 }
 ensure_db_ok($statement2);
