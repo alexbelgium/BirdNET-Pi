@@ -63,10 +63,16 @@ ensure_python_package() {
   fi
 }
 
+# sed -i on /etc/birdnet/birdnet.conf overwites the symbolic link - restore the link
+if ! [ -L /etc/birdnet/birdnet.conf ] ; then
+  sudo_with_user cp -f /etc/birdnet/birdnet.conf $HOME/BirdNET-Pi/
+  ln -fs  $HOME/BirdNET-Pi/birdnet.conf /etc/birdnet/birdnet.conf
+fi
+
 # update snippets below
 SRC="APPRISE_NOTIFICATION_BODY='(.*)'$"
 DST='APPRISE_NOTIFICATION_BODY="\1"'
-sed -i -E "s/$SRC/$DST/" /etc/birdnet/birdnet.conf
+sed -i --follow-symlinks -E "s/$SRC/$DST/" /etc/birdnet/birdnet.conf
 
 if ! grep -E '^DATA_MODEL_VERSION=' /etc/birdnet/birdnet.conf &>/dev/null;then
     echo "DATA_MODEL_VERSION=1" >> /etc/birdnet/birdnet.conf
@@ -84,7 +90,7 @@ fi
 
 SRC='^APPRISE_NOTIFICATION_BODY="A \$comname \(\$sciname\)  was just detected with a confidence of \$confidence"$'
 DST='APPRISE_NOTIFICATION_BODY="A \$comname (\$sciname)  was just detected with a confidence of \$confidence (\$reason)"'
-sed -i -E "s/$SRC/$DST/" /etc/birdnet/birdnet.conf
+sed -i --follow-symlinks -E "s/$SRC/$DST/" /etc/birdnet/birdnet.conf
 
 if ! grep -E '^INFO_SITE=' /etc/birdnet/birdnet.conf &>/dev/null;then
   echo "INFO_SITE=\"ALLABOUTBIRDS\"" >> /etc/birdnet/birdnet.conf
@@ -210,6 +216,10 @@ CREATE TABLE IF NOT EXISTS info (
   SNR FLOAT
 );
 EOF
+set +x
+AUTH=$(grep basicauth /etc/caddy/Caddyfile)
+[ -n "${CADDY_PWD}" ] && [ -z "${AUTH}" ] && sudo /usr/local/bin/update_caddyfile.sh > /dev/null 2>&1
+set -x
 
 # update snippets above
 

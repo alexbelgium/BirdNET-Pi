@@ -279,6 +279,7 @@ CUSTOM_IMAGE_TITLE=""
 CONFIRM_SPECIES=0
 
 # RARE_SPECIES_THRESHOLD defines after how many days a species is considered as rare and highlighted on overview page
+## RARE_SPECIES_THRESHOLD defines after how many days a species is considered as rare and highlighted on overview page
 RARE_SPECIES_THRESHOLD=30
 
 ## These are just for debugging
