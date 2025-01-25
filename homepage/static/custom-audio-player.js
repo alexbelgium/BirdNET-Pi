@@ -9,7 +9,7 @@ function initCustomAudioPlayers(){
   };
 
   // Options with their numeric multipliers
-  const gainOptions = ["OPROGRESS_BAR_UPDATE_INTERVALff","x2","x4","x8","x16"];
+  const gainOptions = ["Off","x2","x4","x8","x16"];
   const gainValues = {Off:1,x2:2,x4:4,x8:8,x16:16};
   const filterOptions = ["Off","250","500","1000"];
 
