@@ -717,7 +717,7 @@ echo "><br><i>$sciname</i></span><br>
     }
     $iter++;
 
-    if($num_rows < 41) {
+    if($num_rows < 100) {
       $imageelem = "<div class='custom-audio-player' data-audio-src=\"$filename\" data-image-src=\"$filename_png\"></div>";
     } else {
       $imageelem = "<a href=\"$filename\"><img src=\"$filename_png\"></a>";
