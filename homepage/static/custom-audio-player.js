@@ -19,9 +19,15 @@ function initCustomAudioPlayers() {
   const savedHighpass = safeGet("customAudioPlayerHighpass", "Off");
 
   // Reusable Style Objects
-  const ICON_BUTTON_STYLES = { /* ... existing styles ... */ };
-  const MENU_OPTION_STYLES = { /* ... existing styles ... */ };
-  const FILTER_BUTTON_STYLES = { /* ... existing styles ... */ };
+  const ICON_BUTTON_STYLES = {
+    background: "none", border: "none", cursor: "pointer", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", marginRight: "0.6rem", padding: "0"
+  };
+  const MENU_OPTION_STYLES = {
+    background: "none", border: "none", cursor: "pointer", color: "white", fontSize: "14px", textAlign: "right", width: "100%", padding: "6px 12px", margin: "2px 0", borderRadius: "4px"
+  };
+  const FILTER_BUTTON_STYLES = {
+    background: "none", border: "none", cursor: "pointer", color: "white", fontSize: "14px", textAlign: "center", width: "auto", padding: "6px 8px", margin: "2px 4px", borderRadius: "4px"
+  };
 
   // Helper Functions
   const applyStyles = (elem, styles) => Object.assign(elem.style, styles);
