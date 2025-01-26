@@ -717,14 +717,11 @@ echo "><br><i>$sciname</i></span><br>
     }
     $iter++;
 
-    #if($num_rows < 100) {
-    $imageelem = "<div class='custom-audio-player' data-audio-src=\"$filename\" data-image-src=\"$filename_png\"></div>";
-    #} else {
-    #  $imageelem = "<div class='spectrogram-container' style='position: relative; display: inline-block; width: 100%;'><img src='$filename_png' alt='$filename' style='width: 100%; border-radius: 5px;'>
-    #  <div class='vertical-bar' style='transition: transform 0.5s linear; position: absolute; top: 0; bottom: 30px; width: 2px; background-color: rgba(211, 211, 211, 0.7); pointer-events: auto; cursor: pointer; display: none;'></div>
-    #  <audio class='audio-controls' onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls preload='none' title='$filename' style='left: 0; bottom: 0; width: 100%;'>
-    #  <source src='$filename'></audio></div>";
-    #}
+    if($num_rows < 41) {
+      $imageelem = "<div class='custom-audio-player' data-audio-src=\"$filename\" data-image-src=\"$filename_png\"></div>";
+    } else {
+      $imageelem = "<a href=\"$filename\"><img src=\"$filename_png\"></a>";
+    }
 
     if($config["FULL_DISK"] == "purge") {
       if(!in_array($filename_formatted, $disk_check_exclude_arr)) {
