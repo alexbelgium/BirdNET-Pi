@@ -70,10 +70,12 @@ function initCustomAudioPlayers() {
     // Basic data
     const audioSrc = player.dataset.audioSrc;
     const imageSrc = player.dataset.imageSrc;
-
+    const lazyLoadArg = (player.dataset.lazyLoad || "").toLowerCase();
+    
     // Audio element
     const audioEl = document.createElement("audio");
-    audioEl.preload = "none"; // Changed to none for lazy loading
+    if (lazyLoadArg === "true") { audioEl.preload = "none"; } else { audioEl.preload = "auto"; }
+    audioEl.setAttribute("onplay",
     audioEl.setAttribute("onplay", "setLiveStreamVolume(0)");
     audioEl.setAttribute("onended", "setLiveStreamVolume(1)");
     audioEl.setAttribute("onpause", "setLiveStreamVolume(1)");
