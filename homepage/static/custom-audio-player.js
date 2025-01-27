@@ -1,10 +1,6 @@
 function initCustomAudioPlayers() {
-  const CONFIG = {
-    LEFT_MARGIN_PERCENT: 6,
-    RIGHT_MARGIN_PERCENT: 9,
-    PROGRESS_BAR_UPDATE_INTERVAL: 20,
-    BUFFER_TIME: 0.1,
-  };
+  // =================== Config & Helpers ===================
+  const CONFIG = { LEFT_MARGIN_PERCENT: 6, RIGHT_MARGIN_PERCENT: 9, PROGRESS_BAR_UPDATE_INTERVAL: 20, BUFFER_TIME: 0.1 };
 
   const debounce = (func, wait) => {
     let timeout;
@@ -13,7 +9,7 @@ function initCustomAudioPlayers() {
       timeout = setTimeout(() => func.apply(this, args), wait);
     };
   };
-
+  
   const icons = {
     play: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M8 5v14l11-7z"/></svg>`,
     pause: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`,
@@ -21,18 +17,15 @@ function initCustomAudioPlayers() {
   };
 
   const safeGet = (k, fb) => {
-    try {
-      return localStorage.getItem(k) || fb;
-    } catch {
-      return fb;
-    }
+    try { return localStorage.getItem(k) || fb; } catch { return fb; }
+  };
+  const safeSet = (k, v) => {
+    try { localStorage.setItem(k, v); } catch {}
   };
 
-  const safeSet = (k, v) => {
-    try {
-      localStorage.setItem(k, v);
-    } catch {}
-  };
+  const savedGain = safeGet("customAudioPlayerGain", "Off");
+  const savedHighpass = safeGet("customAudioPlayerFilterHigh", "Off");
+  const savedLowpass = safeGet("customAudioPlayerFilterLow", "Off");
 
   const applyStyles = (elem, styles) => Object.assign(elem.style, styles);
 
@@ -54,106 +47,75 @@ function initCustomAudioPlayers() {
     return btn;
   };
 
+  // Common styles
   const iconBtnStyle = {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    width: "36px",
-    height: "36px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: "0.6rem",
-    padding: "0",
+    background: "none", border: "none", cursor: "pointer",
+    width: "36px", height: "36px", display: "flex",
+    alignItems: "center", justifyContent: "center",
+    marginRight: "0.6rem", padding: "0"
   };
-
   const textBtnStyle = {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    color: "white",
-    fontSize: "14px",
-    textAlign: "right",
-    width: "100%",
-    padding: "6px 12px",
-    margin: "2px 0",
-    borderRadius: "4px",
+    background: "none", border: "none", cursor: "pointer",
+    color: "white", fontSize: "14px", textAlign: "right",
+    width: "100%", padding: "6px 12px", margin: "2px 0", borderRadius: "4px"
   };
-
   const optionBtnStyle = {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    color: "white",
-    fontSize: "14px",
-    textAlign: "center",
-    width: "auto",
-    padding: "6px 8px",
-    margin: "2px 4px",
-    borderRadius: "4px",
+    background: "none", border: "none", cursor: "pointer",
+    color: "white", fontSize: "14px", textAlign: "center",
+    width: "auto", padding: "6px 8px", margin: "2px 4px", borderRadius: "4px"
   };
 
+  // =================== Main Loop ===================
   document.querySelectorAll(".custom-audio-player").forEach((player) => {
+    // Basic data
     const audioSrc = player.dataset.audioSrc;
     const imageSrc = player.dataset.imageSrc;
 
+    // Audio element
     const audioEl = document.createElement("audio");
-    audioEl.preload = "none";
+    audioEl.preload = "none"; // Changed to none for lazy loading
     audioEl.setAttribute("onplay", "setLiveStreamVolume(0)");
     audioEl.setAttribute("onended", "setLiveStreamVolume(1)");
     audioEl.setAttribute("onpause", "setLiveStreamVolume(1)");
     player.appendChild(audioEl);
 
+    // Wrapper + image
     const wrapper = player.appendChild(document.createElement("div"));
     applyStyles(wrapper, { position: "relative" });
-
     const img = wrapper.appendChild(document.createElement("img"));
     img.src = imageSrc;
     applyStyles(img, { width: "100%", borderRadius: "8px" });
 
+    // Progress indicator
     const indicator = wrapper.appendChild(document.createElement("div"));
     applyStyles(indicator, {
-      position: "absolute",
-      top: "0",
-      bottom: "5%",
-      left: `${CONFIG.LEFT_MARGIN_PERCENT}%`,
-      width: "2px",
-      background: "rgba(0,0,0)",
-      pointerEvents: "none",
-      borderRadius: "2px",
+      position: "absolute", top: "0", bottom: "5%",
+      left: `${CONFIG.LEFT_MARGIN_PERCENT}%`, width: "2px",
+      background: "rgba(0,0,0)", pointerEvents: "none", borderRadius: "2px",
     });
 
+    // Overlay
     const overlay = wrapper.appendChild(document.createElement("div"));
     applyStyles(overlay, {
-      position: "absolute",
-      left: "0",
-      bottom: "0",
-      width: "100%",
-      height: "14.6%",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "0 10px",
-      borderRadius: "0 0 8px 8px",
-      background: "rgba(0,0,0,0.3)",
-      backdropFilter: "blur(1px)",
+      position: "absolute", left: "0", bottom: "0",
+      width: "100%", height: "14.6%", display: "flex",
+      alignItems: "center", justifyContent: "space-between",
+      padding: "0 10px", borderRadius: "0 0 8px 8px",
+      background: "rgba(0,0,0,0.3)", backdropFilter: "blur(1px)",
       visibility: "visible",
     });
 
-    let audioCtx = null,
-      sourceNode,
-      gainNode,
-      filterNodeHigh,
-      filterNodeLow;
+    // =================== Overlay Buttons & Progress ===================
+    let audioCtx = null, sourceNode, gainNode, filterNodeHigh, filterNodeLow;
     const gainOptions = ["Off", "x2", "x4", "x8", "x16"];
-    const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8, x16: 16 };
-    let activeGain = gainOptions.includes(safeGet("customAudioPlayerGain", "Off")) ? safeGet("customAudioPlayerGain", "Off") : "Off";
+    const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8, x16:16 };
+    let activeGain = gainOptions.includes(savedGain) ? savedGain : "Off";
 
     const highpassOptions = ["Off", "250", "500", "1000"];
-    let activeHighpassOption = highpassOptions.includes(safeGet("customAudioPlayerFilterHigh", "Off")) ? safeGet("customAudioPlayerFilterHigh", "Off") : "Off";
+    let activeHighpassOption = highpassOptions.includes(savedHighpass) ? savedHighpass : "Off";
 
     const lowpassOptions = ["Off", "2000", "4000", "8000"];
-    let activeLowpassOption = lowpassOptions.includes(safeGet("customAudioPlayerFilterLow", "Off")) ? safeGet("customAudioPlayerFilterLow", "Off") : "Off";
+    let activeLowpassOption = lowpassOptions.includes(savedLowpass) ? savedLowpass : "Off";
 
     const initAudioContext = async () => {
       if (!audioCtx) {
@@ -174,14 +136,8 @@ function initCustomAudioPlayers() {
       if (filterNodeLow) filterNodeLow.disconnect();
 
       let currentChain = sourceNode;
-      if (filterNodeHigh) {
-        currentChain.connect(filterNodeHigh);
-        currentChain = filterNodeHigh;
-      }
-      if (filterNodeLow) {
-        currentChain.connect(filterNodeLow);
-        currentChain = filterNodeLow;
-      }
+      if (filterNodeHigh) { currentChain.connect(filterNodeHigh); currentChain = filterNodeHigh; }
+      if (filterNodeLow) { currentChain.connect(filterNodeLow); currentChain = filterNodeLow; }
       currentChain.connect(gainNode).connect(audioCtx.destination);
     };
 
@@ -193,7 +149,7 @@ function initCustomAudioPlayers() {
       } else if (gainNode) {
         gainNode.gain.value = 1;
       }
-      gainButtons.forEach((b) => (b.style.textDecoration = b.dataset.gain === activeGain ? "underline" : "none"));
+      gainButtons.forEach(b => b.style.textDecoration = b.dataset.gain === activeGain ? "underline" : "none");
       safeSet("customAudioPlayerGain", activeGain);
     };
 
@@ -211,7 +167,7 @@ function initCustomAudioPlayers() {
         filterNodeHigh = null;
       }
       rebuildAudioChain();
-      highpassButtons.forEach((b) => (b.style.textDecoration = b.dataset.filter === activeHighpassOption ? "underline" : "none"));
+      highpassButtons.forEach(b => b.style.textDecoration = b.dataset.filter === activeHighpassOption ? "underline" : "none");
       safeSet("customAudioPlayerFilterHigh", activeHighpassOption);
     };
 
@@ -229,10 +185,11 @@ function initCustomAudioPlayers() {
         filterNodeLow = null;
       }
       rebuildAudioChain();
-      lowpassButtons.forEach((b) => (b.style.textDecoration = b.dataset.filter === activeLowpassOption ? "underline" : "none"));
+      lowpassButtons.forEach(b => b.style.textDecoration = b.dataset.filter === activeLowpassOption ? "underline" : "none");
       safeSet("customAudioPlayerFilterLow", activeLowpassOption);
     };
 
+    // Play/Pause with Debounce
     const debouncedPlayPause = debounce(async () => {
       await initAudioContext();
       if (audioEl.paused) {
@@ -253,6 +210,7 @@ function initCustomAudioPlayers() {
       onClick: debouncedPlayPause,
     });
 
+    // Progress bar
     const progress = document.createElement("input");
     progress.type = "range";
     progress.value = "0";
@@ -261,23 +219,17 @@ function initCustomAudioPlayers() {
     applyStyles(progress, { flex: "1", margin: "0 0.5rem", verticalAlign: "middle" });
     overlay.appendChild(progress);
 
+    // Menu button (dots)
     const dotsBtn = createButton(overlay, { html: icons.dots, styles: iconBtnStyle });
 
+    // =================== Menu ===================
     const menu = wrapper.appendChild(document.createElement("div"));
     applyStyles(menu, {
-      position: "absolute",
-      right: "10px",
-      bottom: "15%",
-      background: "rgba(0,0,0,0.3)",
-      backdropFilter: "blur(8px)",
-      color: "white",
-      borderRadius: "6px",
-      padding: "0.5rem",
-      visibility: "hidden",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "flex-end",
-      minWidth: "160px",
+      position: "absolute", right: "10px", bottom: "15%",
+      background: "rgba(0,0,0,0.3)", backdropFilter: "blur(8px)",
+      color: "white", borderRadius: "6px", padding: "0.5rem",
+      visibility: "hidden", display: "flex", flexDirection: "column",
+      alignItems: "flex-end", minWidth: "160px",
     });
 
     const closeMenu = () => {
@@ -294,14 +246,12 @@ function initCustomAudioPlayers() {
       if (!menu.contains(e.target) && e.target !== dotsBtn) closeMenu();
     });
 
+    // Info & Download
     createButton(menu, {
       text: "Info",
       styles: textBtnStyle,
       onClick: async () => {
-        let size = "unknown",
-          enc = "unknown",
-          sampleRate = "unknown",
-          channels = "unknown";
+        let size = "unknown", enc = "unknown", sampleRate = "unknown", channels = "unknown";
         try {
           const resp = await fetch(audioSrc, { method: "HEAD" });
           if (resp.ok) {
@@ -313,7 +263,7 @@ function initCustomAudioPlayers() {
             const ct = resp.headers.get("content-type");
             if (ct) enc = ct.split("/")[1]?.toUpperCase() || "unknown";
           }
-          const audioData = await fetch(audioSrc).then((r) => r.arrayBuffer());
+          const audioData = await fetch(audioSrc).then(r => r.arrayBuffer());
           const decCtx = new (window.AudioContext || window.webkitAudioContext)();
           const decoded = await decCtx.decodeAudioData(audioData);
           sampleRate = decoded.sampleRate;
@@ -333,7 +283,7 @@ Channels: ${channels}`);
       styles: textBtnStyle,
       onClick: async () => {
         try {
-          const blob = await fetch(audioSrc).then((r) => r.blob());
+          const blob = await fetch(audioSrc).then(r => r.blob());
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
@@ -349,16 +299,13 @@ Channels: ${channels}`);
       },
     });
 
+    // Gain & Filter Containers
     const createOptionSection = (labelText) => {
       const container = menu.appendChild(document.createElement("div"));
       applyStyles(container, {
-        display: "flex",
-        alignItems: "center",
-        padding: "4px 0",
-        borderTop: "1px solid rgba(255,255,255,0.2)",
-        width: "100%",
-        justifyContent: "flex-end",
-        flexWrap: "wrap",
+        display: "flex", alignItems: "center", padding: "4px 0",
+        borderTop: "1px solid rgba(255,255,255,0.2)", width: "100%",
+        justifyContent: "flex-end", flexWrap: "wrap",
       });
       const label = container.appendChild(document.createElement("div"));
       label.textContent = labelText;
@@ -370,46 +317,44 @@ Channels: ${channels}`);
     const highpassContainer = createOptionSection("HighPass (Hz):");
     const lowpassContainer = createOptionSection("LowPass (Hz):");
 
+    // Create gain buttons
     const gainButtons = gainOptions.map((opt) =>
       createButton(gainContainer, {
-        text: opt,
-        data: { gain: opt },
-        styles: optionBtnStyle,
+        text: opt, data: { gain: opt }, styles: optionBtnStyle,
         onClick: () => setActiveGain(opt),
       })
     );
+    // Create highpass buttons
     const highpassButtons = highpassOptions.map((opt) =>
       createButton(highpassContainer, {
-        text: opt,
-        data: { filter: opt },
-        styles: optionBtnStyle,
+        text: opt, data: { filter: opt }, styles: optionBtnStyle,
         onClick: () => setActiveHighpass(opt),
       })
     );
+    // Create lowpass buttons
     const lowpassButtons = lowpassOptions.map((opt) =>
       createButton(lowpassContainer, {
-        text: opt,
-        data: { filter: opt },
-        styles: optionBtnStyle,
+        text: opt, data: { filter: opt }, styles: optionBtnStyle,
         onClick: () => setActiveLowpass(opt),
       })
     );
 
+    // Sync with saved or default
     setActiveGain(activeGain);
     setActiveHighpass(activeHighpassOption);
     setActiveLowpass(activeLowpassOption);
 
+    // =================== Play/Pause/Progress Listeners ===================
     let intervalId;
     const updateProgress = () => {
       if (!audioEl.duration) return;
       const frac = audioEl.currentTime / audioEl.duration;
       const pc = frac * 100;
       progress.value = pc;
-      indicator.style.left = CONFIG.LEFT_MARGIN_PERCENT + (pc * (100 - CONFIG.LEFT_MARGIN_PERCENT - CONFIG.RIGHT_MARGIN_PERCENT)) / 100 + "%";
+      indicator.style.left = CONFIG.LEFT_MARGIN_PERCENT +
+        (pc * (100 - CONFIG.LEFT_MARGIN_PERCENT - CONFIG.RIGHT_MARGIN_PERCENT) / 100) + "%";
     };
-    const clearProgressInterval = () => {
-      if (intervalId) clearInterval(intervalId);
-    };
+    const clearProgressInterval = () => { if (intervalId) clearInterval(intervalId); };
 
     audioEl.addEventListener("play", () => {
       overlay.style.visibility = "hidden";
@@ -429,6 +374,7 @@ Channels: ${channels}`);
       updateProgress();
     });
 
+    // Click on image seeks & plays
     wrapper.addEventListener("click", async (e) => {
       if (menu.style.visibility === "visible" || overlay.contains(e.target) || !audioEl.duration) return;
       await initAudioContext();
@@ -440,6 +386,7 @@ Channels: ${channels}`);
       audioEl.play();
     });
 
+    // Overlay show/hide by hover/touch
     player.addEventListener("mouseenter", () => (overlay.style.visibility = "visible"));
     wrapper.addEventListener("mouseleave", () => (overlay.style.visibility = "hidden"));
     wrapper.addEventListener("mousemove", () => (overlay.style.visibility = "visible"));
