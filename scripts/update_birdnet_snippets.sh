@@ -63,10 +63,16 @@ ensure_python_package() {
   fi
 }
 
+# sed -i on /etc/birdnet/birdnet.conf overwites the symbolic link - restore the link
+if ! [ -L /etc/birdnet/birdnet.conf ] ; then
+  sudo_with_user cp -f /etc/birdnet/birdnet.conf $HOME/BirdNET-Pi/
+  ln -fs  $HOME/BirdNET-Pi/birdnet.conf /etc/birdnet/birdnet.conf
+fi
+
 # update snippets below
 SRC="APPRISE_NOTIFICATION_BODY='(.*)'$"
 DST='APPRISE_NOTIFICATION_BODY="\1"'
-sed -i -E "s/$SRC/$DST/" /etc/birdnet/birdnet.conf
+sed -i --follow-symlinks -E "s/$SRC/$DST/" /etc/birdnet/birdnet.conf
 
 if ! grep -E '^DATA_MODEL_VERSION=' /etc/birdnet/birdnet.conf &>/dev/null;then
     echo "DATA_MODEL_VERSION=1" >> /etc/birdnet/birdnet.conf
@@ -84,7 +90,7 @@ fi
 
 SRC='^APPRISE_NOTIFICATION_BODY="A \$comname \(\$sciname\)  was just detected with a confidence of \$confidence"$'
 DST='APPRISE_NOTIFICATION_BODY="A \$comname (\$sciname)  was just detected with a confidence of \$confidence (\$reason)"'
-sed -i -E "s/$SRC/$DST/" /etc/birdnet/birdnet.conf
+sed -i --follow-symlinks -E "s/$SRC/$DST/" /etc/birdnet/birdnet.conf
 
 if ! grep -E '^INFO_SITE=' /etc/birdnet/birdnet.conf &>/dev/null;then
   echo "INFO_SITE=\"ALLABOUTBIRDS\"" >> /etc/birdnet/birdnet.conf
@@ -94,8 +100,17 @@ if ! grep -E '^COLOR_SCHEME=' /etc/birdnet/birdnet.conf &>/dev/null;then
   echo "COLOR_SCHEME=\"light\"" >> /etc/birdnet/birdnet.conf
 fi
 
+if ! grep -E '^PURGE_THRESHOLD=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo "PURGE_THRESHOLD=95" >> /etc/birdnet/birdnet.conf
+fi
+
 if ! grep -E '^MAX_FILES_SPECIES=' /etc/birdnet/birdnet.conf &>/dev/null;then
   echo "MAX_FILES_SPECIES=\"0\"" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^RARE_SPECIES_THRESHOLD=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo '## RARE_SPECIES_THRESHOLD defines after how many days a species is considered as rare and highlighted on overview page' >> /etc/birdnet/birdnet.conf
+  echo "RARE_SPECIES_THRESHOLD=\"30\"" >> /etc/birdnet/birdnet.conf
 fi
 
 [ -d $RECS_DIR/StreamData ] || sudo_with_user mkdir -p $RECS_DIR/StreamData
@@ -187,6 +202,11 @@ if [ "$(grep -o "#birdnet" /etc/crontab | wc -l)" -lt 5 ]; then
   sed "s/\$USER/$USER/g" "$HOME"/BirdNET-Pi/templates/cleanup.cron >> /etc/crontab
   sed "s/\$USER/$USER/g" "$HOME"/BirdNET-Pi/templates/weekly_report.cron >> /etc/crontab
 fi
+
+set +x
+AUTH=$(grep basicauth /etc/caddy/Caddyfile)
+[ -n "${CADDY_PWD}" ] && [ -z "${AUTH}" ] && sudo /usr/local/bin/update_caddyfile.sh > /dev/null 2>&1
+set -x
 
 # update snippets above
 
