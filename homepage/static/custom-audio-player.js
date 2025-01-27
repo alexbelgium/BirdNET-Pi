@@ -73,8 +73,7 @@ function initCustomAudioPlayers() {
 
     // Audio element
     const audioEl = document.createElement("audio");
-    audioEl.src = audioSrc;
-    audioEl.preload = "auto"; // Changed to auto for buffering
+    audioEl.preload = "none"; // Changed to none for lazy loading
     audioEl.setAttribute("onplay", "setLiveStreamVolume(0)");
     audioEl.setAttribute("onended", "setLiveStreamVolume(1)");
     audioEl.setAttribute("onpause", "setLiveStreamVolume(1)");
@@ -194,7 +193,11 @@ function initCustomAudioPlayers() {
     const debouncedPlayPause = debounce(async () => {
       await initAudioContext();
       if (audioEl.paused) {
-        audioEl.currentTime += CONFIG.BUFFER_TIME; // Add buffer time
+        if (!audioEl.src) {
+          audioEl.src = audioSrc;
+          await audioEl.load();
+        }
+        audioEl.currentTime += CONFIG.BUFFER_TIME;
         audioEl.play();
       } else {
         audioEl.pause();
