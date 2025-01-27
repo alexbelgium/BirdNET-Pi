@@ -1,7 +1,15 @@
 function initCustomAudioPlayers() {
   // =================== Config & Helpers ===================
-  const CONFIG = { LEFT_MARGIN_PERCENT: 6, RIGHT_MARGIN_PERCENT: 9, PROGRESS_BAR_UPDATE_INTERVAL: 20 };
+  const CONFIG = { LEFT_MARGIN_PERCENT: 6, RIGHT_MARGIN_PERCENT: 9, PROGRESS_BAR_UPDATE_INTERVAL: 20, BUFFER_TIME: 0.1 };
 
+  const debounce = (func, wait) => {
+    let timeout;
+    return (...args) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  };
+  
   const icons = {
     play: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M8 5v14l11-7z"/></svg>`,
     pause: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`,
@@ -66,7 +74,7 @@ function initCustomAudioPlayers() {
     // Audio element
     const audioEl = document.createElement("audio");
     audioEl.src = audioSrc;
-    audioEl.preload = "metadata";
+    audioEl.preload = "auto"; // Changed to auto for buffering
     audioEl.setAttribute("onplay", "setLiveStreamVolume(0)");
     audioEl.setAttribute("onended", "setLiveStreamVolume(1)");
     audioEl.setAttribute("onpause", "setLiveStreamVolume(1)");
@@ -182,14 +190,21 @@ function initCustomAudioPlayers() {
       safeSet("customAudioPlayerFilterLow", activeLowpassOption);
     };
 
-    // Play/Pause
+    // Play/Pause with Debounce
+    const debouncedPlayPause = debounce(async () => {
+      await initAudioContext();
+      if (audioEl.paused) {
+        audioEl.currentTime += CONFIG.BUFFER_TIME; // Add buffer time
+        audioEl.play();
+      } else {
+        audioEl.pause();
+      }
+    }, 100);
+
     const playBtn = createButton(overlay, {
       html: icons.play,
       styles: iconBtnStyle,
-      onClick: async () => {
-        await initAudioContext();
-        audioEl.paused ? audioEl.play() : audioEl.pause();
-      },
+      onClick: debouncedPlayPause,
     });
 
     // Progress bar
