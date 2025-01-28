@@ -1,6 +1,12 @@
 function initCustomAudioPlayers() {
   // =================== Config & Helpers ===================
-  const CONFIG = { LEFT_MARGIN_PERCENT: 6, RIGHT_MARGIN_PERCENT: 9, PROGRESS_BAR_UPDATE_INTERVAL: 20, BUFFER_TIME: 0.1 };
+  const CONFIG = { 
+    LEFT_MARGIN_PERCENT: 6, 
+    RIGHT_MARGIN_PERCENT: 9, 
+    PROGRESS_BAR_UPDATE_INTERVAL: 20, 
+    BUFFER_TIME: 0.1,
+    SPINNER_DELAY: 500 // 500ms delay for spinner
+  };
 
   const debounce = (func, wait) => {
     let timeout;
@@ -9,12 +15,11 @@ function initCustomAudioPlayers() {
       timeout = setTimeout(() => func.apply(this, args), wait);
     };
   };
-
+  
   const icons = {
     play: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M8 5v14l11-7z"/></svg>`,
     pause: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`,
     dots: `<svg width="24" height="24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>`,
-    spinner: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 50 50"><path fill="white" d="M25.251,6.004c-10.493,0-19.004,8.511-19.004,19.004c0,10.493,8.511,19.004,19.004,19.004S44.255,35.501,44.255,25.008 C44.255,14.515,35.744,6.004,25.251,6.004z M25.251,0c13.807,0,25.008,11.201,25.008,25.008c0,13.807-11.201,25.008-25.008,25.008 S0.243,38.815,0.243,25.008C0.243,11.201,11.444,0,25.251,0z"><animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></path></svg>`
   };
 
   const safeGet = (k, fb) => {
@@ -66,6 +71,16 @@ function initCustomAudioPlayers() {
     width: "auto", padding: "6px 8px", margin: "2px 4px", borderRadius: "4px"
   };
 
+  // =================== Add Spinner Animation CSS ===================
+  const spinnerStyle = document.createElement("style");
+  spinnerStyle.textContent = `
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  `;
+  document.head.appendChild(spinnerStyle);
+
   // =================== Main Loop ===================
   document.querySelectorAll(".custom-audio-player").forEach((player) => {
     // Basic data
@@ -106,19 +121,10 @@ function initCustomAudioPlayers() {
       visibility: "visible",
     });
 
-    // Loading spinner
-    const loadingSpinner = document.createElement("div");
-    loadingSpinner.innerHTML = icons.spinner;
-    applyStyles(loadingSpinner, {
-      position: "absolute", top: "50%", left: "50%",
-      transform: "translate(-50%, -50%)", display: "none"
-    });
-    wrapper.appendChild(loadingSpinner);
-
     // =================== Overlay Buttons & Progress ===================
     let audioCtx = null, sourceNode, gainNode, filterNodeHigh, filterNodeLow;
     const gainOptions = ["Off", "x2", "x4", "x8", "x16"];
-    const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8, x16: 16 };
+    const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8, x16:16 };
     let activeGain = gainOptions.includes(savedGain) ? savedGain : "Off";
 
     const highpassOptions = ["Off", "250", "500", "1000"];
@@ -199,13 +205,24 @@ function initCustomAudioPlayers() {
       safeSet("customAudioPlayerFilterLow", activeLowpassOption);
     };
 
-    // Play/Pause with Debounce
+    // =================== Spinner Creation ===================
+    const spinner = document.createElement("div");
+    applyStyles(spinner, { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "40px", height: "40px", border: "4px solid rgba(255, 255, 255, 0.3)", borderTop: "4px solid white", borderRadius: "50%", animation: "spin 1s linear infinite", display: "none", zIndex: "10", });
+    wrapper.appendChild(spinner);
+
+    // =================== Play/Pause with Spinner ===================
+    let spinnerTimeout; // To manage spinner delay
+
     const debouncedPlayPause = debounce(async () => {
       await initAudioContext();
       if (audioEl.paused) {
         if (!audioEl.src) {
           audioEl.src = audioSrc;
-          await audioEl.load();
+          audioEl.load();
+          // Start spinner timeout
+          spinnerTimeout = setTimeout(() => {
+            spinner.style.display = "block";
+          }, CONFIG.SPINNER_DELAY);
         }
         audioEl.currentTime += CONFIG.BUFFER_TIME;
         audioEl.play();
@@ -220,13 +237,24 @@ function initCustomAudioPlayers() {
       onClick: debouncedPlayPause,
     });
 
-    // Progress bar
+    // =================== Audio Event Listeners for Spinner ===================
+    const hideSpinner = () => {
+      clearTimeout(spinnerTimeout);
+      spinner.style.display = "none";
+    };
+
+    audioEl.addEventListener("play", hideSpinner);
+    audioEl.addEventListener("pause", hideSpinner);
+    audioEl.addEventListener("canplaythrough", hideSpinner);
+    audioEl.addEventListener("error", hideSpinner);
+
+    // =================== Progress bar ===================
     const progress = document.createElement("input");
     progress.type = "range";
     progress.value = "0";
     progress.min = "0";
     progress.max = "100";
-    applyStyles(progress, { flex: "1", margin: "0 0.5rem", verticalAlign: "middle" });
+    applyStyles(progress, {  flex: "1", margin: "0 0.5rem", verticalAlign: "middle" });
     overlay.appendChild(progress);
 
     // Menu button (dots)
@@ -377,12 +405,6 @@ Channels: ${channels}`);
       clearProgressInterval();
     });
     audioEl.addEventListener("ended", () => clearProgressInterval());
-    audioEl.addEventListener("waiting", () => {
-      loadingSpinner.style.display = "block";
-    });
-    audioEl.addEventListener("canplay", () => {
-      loadingSpinner.style.display = "none";
-    });
 
     progress.addEventListener("input", () => {
       if (!audioEl.duration) return;
