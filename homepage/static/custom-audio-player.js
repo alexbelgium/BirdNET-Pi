@@ -14,7 +14,7 @@ function initCustomAudioPlayers() {
     play: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M8 5v14l11-7z"/></svg>`,
     pause: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`,
     dots: `<svg width="24" height="24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>`,
-    spinner: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" stroke="white" stroke-width="5" fill="none" stroke-dasharray="40 130" fill="none" style="transform-origin: center; animation: spin 1s linear infinite;"></circle><style>@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }</style></svg>`
+    spinner: `<div style="width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid #fff; border-radius: 50%; box-sizing: border-box; animation: ring-spin 1s linear infinite;"><style>@keyframes ring-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style></div>`
   };
 
   const safeGet = (k, fb) => {
