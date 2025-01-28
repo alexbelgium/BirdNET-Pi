@@ -9,11 +9,12 @@ function initCustomAudioPlayers() {
       timeout = setTimeout(() => func.apply(this, args), wait);
     };
   };
-  
+
   const icons = {
     play: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M8 5v14l11-7z"/></svg>`,
     pause: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`,
     dots: `<svg width="24" height="24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>`,
+    spinner: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 50 50"><path fill="white" d="M25.251,6.004c-10.493,0-19.004,8.511-19.004,19.004c0,10.493,8.511,19.004,19.004,19.004S44.255,35.501,44.255,25.008 C44.255,14.515,35.744,6.004,25.251,6.004z M25.251,0c13.807,0,25.008,11.201,25.008,25.008c0,13.807-11.201,25.008-25.008,25.008 S0.243,38.815,0.243,25.008C0.243,11.201,11.444,0,25.251,0z"><animateTransform attributeType="xml" attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></path></svg>`
   };
 
   const safeGet = (k, fb) => {
@@ -73,7 +74,7 @@ function initCustomAudioPlayers() {
 
     // Audio element
     const audioEl = document.createElement("audio");
-    audioEl.preload = "none"; // Changed to none for lazy loading
+    audioEl.preload = "none";
     audioEl.setAttribute("onplay", "setLiveStreamVolume(0)");
     audioEl.setAttribute("onended", "setLiveStreamVolume(1)");
     audioEl.setAttribute("onpause", "setLiveStreamVolume(1)");
@@ -105,10 +106,19 @@ function initCustomAudioPlayers() {
       visibility: "visible",
     });
 
+    // Loading spinner
+    const loadingSpinner = document.createElement("div");
+    loadingSpinner.innerHTML = icons.spinner;
+    applyStyles(loadingSpinner, {
+      position: "absolute", top: "50%", left: "50%",
+      transform: "translate(-50%, -50%)", display: "none"
+    });
+    wrapper.appendChild(loadingSpinner);
+
     // =================== Overlay Buttons & Progress ===================
     let audioCtx = null, sourceNode, gainNode, filterNodeHigh, filterNodeLow;
     const gainOptions = ["Off", "x2", "x4", "x8", "x16"];
-    const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8, x16:16 };
+    const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8, x16: 16 };
     let activeGain = gainOptions.includes(savedGain) ? savedGain : "Off";
 
     const highpassOptions = ["Off", "250", "500", "1000"];
@@ -367,6 +377,12 @@ Channels: ${channels}`);
       clearProgressInterval();
     });
     audioEl.addEventListener("ended", () => clearProgressInterval());
+    audioEl.addEventListener("waiting", () => {
+      loadingSpinner.style.display = "block";
+    });
+    audioEl.addEventListener("canplay", () => {
+      loadingSpinner.style.display = "none";
+    });
 
     progress.addEventListener("input", () => {
       if (!audioEl.duration) return;
