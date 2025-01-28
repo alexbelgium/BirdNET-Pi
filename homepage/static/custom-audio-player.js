@@ -14,8 +14,7 @@ function initCustomAudioPlayers() {
     play: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M8 5v14l11-7z"/></svg>`,
     pause: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`,
     dots: `<svg width="24" height="24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>`,
-    spinner: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 50 50"><path fill="white" d="M25.251,6.004c-10.493,0-19.004,8.511-19.004,19.004c0,10.493,8.511,19.004,19.004,19.004S44.255,35.501,44.255,25.008 C44.255,14.515,35.744,6.004,25.251,6.004z M25.251,0c13.807,0,25.008,11.201,25.008,25.008c0,13.807-11.201,25.008-25.008,25.008 S0.243,38.815,0.243,25.008C0.243,11.201,11.444,0,25.251,0z">
-              <animateTransform attributeType="XML" attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></path></svg>`
+    spinner: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" stroke="white" stroke-width="5" fill="none" stroke-dasharray="40 130" fill="none" style="transform-origin: center; animation: spin 1s linear infinite;"></circle><style>@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }</style></svg>`
   };
 
   const safeGet = (k, fb) => {
