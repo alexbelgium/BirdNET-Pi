@@ -189,7 +189,7 @@ if (get_included_files()[0] === __FILE__) {
 }
 
 ?>
-<script src="static/spectrogram-player.js" defer></script>
+<script src="static/custom-audio-player.js"></script>
 <script>
 
 function deleteDetection(filename,copylink=false) {
@@ -626,7 +626,7 @@ echo "<table>
     $iter++;
 
     if($num_rows < 100){
-      $imageelem = "<video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster=\"$filename_png\" preload=\"none\" title=\"$filename\"><source src=\"$filename\"></video>";
+      $imageelem = "<div class='custom-audio-player' data-audio-src=\"$filename\" data-image-src=\"$filename_png\"></div>";
     } else {
       $imageelem = "<a href=\"$filename\"><img src=\"$filename_png\"></a>";
     }
