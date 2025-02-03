@@ -13,8 +13,9 @@ function initCustomAudioPlayers() {
   const icons = {
     play: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M8 5v14l11-7z"/></svg>`,
     pause: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`,
-    dots: `<svg width="24" height="24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>`,
-    spinner: `<div style="width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; box-sizing: border-box; animation: ring-spin 1s linear infinite;"><style>@keyframes ring-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style></div>`
+    dots: `<svg width="24" height="24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4z[...]`,
+    spinner: `<div style="width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; box-sizing: border-box; animation: ring-spin 1s linear infinite;"></div>`,
+    error: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zM1 12C1 6.48 6.48 1 12 1s11 5.48 11 11-5.48 11-11 11S1 17.52 1 12zm11-6c-.55 0-1 .45-1 1v5c0 .55.45 1 1 1s1-.45 1-1V7c0-.55-.45-1-1-1zm0 10c-.55 0-1 .45-1 1v1c0 .55.45 1 1 1s1-.45 1-1v-1c0-.55-.45-1-1-1z"/></svg>`
   };
 
   const safeGet = (k, fb) => {
@@ -80,20 +81,27 @@ function initCustomAudioPlayers() {
     audioEl.setAttribute("onpause", "setLiveStreamVolume(1)");
     player.appendChild(audioEl);
 
-    // Wrapper + image
+    // Wrapper
     const wrapper = player.appendChild(document.createElement("div"));
     applyStyles(wrapper, { position: "relative" });
-    const img = wrapper.appendChild(document.createElement("img"));
-    img.src = imageSrc;
-    applyStyles(img, { width: "100%", borderRadius: "8px" });
 
-    // Progress indicator
-    const indicator = wrapper.appendChild(document.createElement("div"));
-    applyStyles(indicator, {
-      position: "absolute", top: "0", bottom: "5%",
-      left: `${CONFIG.LEFT_MARGIN_PERCENT}%`, width: "2px",
-      background: "rgba(0,0,0)", pointerEvents: "none", borderRadius: "2px",
-    });
+    // Handle image
+    if (imageSrc) {
+      const img = wrapper.appendChild(document.createElement("img"));
+      img.src = imageSrc;
+      img.onerror = () => {
+        wrapper.removeChild(img);
+      };
+      applyStyles(img, { width: "100%", borderRadius: "8px" });
+
+      // Progress indicator
+      const indicator = wrapper.appendChild(document.createElement("div"));
+      applyStyles(indicator, {
+        position: "absolute", top: "0", bottom: "5%",
+        left: `${CONFIG.LEFT_MARGIN_PERCENT}%`, width: "2px",
+        background: "rgba(0,0,0)", pointerEvents: "none", borderRadius: "2px",
+      });
+    }
 
     // Overlay
     const overlay = wrapper.appendChild(document.createElement("div"));
@@ -114,6 +122,16 @@ function initCustomAudioPlayers() {
       transform: "translate(-50%, -50%)", display: "none"
     });
     wrapper.appendChild(loadingSpinner);
+
+    // Error message
+    const errorMessage = document.createElement("div");
+    errorMessage.innerHTML = icons.error + " Audio not available";
+    applyStyles(errorMessage, {
+      position: "absolute", top: "50%", left: "50%",
+      transform: "translate(-50%, -50%)", display: "none",
+      color: "white", background: "rgba(255,0,0,0.8)", padding: "10px", borderRadius: "8px"
+    });
+    wrapper.appendChild(errorMessage);
 
     // =================== Overlay Buttons & Progress ===================
     let audioCtx = null, sourceNode, gainNode, filterNodeHigh, filterNodeLow;
@@ -208,7 +226,9 @@ function initCustomAudioPlayers() {
           await audioEl.load();
         }
         audioEl.currentTime += CONFIG.BUFFER_TIME;
-        audioEl.play();
+        audioEl.play().catch(() => {
+          errorMessage.style.display = "block";
+        });
       } else {
         audioEl.pause();
       }
