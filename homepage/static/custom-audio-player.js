@@ -275,6 +275,13 @@ function initCustomAudioPlayers() {
     document.addEventListener("click", (e) => {
       if (!menu.contains(e.target) && e.target !== dotsBtn) closeMenu();
     });
+    const fetchAudioMetadata = async (url) => {
+      try {
+        return await fetch(url, { method: "HEAD" });
+      } catch {
+        return fetch(url); // fallback to GET request
+      }
+    };
 
     // Info & Download
     createButton(menu, {
@@ -283,7 +290,7 @@ function initCustomAudioPlayers() {
       onClick: async () => {
         let size = "unknown", enc = "unknown", sampleRate = "unknown", channels = "unknown";
         try {
-          const resp = await fetch(audioSrc, { method: "HEAD" });
+          const resp = await fetchAudioMetadata(audioSrc);
           if (resp.ok) {
             const cl = resp.headers.get("content-length");
             if (cl) {
