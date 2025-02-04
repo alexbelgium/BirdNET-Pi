@@ -283,7 +283,7 @@ function initCustomAudioPlayers() {
       onClick: async () => {
         let size = "unknown", enc = "unknown", sampleRate = "unknown", channels = "unknown";
         try {
-          const resp = await fetch(audioSrc);
+          const resp = await fetch(audioSrc, { method: "HEAD" });
           if (resp.ok) {
             const cl = resp.headers.get("content-length");
             if (cl) {
