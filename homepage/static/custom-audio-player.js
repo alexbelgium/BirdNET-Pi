@@ -281,30 +281,70 @@ function initCustomAudioPlayers() {
       text: "Info",
       styles: textBtnStyle,
       onClick: async () => {
-        let size = "unknown", enc = "unknown", sampleRate = "unknown", channels = "unknown";
+        // Default everything to "Unknown"
+        let size = "Unknown";
+        let enc = "Unknown";
+        let sampleRate = "Unknown";
+        let channels = "Unknown";
+        const duration = audioEl.duration
+          ? `${audioEl.duration.toFixed(2)} s`
+          : "Unknown";
+    
+        // ------------------ HEAD request first ------------------
+        let metadataResp = null;
         try {
-          const resp = await fetch(audioSrc, { method: "HEAD" });
-          if (resp.ok) {
-            const cl = resp.headers.get("content-length");
-            if (cl) {
-              const kb = parseInt(cl, 10) / 1024;
-              size = kb >= 1024 ? `${(kb / 1024).toFixed(2)} MB` : `${kb.toFixed(2)} KB`;
-            }
-            const ct = resp.headers.get("content-type");
-            if (ct) enc = ct.split("/")[1]?.toUpperCase() || "unknown";
+          const headResp = await fetch(audioSrc, { method: "HEAD" });
+          if (!headResp.ok) {
+            throw new Error("HEAD request not successful");
           }
-          const audioData = await fetch(audioSrc).then(r => r.arrayBuffer());
+          metadataResp = headResp;
+        } catch (err) {
+          // ------------------ Fall back to GET request ------------------
+          try {
+            const getResp = await fetch(audioSrc);
+            if (!getResp.ok) {
+              throw new Error("GET request not successful");
+            }
+            metadataResp = getResp;
+          } catch {
+            // If GET also fails, we do nothing (all remain "Unknown")
+          }
+        }
+    
+        // If metadataResp is set, parse headers
+        if (metadataResp) {
+          const cl = metadataResp.headers.get("content-length");
+          if (cl) {
+            const kb = parseInt(cl, 10) / 1024;
+            size =
+              kb >= 1024
+                ? `${(kb / 1024).toFixed(2)} MB`
+                : `${kb.toFixed(2)} KB`;
+          }
+          const ct = metadataResp.headers.get("content-type");
+          if (ct) {
+            // e.g., "audio/mpeg" => "mpeg" => "MPEG" (or remain "Unknown")
+            enc = ct.split("/")[1]?.toUpperCase() || "Unknown";
+          }
+        }
+    
+        // ------------------ Decode full audio data for sample rate & channels ------------------
+        try {
+          const audioData = await fetch(audioSrc).then((r) => r.arrayBuffer());
           const decCtx = new (window.AudioContext || window.webkitAudioContext)();
           const decoded = await decCtx.decodeAudioData(audioData);
           sampleRate = decoded.sampleRate;
           channels = decoded.numberOfChannels;
-        } catch {}
-        const duration = audioEl.duration ? `${audioEl.duration.toFixed(2)} s` : "unknown";
+        } catch {
+          // If decoding fails, sampleRate & channels remain "Unknown"
+        }
+    
+        // ------------------ Show info (no errors) ------------------
         alert(`Duration: ${duration}
 Type: ${enc}
 Size: ${size}
 Sampling Rate: ${sampleRate} Hz
-Channels: ${channels}`);
+Channels: ${channels}`);    
         closeMenu();
       },
     });
