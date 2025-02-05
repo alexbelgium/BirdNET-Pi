@@ -1,6 +1,11 @@
 function initCustomAudioPlayers() {
   // =================== Config & Helpers ===================
-  const CONFIG = { LEFT_MARGIN_PERCENT: 6, RIGHT_MARGIN_PERCENT: 9, PROGRESS_BAR_UPDATE_INTERVAL: 20, BUFFER_TIME: 0.1 };
+  const CONFIG = {
+    LEFT_MARGIN_PERCENT: 6,
+    RIGHT_MARGIN_PERCENT: 9,
+    PROGRESS_BAR_UPDATE_INTERVAL: 20,
+    BUFFER_TIME: 0.1,
+  };
 
   const debounce = (func, wait) => {
     let timeout;
@@ -15,14 +20,20 @@ function initCustomAudioPlayers() {
     pause: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`,
     dots: `<svg width="24" height="24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 22a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>`,
     spinner: `<div style="width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; box-sizing: border-box; animation: ring-spin 1s linear infinite;"></div>`,
-    error: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zM1 12C1 6.48 6.48 1 12 1s11 5.48 11 11-5.48 11-11 11S1 17.52 1 12zm11-6c-.55 0-1 .45-1 1v5c0 .55.45 1 1 1s1-.45 1-1V7c0-.55-.45-1-1-1zm0 10c-.55 0-1 .45-1 1v1c0 .55.45 1 1 1s1-.45 1-1v-1c0-.55-.45-1-1-1z"/></svg>`
+    error: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zM1 12C1 6.48 6.48 1 12 1s11 5.48 11 11-5.48 11-11 11S1 17.52 1 12zm11-6c-.55 0-1 .45-1 1v5c0 .55.45 1 1 1s1-.45 1-1V7c0-.55-.45-1-1-1zm0 10c-.55 0-1 .45-1 1v1c0 .55.45 1 1 1s1-.45 1-1v-1c0-.55-.45-1-1-1z"/></svg>`,
   };
 
   const safeGet = (k, fb) => {
-    try { return localStorage.getItem(k) || fb; } catch { return fb; }
+    try {
+      return localStorage.getItem(k) || fb;
+    } catch {
+      return fb;
+    }
   };
   const safeSet = (k, v) => {
-    try { localStorage.setItem(k, v); } catch {}
+    try {
+      localStorage.setItem(k, v);
+    } catch {}
   };
 
   const savedGain = safeGet("customAudioPlayerGain", "Off");
@@ -37,7 +48,10 @@ function initCustomAudioPlayers() {
     btn.addEventListener("mouseout", () => (btn.style.background = "none"));
   };
 
-  const createButton = (parent, { text = "", html = "", styles = {}, data = {}, onClick = null } = {}) => {
+  const createButton = (
+    parent,
+    { text = "", html = "", styles = {}, data = {}, onClick = null } = {}
+  ) => {
     const btn = document.createElement("button");
     btn.type = "button";
     if (text) btn.textContent = text;
@@ -51,23 +65,43 @@ function initCustomAudioPlayers() {
 
   // Common styles
   const iconBtnStyle = {
-    background: "none", border: "none", cursor: "pointer",
-    width: "36px", height: "36px", display: "flex",
-    alignItems: "center", justifyContent: "center",
-    marginRight: "0.6rem", padding: "0"
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    width: "36px",
+    height: "36px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: "0.6rem",
+    padding: "0",
   };
   const textBtnStyle = {
-    background: "none", border: "none", cursor: "pointer",
-    color: "white", fontSize: "14px", textAlign: "right",
-    width: "100%", padding: "6px 12px", margin: "2px 0", borderRadius: "4px"
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    color: "white",
+    fontSize: "14px",
+    textAlign: "right",
+    width: "100%",
+    padding: "6px 12px",
+    margin: "2px 0",
+    borderRadius: "4px",
   };
   const optionBtnStyle = {
-    background: "none", border: "none", cursor: "pointer",
-    color: "white", fontSize: "14px", textAlign: "center",
-    width: "auto", padding: "6px 8px", margin: "2px 4px", borderRadius: "4px"
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    color: "white",
+    fontSize: "14px",
+    textAlign: "center",
+    width: "auto",
+    padding: "6px 8px",
+    margin: "2px 4px",
+    borderRadius: "4px",
   };
 
-  // =================== Main Loop ===================
+  // =================== Main Loop over all .custom-audio-player ===================
   document.querySelectorAll(".custom-audio-player").forEach((player) => {
     // Basic data
     const audioSrc = player.dataset.audioSrc;
@@ -80,6 +114,101 @@ function initCustomAudioPlayers() {
     audioEl.setAttribute("onended", "setLiveStreamVolume(1)");
     audioEl.setAttribute("onpause", "setLiveStreamVolume(1)");
     player.appendChild(audioEl);
+
+    // Promise to fetch+decode the audio data exactly once
+    let fetchAndDecodePromise = null;
+    let decodedDataCache = null; // store the AudioBuffer once decoded for sampleRate/channels
+
+    // A helper to ensure the audio is loaded into the <audio> element
+    // and we have metadata for `audioEl.duration`.
+    const ensureAudioLoaded = async () => {
+      // If we already have valid metadata, do nothing.
+      if (audioEl.readyState >= HTMLMediaElement.HAVE_METADATA) {
+        return;
+      }
+
+      // Show spinner
+      loadingSpinner.style.display = "block";
+
+      // Set .src if not set yet, then load
+      if (!audioEl.src) {
+        audioEl.src = audioSrc;
+      }
+      // .load() is synchronous but we must wait for "loadedmetadata" event
+      audioEl.load();
+
+      await new Promise((resolve, reject) => {
+        const onLoadedMetadata = () => {
+          audioEl.removeEventListener("loadedmetadata", onLoadedMetadata);
+          audioEl.removeEventListener("error", onError);
+          loadingSpinner.style.display = "none";
+          resolve();
+        };
+        const onError = (e) => {
+          audioEl.removeEventListener("loadedmetadata", onLoadedMetadata);
+          audioEl.removeEventListener("error", onError);
+          loadingSpinner.style.display = "none";
+          errorMessage.style.display = "block";
+          reject(e);
+        };
+        audioEl.addEventListener("loadedmetadata", onLoadedMetadata);
+        audioEl.addEventListener("error", onError);
+      });
+    };
+
+    // A helper to fetch+decode the full audio data for size, sampleRate, channels.
+    // The first time we do it, we store in fetchAndDecodePromise so we do not repeat.
+    const fetchAndDecodeAudioData = async () => {
+      if (decodedDataCache) {
+        // Already have decoded data
+        return decodedDataCache;
+      }
+      if (!fetchAndDecodePromise) {
+        fetchAndDecodePromise = (async () => {
+          // Show spinner
+          loadingSpinner.style.display = "block";
+
+          // Perform a GET request; the browser may leverage its cache automatically
+          // if audioEl previously loaded this resource.
+          let getResp;
+          try {
+            getResp = await fetch(audioSrc, { method: "GET" });
+            if (!getResp.ok) throw new Error("GET request not successful");
+          } catch (err) {
+            // Hide spinner on error
+            loadingSpinner.style.display = "none";
+            throw err;
+          }
+
+          // Try to get content-length for file size
+          const cl = getResp.headers.get("content-length");
+          let sizeInfo = null;
+          if (cl) {
+            const kb = parseInt(cl, 10) / 1024;
+            sizeInfo =
+              kb >= 1024
+                ? `${(kb / 1024).toFixed(2)} MB`
+                : `${kb.toFixed(2)} KB`;
+          }
+
+          const audioData = await getResp.arrayBuffer();
+          const decCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const decoded = await decCtx.decodeAudioData(audioData);
+
+          // done
+          loadingSpinner.style.display = "none";
+
+          decodedDataCache = {
+            size: sizeInfo || "Unknown",
+            sampleRate: decoded.sampleRate,
+            channels: decoded.numberOfChannels,
+          };
+          return decodedDataCache;
+        })();
+      }
+      // Return the stored promise
+      return fetchAndDecodePromise;
+    };
 
     // Wrapper
     const wrapper = player.appendChild(document.createElement("div"));
@@ -97,20 +226,32 @@ function initCustomAudioPlayers() {
       // Progress indicator
       const indicator = wrapper.appendChild(document.createElement("div"));
       applyStyles(indicator, {
-        position: "absolute", top: "0", bottom: "5%",
-        left: `${CONFIG.LEFT_MARGIN_PERCENT}%`, width: "2px",
-        background: "rgba(0,0,0)", pointerEvents: "none", borderRadius: "2px",
+        position: "absolute",
+        top: "0",
+        bottom: "5%",
+        left: `${CONFIG.LEFT_MARGIN_PERCENT}%`,
+        width: "2px",
+        background: "rgba(0,0,0)",
+        pointerEvents: "none",
+        borderRadius: "2px",
       });
     }
 
     // Overlay
     const overlay = wrapper.appendChild(document.createElement("div"));
     applyStyles(overlay, {
-      position: "absolute", left: "0", bottom: "0",
-      width: "100%", height: "14.6%", display: "flex",
-      alignItems: "center", justifyContent: "space-between",
-      padding: "0 10px", borderRadius: "0 0 8px 8px",
-      background: "rgba(0,0,0,0.3)", backdropFilter: "blur(1px)",
+      position: "absolute",
+      left: "0",
+      bottom: "0",
+      width: "100%",
+      height: "14.6%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "0 10px",
+      borderRadius: "0 0 8px 8px",
+      background: "rgba(0,0,0,0.3)",
+      backdropFilter: "blur(1px)",
       visibility: "visible",
     });
 
@@ -118,8 +259,11 @@ function initCustomAudioPlayers() {
     const loadingSpinner = document.createElement("div");
     loadingSpinner.innerHTML = icons.spinner;
     applyStyles(loadingSpinner, {
-      position: "absolute", top: "50%", left: "50%",
-      transform: "translate(-50%, -50%)", display: "none"
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      display: "none",
     });
     wrapper.appendChild(loadingSpinner);
 
@@ -127,23 +271,37 @@ function initCustomAudioPlayers() {
     const errorMessage = document.createElement("div");
     errorMessage.innerHTML = icons.error + " Audio not available";
     applyStyles(errorMessage, {
-      position: "absolute", top: "50%", left: "50%",
-      transform: "translate(-50%, -50%)", display: "none",
-      color: "white", background: "rgba(255,0,0,0.8)", padding: "10px", borderRadius: "8px"
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      display: "none",
+      color: "white",
+      background: "rgba(255,0,0,0.8)",
+      padding: "10px",
+      borderRadius: "8px",
     });
     wrapper.appendChild(errorMessage);
 
     // =================== Overlay Buttons & Progress ===================
-    let audioCtx = null, sourceNode, gainNode, filterNodeHigh, filterNodeLow;
+    let audioCtx = null,
+      sourceNode,
+      gainNode,
+      filterNodeHigh,
+      filterNodeLow;
     const gainOptions = ["Off", "x2", "x4", "x8", "x16"];
     const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8, x16: 16 };
     let activeGain = gainOptions.includes(savedGain) ? savedGain : "Off";
 
     const highpassOptions = ["Off", "250", "500", "1000"];
-    let activeHighpassOption = highpassOptions.includes(savedHighpass) ? savedHighpass : "Off";
+    let activeHighpassOption = highpassOptions.includes(savedHighpass)
+      ? savedHighpass
+      : "Off";
 
     const lowpassOptions = ["Off", "2000", "4000", "8000"];
-    let activeLowpassOption = lowpassOptions.includes(savedLowpass) ? savedLowpass : "Off";
+    let activeLowpassOption = lowpassOptions.includes(savedLowpass)
+      ? savedLowpass
+      : "Off";
 
     const initAudioContext = async () => {
       if (!audioCtx) {
@@ -164,8 +322,14 @@ function initCustomAudioPlayers() {
       if (filterNodeLow) filterNodeLow.disconnect();
 
       let currentChain = sourceNode;
-      if (filterNodeHigh) { currentChain.connect(filterNodeHigh); currentChain = filterNodeHigh; }
-      if (filterNodeLow) { currentChain.connect(filterNodeLow); currentChain = filterNodeLow; }
+      if (filterNodeHigh) {
+        currentChain.connect(filterNodeHigh);
+        currentChain = filterNodeHigh;
+      }
+      if (filterNodeLow) {
+        currentChain.connect(filterNodeLow);
+        currentChain = filterNodeLow;
+      }
       currentChain.connect(gainNode).connect(audioCtx.destination);
     };
 
@@ -177,7 +341,12 @@ function initCustomAudioPlayers() {
       } else if (gainNode) {
         gainNode.gain.value = 1;
       }
-      gainButtons.forEach(b => b.style.textDecoration = b.dataset.gain === activeGain ? "underline" : "none");
+      gainButtons.forEach(
+        (b) =>
+          (b.style.textDecoration = b.dataset.gain === activeGain
+            ? "underline"
+            : "none")
+      );
       safeSet("customAudioPlayerGain", activeGain);
     };
 
@@ -195,7 +364,12 @@ function initCustomAudioPlayers() {
         filterNodeHigh = null;
       }
       rebuildAudioChain();
-      highpassButtons.forEach(b => b.style.textDecoration = b.dataset.filter === activeHighpassOption ? "underline" : "none");
+      highpassButtons.forEach(
+        (b) =>
+          (b.style.textDecoration = b.dataset.filter === activeHighpassOption
+            ? "underline"
+            : "none")
+      );
       safeSet("customAudioPlayerFilterHigh", activeHighpassOption);
     };
 
@@ -213,27 +387,41 @@ function initCustomAudioPlayers() {
         filterNodeLow = null;
       }
       rebuildAudioChain();
-      lowpassButtons.forEach(b => b.style.textDecoration = b.dataset.filter === activeLowpassOption ? "underline" : "none");
+      lowpassButtons.forEach(
+        (b) =>
+          (b.style.textDecoration = b.dataset.filter === activeLowpassOption
+            ? "underline"
+            : "none")
+      );
       safeSet("customAudioPlayerFilterLow", activeLowpassOption);
     };
 
-    // Play/Pause with Debounce
+    // Debounced Play/Pause
     const debouncedPlayPause = debounce(async () => {
       await initAudioContext();
+
+      // Make sure the audio is loaded
+      try {
+        await ensureAudioLoaded();
+      } catch {
+        // If ensureAudioLoaded failed, we show an error message
+        return;
+      }
+
+      // Actually play or pause
       if (audioEl.paused) {
-        if (!audioEl.src) {
-          audioEl.src = audioSrc;
-          await audioEl.load();
-        }
         audioEl.currentTime += CONFIG.BUFFER_TIME;
-        audioEl.play().catch(() => {
-          errorMessage.style.display = "block";
-        });
+        audioEl
+          .play()
+          .catch(() => {
+            errorMessage.style.display = "block";
+          });
       } else {
         audioEl.pause();
       }
     }, 100);
 
+    // Play Button
     const playBtn = createButton(overlay, {
       html: icons.play,
       styles: iconBtnStyle,
@@ -246,7 +434,11 @@ function initCustomAudioPlayers() {
     progress.value = "0";
     progress.min = "0";
     progress.max = "100";
-    applyStyles(progress, { flex: "1", margin: "0 0.5rem", verticalAlign: "middle" });
+    applyStyles(progress, {
+      flex: "1",
+      margin: "0 0.5rem",
+      verticalAlign: "middle",
+    });
     overlay.appendChild(progress);
 
     // Menu button (dots)
@@ -255,18 +447,26 @@ function initCustomAudioPlayers() {
     // =================== Menu ===================
     const menu = wrapper.appendChild(document.createElement("div"));
     applyStyles(menu, {
-      position: "absolute", right: "10px", bottom: "15%",
-      background: "rgba(0,0,0,0.3)", backdropFilter: "blur(8px)",
-      color: "white", borderRadius: "6px", padding: "0.5rem",
-      visibility: "hidden", display: "flex", flexDirection: "column",
-      alignItems: "flex-end", minWidth: "160px",
+      position: "absolute",
+      right: "10px",
+      bottom: "15%",
+      background: "rgba(0,0,0,0.3)",
+      backdropFilter: "blur(8px)",
+      color: "white",
+      borderRadius: "6px",
+      padding: "0.5rem",
+      visibility: "hidden",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "flex-end",
+      minWidth: "160px",
     });
 
+    let menuOpen = false;
     const closeMenu = () => {
       menuOpen = false;
       menu.style.visibility = "hidden";
     };
-    let menuOpen = false;
     dotsBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       menuOpen = !menuOpen;
@@ -281,79 +481,63 @@ function initCustomAudioPlayers() {
       text: "Info",
       styles: textBtnStyle,
       onClick: async () => {
-        // Default everything to "Unknown"
-        let size = "Unknown";
-        let enc = "Unknown";
-        let sampleRate = "Unknown";
-        let channels = "Unknown";
+        closeMenu();
+
+        // 1) Ensure we have basic metadata (duration)
+        try {
+          await ensureAudioLoaded();
+        } catch {
+          // If something failed, the errorMessage is already shown
+          return;
+        }
         const duration = audioEl.duration
           ? `${audioEl.duration.toFixed(2)} s`
           : "Unknown";
-    
-        // ------------------ HEAD request first ------------------
-        let metadataResp = null;
+
+        // 2) Decode audio data (for size, sampleRate, channels)
+        let size = "Unknown",
+          enc = "Unknown",
+          sampleRate = "Unknown",
+          channels = "Unknown";
         try {
-          const headResp = await fetch(audioSrc, { method: "HEAD" });
-          if (!headResp.ok) {
-            throw new Error("HEAD request not successful");
+          // We use the same fetch+decode promise (may be in browser cache)
+          const data = await fetchAndDecodeAudioData();
+          if (data) {
+            size = data.size;
+            sampleRate = data.sampleRate;
+            channels = data.channels;
           }
-          metadataResp = headResp;
-        } catch (err) {
-          // ------------------ Fall back to GET request ------------------
-          try {
-            const getResp = await fetch(audioSrc);
-            if (!getResp.ok) {
-              throw new Error("GET request not successful");
-            }
-            metadataResp = getResp;
-          } catch {
-            // If GET also fails, we do nothing (all remain "Unknown")
-          }
-        }
-    
-        // If metadataResp is set, parse headers
-        if (metadataResp) {
-          const cl = metadataResp.headers.get("content-length");
-          if (cl) {
-            const kb = parseInt(cl, 10) / 1024;
-            size =
-              kb >= 1024
-                ? `${(kb / 1024).toFixed(2)} MB`
-                : `${kb.toFixed(2)} KB`;
-          }
-          const ct = metadataResp.headers.get("content-type");
-          if (ct) {
-            // e.g., "audio/mpeg" => "mpeg" => "MPEG" (or remain "Unknown")
-            enc = ct.split("/")[1]?.toUpperCase() || "Unknown";
-          }
-        }
-    
-        // ------------------ Decode full audio data for sample rate & channels ------------------
-        try {
-          const audioData = await fetch(audioSrc).then((r) => r.arrayBuffer());
-          const decCtx = new (window.AudioContext || window.webkitAudioContext)();
-          const decoded = await decCtx.decodeAudioData(audioData);
-          sampleRate = decoded.sampleRate;
-          channels = decoded.numberOfChannels;
         } catch {
-          // If decoding fails, sampleRate & channels remain "Unknown"
+          // decoding failed => leave them as "Unknown"
         }
-    
-        // ------------------ Show info (no errors) ------------------
-        alert(`Duration: ${duration}
+
+        // 3) Infer encoding from audioEl or from your "Content-Type" guess
+        //    If you need a more robust detection, parse the actual file in fetchAndDecodeAudioData
+        const guessContentType = audioSrc.split(".").pop()?.toUpperCase() || "";
+        if (guessContentType) {
+          enc = guessContentType;
+        }
+
+        alert(
+          `Duration: ${duration}
 Type: ${enc}
 Size: ${size}
 Sampling Rate: ${sampleRate} Hz
-Channels: ${channels}`);    
-        closeMenu();
+Channels: ${channels}`
+        );
       },
     });
+
     createButton(menu, {
       text: "Download",
       styles: textBtnStyle,
       onClick: async () => {
+        closeMenu();
         try {
-          const blob = await fetch(audioSrc).then(r => r.blob());
+          loadingSpinner.style.display = "block";
+          const blob = await fetch(audioSrc).then((r) => r.blob());
+          loadingSpinner.style.display = "none";
+
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
@@ -363,9 +547,9 @@ Channels: ${channels}`);
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
         } catch {
+          loadingSpinner.style.display = "none";
           alert("Failed to download audio.");
         }
-        closeMenu();
       },
     });
 
@@ -373,13 +557,22 @@ Channels: ${channels}`);
     const createOptionSection = (labelText) => {
       const container = menu.appendChild(document.createElement("div"));
       applyStyles(container, {
-        display: "flex", alignItems: "center", padding: "4px 0",
-        borderTop: "1px solid rgba(255,255,255,0.2)", width: "100%",
-        justifyContent: "flex-end", flexWrap: "wrap",
+        display: "flex",
+        alignItems: "center",
+        padding: "4px 0",
+        borderTop: "1px solid rgba(255,255,255,0.2)",
+        width: "100%",
+        justifyContent: "flex-end",
+        flexWrap: "wrap",
       });
       const label = container.appendChild(document.createElement("div"));
       label.textContent = labelText;
-      applyStyles(label, { marginRight: "8px", fontSize: "14px", color: "#ccc", flexShrink: "0" });
+      applyStyles(label, {
+        marginRight: "8px",
+        fontSize: "14px",
+        color: "#ccc",
+        flexShrink: "0",
+      });
       return container;
     };
 
@@ -390,21 +583,27 @@ Channels: ${channels}`);
     // Create gain buttons
     const gainButtons = gainOptions.map((opt) =>
       createButton(gainContainer, {
-        text: opt, data: { gain: opt }, styles: optionBtnStyle,
+        text: opt,
+        data: { gain: opt },
+        styles: optionBtnStyle,
         onClick: () => setActiveGain(opt),
       })
     );
     // Create highpass buttons
     const highpassButtons = highpassOptions.map((opt) =>
       createButton(highpassContainer, {
-        text: opt, data: { filter: opt }, styles: optionBtnStyle,
+        text: opt,
+        data: { filter: opt },
+        styles: optionBtnStyle,
         onClick: () => setActiveHighpass(opt),
       })
     );
     // Create lowpass buttons
     const lowpassButtons = lowpassOptions.map((opt) =>
       createButton(lowpassContainer, {
-        text: opt, data: { filter: opt }, styles: optionBtnStyle,
+        text: opt,
+        data: { filter: opt },
+        styles: optionBtnStyle,
         onClick: () => setActiveLowpass(opt),
       })
     );
@@ -421,10 +620,19 @@ Channels: ${channels}`);
       const frac = audioEl.currentTime / audioEl.duration;
       const pc = frac * 100;
       progress.value = pc;
-      indicator.style.left = CONFIG.LEFT_MARGIN_PERCENT +
-        (pc * (100 - CONFIG.LEFT_MARGIN_PERCENT - CONFIG.RIGHT_MARGIN_PERCENT) / 100) + "%";
+      const indicator = wrapper.querySelector("div[style*='background: rgba(0,0,0)']");
+      if (indicator) {
+        indicator.style.left =
+          CONFIG.LEFT_MARGIN_PERCENT +
+          (pc * (100 - CONFIG.LEFT_MARGIN_PERCENT - CONFIG.RIGHT_MARGIN_PERCENT)) /
+            100 +
+          "%";
+      }
     };
-    const clearProgressInterval = () => { if (intervalId) clearInterval(intervalId); };
+
+    const clearProgressInterval = () => {
+      if (intervalId) clearInterval(intervalId);
+    };
 
     audioEl.addEventListener("play", () => {
       overlay.style.visibility = "hidden";
@@ -437,6 +645,7 @@ Channels: ${channels}`);
       clearProgressInterval();
     });
     audioEl.addEventListener("ended", () => clearProgressInterval());
+
     audioEl.addEventListener("waiting", () => {
       loadingSpinner.style.display = "block";
     });
@@ -450,16 +659,25 @@ Channels: ${channels}`);
       updateProgress();
     });
 
-    // Click on image seeks & plays
+    // Clicking on the image: move the playhead & play
     wrapper.addEventListener("click", async (e) => {
-      if (menu.style.visibility === "visible" || overlay.contains(e.target) || !audioEl.duration) return;
-      await initAudioContext();
+      // If user clicked menu or overlay, ignore
+      if (menu.style.visibility === "visible" || overlay.contains(e.target)) return;
+
+      // If we have no duration (not loaded yet), skip
+      if (!audioEl.duration) return;
+
+      // Seek
       const { left, width } = wrapper.getBoundingClientRect();
       const x = Math.max(0, Math.min(1, (e.clientX - left) / width));
       progress.value = x * 100;
       audioEl.currentTime = x * audioEl.duration;
       updateProgress();
-      audioEl.play();
+
+      // Then play
+      audioEl.play().catch(() => {
+        errorMessage.style.display = "block";
+      });
     });
 
     // Overlay show/hide by hover/touch
