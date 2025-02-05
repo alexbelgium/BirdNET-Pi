@@ -115,12 +115,11 @@ function initCustomAudioPlayers() {
     audioEl.setAttribute("onpause", "setLiveStreamVolume(1)");
     player.appendChild(audioEl);
 
-    // Promise to fetch+decode the audio data exactly once
+    // =================== Fetch+Decode Caching ===================
     let fetchAndDecodePromise = null;
-    let decodedDataCache = null; // store the AudioBuffer once decoded for sampleRate/channels
+    let decodedDataCache = null; // store the AudioBuffer info once decoded for sampleRate/channels
 
-    // A helper to ensure the audio is loaded into the <audio> element
-    // and we have metadata for `audioEl.duration`.
+    // A helper to ensure the audio is loaded into <audio> so we have metadata for duration.
     const ensureAudioLoaded = async () => {
       // If we already have valid metadata, do nothing.
       if (audioEl.readyState >= HTMLMediaElement.HAVE_METADATA) {
@@ -130,11 +129,10 @@ function initCustomAudioPlayers() {
       // Show spinner
       loadingSpinner.style.display = "block";
 
-      // Set .src if not set yet, then load
+      // Set .src if not set yet, then call .load()
       if (!audioEl.src) {
         audioEl.src = audioSrc;
       }
-      // .load() is synchronous but we must wait for "loadedmetadata" event
       audioEl.load();
 
       await new Promise((resolve, reject) => {
@@ -157,7 +155,6 @@ function initCustomAudioPlayers() {
     };
 
     // A helper to fetch+decode the full audio data for size, sampleRate, channels.
-    // The first time we do it, we store in fetchAndDecodePromise so we do not repeat.
     const fetchAndDecodeAudioData = async () => {
       if (decodedDataCache) {
         // Already have decoded data
@@ -168,45 +165,40 @@ function initCustomAudioPlayers() {
           // Show spinner
           loadingSpinner.style.display = "block";
 
-          // Perform a GET request; the browser may leverage its cache automatically
-          // if audioEl previously loaded this resource.
+          // GET request; the browser may reuse from cache if audioEl has loaded it
           let getResp;
           try {
             getResp = await fetch(audioSrc, { method: "GET" });
             if (!getResp.ok) throw new Error("GET request not successful");
           } catch (err) {
-            // Hide spinner on error
             loadingSpinner.style.display = "none";
             throw err;
           }
 
-          // Try to get content-length for file size
-          const cl = getResp.headers.get("content-length");
-          let sizeInfo = null;
-          if (cl) {
-            const kb = parseInt(cl, 10) / 1024;
-            sizeInfo =
-              kb >= 1024
-                ? `${(kb / 1024).toFixed(2)} MB`
-                : `${kb.toFixed(2)} KB`;
-          }
-
+          // Read into an ArrayBuffer
           const audioData = await getResp.arrayBuffer();
+
+          // Compute size from byte length
+          const sizeBytes = audioData.byteLength;
+          const kb = sizeBytes / 1024;
+          const sizeInfo =
+            kb >= 1024 ? `${(kb / 1024).toFixed(2)} MB` : `${kb.toFixed(2)} KB`;
+
+          // Decode the audio data for sampleRate & channels
           const decCtx = new (window.AudioContext || window.webkitAudioContext)();
           const decoded = await decCtx.decodeAudioData(audioData);
 
-          // done
           loadingSpinner.style.display = "none";
 
+          // Store the final info
           decodedDataCache = {
-            size: sizeInfo || "Unknown",
+            size: sizeInfo,
             sampleRate: decoded.sampleRate,
             channels: decoded.numberOfChannels,
           };
           return decodedDataCache;
         })();
       }
-      // Return the stored promise
       return fetchAndDecodePromise;
     };
 
@@ -215,6 +207,7 @@ function initCustomAudioPlayers() {
     applyStyles(wrapper, { position: "relative" });
 
     // Handle image
+    let indicator = null;
     if (imageSrc) {
       const img = wrapper.appendChild(document.createElement("img"));
       img.src = imageSrc;
@@ -224,7 +217,7 @@ function initCustomAudioPlayers() {
       applyStyles(img, { width: "100%", borderRadius: "8px" });
 
       // Progress indicator
-      const indicator = wrapper.appendChild(document.createElement("div"));
+      indicator = wrapper.appendChild(document.createElement("div"));
       applyStyles(indicator, {
         position: "absolute",
         top: "0",
@@ -341,12 +334,9 @@ function initCustomAudioPlayers() {
       } else if (gainNode) {
         gainNode.gain.value = 1;
       }
-      gainButtons.forEach(
-        (b) =>
-          (b.style.textDecoration = b.dataset.gain === activeGain
-            ? "underline"
-            : "none")
-      );
+      gainButtons.forEach((b) => {
+        b.style.textDecoration = b.dataset.gain === activeGain ? "underline" : "none";
+      });
       safeSet("customAudioPlayerGain", activeGain);
     };
 
@@ -364,12 +354,10 @@ function initCustomAudioPlayers() {
         filterNodeHigh = null;
       }
       rebuildAudioChain();
-      highpassButtons.forEach(
-        (b) =>
-          (b.style.textDecoration = b.dataset.filter === activeHighpassOption
-            ? "underline"
-            : "none")
-      );
+      highpassButtons.forEach((b) => {
+        b.style.textDecoration =
+          b.dataset.filter === activeHighpassOption ? "underline" : "none";
+      });
       safeSet("customAudioPlayerFilterHigh", activeHighpassOption);
     };
 
@@ -387,12 +375,10 @@ function initCustomAudioPlayers() {
         filterNodeLow = null;
       }
       rebuildAudioChain();
-      lowpassButtons.forEach(
-        (b) =>
-          (b.style.textDecoration = b.dataset.filter === activeLowpassOption
-            ? "underline"
-            : "none")
-      );
+      lowpassButtons.forEach((b) => {
+        b.style.textDecoration =
+          b.dataset.filter === activeLowpassOption ? "underline" : "none";
+      });
       safeSet("customAudioPlayerFilterLow", activeLowpassOption);
     };
 
@@ -404,18 +390,16 @@ function initCustomAudioPlayers() {
       try {
         await ensureAudioLoaded();
       } catch {
-        // If ensureAudioLoaded failed, we show an error message
+        // If ensureAudioLoaded failed, error is shown
         return;
       }
 
       // Actually play or pause
       if (audioEl.paused) {
         audioEl.currentTime += CONFIG.BUFFER_TIME;
-        audioEl
-          .play()
-          .catch(() => {
-            errorMessage.style.display = "block";
-          });
+        audioEl.play().catch(() => {
+          errorMessage.style.display = "block";
+        });
       } else {
         audioEl.pause();
       }
@@ -483,11 +467,11 @@ function initCustomAudioPlayers() {
       onClick: async () => {
         closeMenu();
 
-        // 1) Ensure we have basic metadata (duration)
+        // 1) Ensure we have at least the metadata (duration)
         try {
           await ensureAudioLoaded();
         } catch {
-          // If something failed, the errorMessage is already shown
+          // error shown if it fails
           return;
         }
         const duration = audioEl.duration
@@ -500,7 +484,6 @@ function initCustomAudioPlayers() {
           sampleRate = "Unknown",
           channels = "Unknown";
         try {
-          // We use the same fetch+decode promise (may be in browser cache)
           const data = await fetchAndDecodeAudioData();
           if (data) {
             size = data.size;
@@ -511,8 +494,7 @@ function initCustomAudioPlayers() {
           // decoding failed => leave them as "Unknown"
         }
 
-        // 3) Infer encoding from audioEl or from your "Content-Type" guess
-        //    If you need a more robust detection, parse the actual file in fetchAndDecodeAudioData
+        // 3) Infer encoding from extension, etc.
         const guessContentType = audioSrc.split(".").pop()?.toUpperCase() || "";
         if (guessContentType) {
           enc = guessContentType;
@@ -620,7 +602,6 @@ Channels: ${channels}`
       const frac = audioEl.currentTime / audioEl.duration;
       const pc = frac * 100;
       progress.value = pc;
-      const indicator = wrapper.querySelector("div[style*='background: rgba(0,0,0)']");
       if (indicator) {
         indicator.style.left =
           CONFIG.LEFT_MARGIN_PERCENT +
@@ -661,10 +642,9 @@ Channels: ${channels}`
 
     // Clicking on the image: move the playhead & play
     wrapper.addEventListener("click", async (e) => {
-      // If user clicked menu or overlay, ignore
+      // If user clicked the menu or the overlay, ignore
       if (menu.style.visibility === "visible" || overlay.contains(e.target)) return;
-
-      // If we have no duration (not loaded yet), skip
+      // If we have no duration (not loaded yet), ignore
       if (!audioEl.duration) return;
 
       // Seek
@@ -690,4 +670,5 @@ Channels: ${channels}`
   });
 }
 
+// Initialize on DOM ready
 document.addEventListener("DOMContentLoaded", initCustomAudioPlayers);
