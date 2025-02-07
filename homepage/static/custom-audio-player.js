@@ -110,9 +110,9 @@ function initCustomAudioPlayers() {
     // Audio element
     const audioEl = document.createElement("audio");
     audioEl.preload = "none";
-    audioEl.setAttribute("onplay", "setLiveStreamVolume(0)");
-    audioEl.setAttribute("onended", "setLiveStreamVolume(1)");
-    audioEl.setAttribute("onpause", "setLiveStreamVolume(1)");
+    //audioEl.setAttribute("onplay", "setLiveStreamVolume(0)");
+    //audioEl.setAttribute("onended", "setLiveStreamVolume(1)");
+    //audioEl.setAttribute("onpause", "setLiveStreamVolume(1)");
     player.appendChild(audioEl);
 
     // =================== Fetch+Decode Caching ===================
