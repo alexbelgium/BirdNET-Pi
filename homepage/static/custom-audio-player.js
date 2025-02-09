@@ -282,8 +282,8 @@ function initCustomAudioPlayers() {
       gainNode,
       filterNodeHigh,
       filterNodeLow;
-    const gainOptions = ["Off", "x2", "x4", "x8", "x16"];
-    const gainValues = { Off: 1, x2: 2, x4: 4, x8: 8, x16: 16 };
+    const gainOptions = ["Off", "6", "12", "18", "24"];
+    const gainValues = { "Off": 1, "6": 2, "12": 4, "18": 8, "24": 16 };
     let activeGain = gainOptions.includes(savedGain) ? savedGain : "Off";
 
     const highpassOptions = ["Off", "250", "500", "1000"];
@@ -558,7 +558,7 @@ Channels: ${channels}`
       return container;
     };
 
-    const gainContainer = createOptionSection("Gain:");
+    const gainContainer = createOptionSection("Gain (dB):");
     const highpassContainer = createOptionSection("HighPass (Hz):");
     const lowpassContainer = createOptionSection("LowPass (Hz):");
 
