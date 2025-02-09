@@ -396,6 +396,9 @@ function initCustomAudioPlayers() {
 
       // Actually play or pause
       if (audioEl.paused) {
+        if (audioEl.currentTime >= audioEl.duration) {
+          audioEl.currentTime = 0;
+        }
         audioEl.currentTime += CONFIG.BUFFER_TIME;
         audioEl.play().catch(() => {
           errorMessage.style.display = "block";
