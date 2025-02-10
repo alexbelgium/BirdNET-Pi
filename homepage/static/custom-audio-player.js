@@ -646,7 +646,7 @@ Channels: ${channels}`
     // Clicking on the image: move the playhead & play
     wrapper.addEventListener("click", async (e) => {
       // If user clicked the menu or the overlay, ignore
-      if (menu.style.visibility === "visible" || overlay.contains(e.target)) return;
+      if (menu.style.visibility === "visible" || overlay.contains(e.target) || menu.contains(e.target)) return;
       // If we have no duration (not loaded yet), ignore
       if (!audioEl.duration) return;
 
