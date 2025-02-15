@@ -467,7 +467,9 @@ function initCustomAudioPlayers() {
     createButton(menu, {
       text: "Info",
       styles: textBtnStyle,
-      onClick: async () => {
+      onClick: async (e) => {
+        e.stopPropagation();
+        audioEl.pause();
         closeMenu();
 
         // 1) Ensure we have at least the metadata (duration)
@@ -516,7 +518,9 @@ Channels: ${channels}`
     createButton(menu, {
       text: "Download",
       styles: textBtnStyle,
-      onClick: async () => {
+      onClick: async (e) => {
+        e.stopPropagation();
+        audioEl.pause();
         closeMenu();
         try {
           loadingSpinner.style.display = "block";
