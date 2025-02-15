@@ -87,7 +87,8 @@ def get_daily_plot_data(conn, now):
     db_entire = pd.read_sql_query(f"SELECT {sql_fields} FROM detections", conn)
     db_today = pd.read_sql_query(f"SELECT {sql_fields} FROM detections WHERE Date = DATE('now')", conn)
     # Prepare suptitle
-    avg_daily_detections = round(int(db_entire.Detections[0]) / int(db_entire.Days[0]))
+    days_count = int(db_entire.Days[0]) if db_entire.Days[0] else 1  # Avoid division by zero
+    avg_daily_detections = round(int(db_entire.Detections[0]) / days_count)
     plot_suptitle = f"Hourly overview updated at {now.strftime('%Y-%m-%d %H:%M:%S')}\n"
     plot_suptitle += f"({db_today.Species[0]} species today, {db_entire.Species[0]} in total;  "
     plot_suptitle += f"{db_today.Detections[0]} detections today, {avg_daily_detections} on average)"
