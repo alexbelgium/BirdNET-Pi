@@ -64,7 +64,7 @@ def clr_plot_facecolor():
     if get_settings_cached()['COLOR_SCHEME'] == "dark":
         return 'darkgrey'
     else:
-        return 'none'
+        return '#77C487'
 
 def clr_current_ticklabel():
     # Update colors according to color scheme
