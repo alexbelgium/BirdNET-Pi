@@ -467,7 +467,9 @@ function initCustomAudioPlayers() {
     createButton(menu, {
       text: "Info",
       styles: textBtnStyle,
-      onClick: async () => {
+      onClick: async (e) => {
+        e.stopPropagation();
+        audioEl.pause();
         closeMenu();
 
         // 1) Ensure we have at least the metadata (duration)
@@ -516,7 +518,9 @@ Channels: ${channels}`
     createButton(menu, {
       text: "Download",
       styles: textBtnStyle,
-      onClick: async () => {
+      onClick: async (e) => {
+        e.stopPropagation();
+        audioEl.pause();
         closeMenu();
         try {
           loadingSpinner.style.display = "block";
@@ -646,7 +650,7 @@ Channels: ${channels}`
     // Clicking on the image: move the playhead & play
     wrapper.addEventListener("click", async (e) => {
       // If user clicked the menu or the overlay, ignore
-      if (menu.style.visibility === "visible" || overlay.contains(e.target)) return;
+      if (menu.style.visibility === "visible" || overlay.contains(e.target) || menu.contains(e.target)) return;
       // If we have no duration (not loaded yet), ignore
       if (!audioEl.duration) return;
 
