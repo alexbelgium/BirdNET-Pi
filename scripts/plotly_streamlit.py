@@ -299,7 +299,7 @@ if daily is False:
             )
 
             daily = pd.crosstab(df5, df5.index.date, dropna=True, margins=True)
-            fig.add_trace(go.Bar(x=daily.columns[:-1].tolist(), y=daily.loc[specie][:-1].tolist(), marker_color='seagreen'),row=3, col=2)
+            fig.add_trace(go.Bar(x=daily.columns[:-1].tolist(), y=daily.loc[specie][:-1].tolist(), marker_color='seagreen'), row=3, col=2)
             st.plotly_chart(fig, use_container_width=True)  # , config=config)
 
         else:
