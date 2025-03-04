@@ -254,14 +254,14 @@ if daily is False:
 
             # Plot seen species for selected date range and number of species
 
-            fig.add_trace(go.Bar(y=top_N_species.index, x=top_N_species, orientation='h', marker_color='seagreen'), row=1, col=1)
+            fig.add_trace(go.Bar(y=top_N_species.index.tolist(), x=top_N_species.values.tolist(), orientation='h', marker_color='seagreen'), row=1, col=1)
 
             fig.update_layout(
                 margin=dict(l=0, r=0, t=50, b=0),
                 yaxis={'categoryorder': 'total ascending'})
 
             # Set 360 degrees, 24 hours for polar plot
-            theta = np.linspace(0.0, 360, 24, endpoint=False)
+            theta = np.linspace(0.0, 360, 24, endpoint=False).tolist()
 
             specie_filt = df5 == specie
             df3 = df5[specie_filt]
@@ -271,7 +271,7 @@ if daily is False:
             d = pd.DataFrame(np.zeros((23, 1))).squeeze()
             detections = hourly.loc[specie]
             detections = (d + detections).fillna(0)
-            fig.add_trace(go.Barpolar(r=detections, theta=theta, marker_color='seagreen'), row=1, col=2)
+            fig.add_trace(go.Barpolar(r=detections.tolist(), theta=theta, marker_color='seagreen'), row=1, col=2)
             fig.update_layout(
                 autosize=False,
                 width=1000,
@@ -299,7 +299,7 @@ if daily is False:
             )
 
             daily = pd.crosstab(df5, df5.index.date, dropna=True, margins=True)
-            fig.add_trace(go.Bar(x=daily.columns[:-1], y=daily.loc[specie][:-1], marker_color='seagreen'), row=3, col=2)
+            fig.add_trace(go.Bar(x=daily.columns[:-1].tolist(), y=daily.loc[specie][:-1].tolist(), marker_color='seagreen'), row=3, col=2)
             st.plotly_chart(fig, use_container_width=True)  # , config=config)
 
         else:
@@ -310,7 +310,7 @@ if daily is False:
                     specs=[[{"type": "polar", "rowspan": 2}], [{"rowspan": 1}], [{"type": "xy", "rowspan": 1}]]
                 )
                 # Set 360 degrees, 24 hours for polar plot
-                theta = np.linspace(0.0, 360, 24, endpoint=False)
+                theta = np.linspace(0.0, 360, 24, endpoint=False).tolist()
 
                 specie_filt = df5 == specie
                 df3 = df5[specie_filt]
@@ -320,7 +320,7 @@ if daily is False:
                 d = pd.DataFrame(np.zeros((23, 1))).squeeze()
                 detections = hourly.loc[specie]
                 detections = (d + detections).fillna(0)
-                fig.add_trace(go.Barpolar(r=detections, theta=theta, marker_color='seagreen'), row=1, col=1)
+                fig.add_trace(go.Barpolar(r=detections.tolist(), theta=theta, marker_color='seagreen'), row=1, col=1)
                 fig.update_layout(
                     autosize=False,
                     width=1000,
@@ -348,7 +348,7 @@ if daily is False:
                 )
 
                 daily = pd.crosstab(df5, df5.index.date, dropna=True, margins=True)
-                fig.add_trace(go.Bar(x=daily.columns[:-1], y=daily.loc[specie][:-1], marker_color='seagreen'), row=3, col=1)
+                fig.add_trace(go.Bar(x=daily.columns[:-1].tolist(), y=daily.loc[specie][:-1].tolist(), marker_color='seagreen'), row=3, col=1)
                 st.plotly_chart(fig, use_container_width=True)  # , config=config)
                 df_counts = int(hourly[hourly.index == specie]['All'].iloc[0])
                 st.subheader('Total Detect:' + str('{:,}'.format(df_counts))
@@ -378,7 +378,7 @@ if daily is False:
                               index=0)
 
         df_counts = int(hourly[hourly.index == specie]['All'])
-        fig = st.container()
+
         fig = make_subplots(rows=1, cols=1)
 
         df4 = df2['Com_Name'][df2['Com_Name'] == specie].resample('15min').count()
@@ -397,7 +397,7 @@ if daily is False:
 
         heatmap = go.Heatmap(
             x=fig_x,
-            y=day_hour_freq.columns,
+            y=day_hour_freq.columns.tolist(),
             z=fig_z,  # heat.values,
             showscale=False,
             texttemplate="%{text}", autocolorscale=False, colorscale=selected_pal
@@ -438,7 +438,7 @@ else:
 
     plt_topN_today = (df6['Com_Name'].value_counts()[:readings])
     freq_order = pd.value_counts(df6['Com_Name']).iloc[:readings].index
-    fig.add_trace(go.Bar(y=plt_topN_today.index, x=plt_topN_today, marker_color='seagreen', orientation='h'), row=1,
+    fig.add_trace(go.Bar(y=plt_topN_today.index.tolist(), x=plt_topN_today.values.tolist(), marker_color='seagreen', orientation='h'), row=1,
                   col=1)
 
     df6['Hour of Day'] = [r.hour for r in df6.index.time]
@@ -447,6 +447,7 @@ else:
     heat.index = pd.CategoricalIndex(heat.index, categories=freq_order)
     heat.sort_index(level=0, inplace=True)
 
+    heat.index = heat.index.astype(str)
     heat_plot_values = ma.log(heat.values).filled(0)
 
     hours_in_day = pd.Series(data=range(0, 24))
@@ -457,7 +458,7 @@ else:
 
     labels = heat.values.astype(int).astype('str')
     labels[labels == '0'] = ""
-    fig.add_trace(go.Heatmap(x=heat.columns, y=heat.index, z=heat_values_normalized,  # heat.values,
+    fig.add_trace(go.Heatmap(x=heat.columns.tolist(), y=heat.index.tolist(), z=heat_values_normalized,  # heat.values,
                              showscale=False,
                              text=labels, texttemplate="%{text}", colorscale='Blugrn'
                              ), row=1, col=2)
