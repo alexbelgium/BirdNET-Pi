@@ -14,6 +14,7 @@ information"
   exit 1
 fi
 
+
 # Simple new installer
 HOME=$HOME
 USER=$USER
