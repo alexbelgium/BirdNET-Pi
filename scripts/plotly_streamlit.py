@@ -190,8 +190,8 @@ def sunrise_sunset_scatter(date_range):
     current_date = start_date
 
     for current_date in date_range:
-        sun_rise = sun.get_local_sunrise_time(current_date)
-        sun_dusk = sun.get_local_sunset_time(current_date)
+        sun_rise = sun.get_local_sunrise_time(current_date, None)
+        sun_dusk = sun.get_local_sunset_time(current_date, None)
 
         sun_rise_time = float(sun_rise.hour) + float(sun_rise.minute) / 60.0
         sun_dusk_time = float(sun_dusk.hour) + float(sun_dusk.minute) / 60.0
