@@ -268,7 +268,7 @@ if daily is False:
 
             detections2 = pd.crosstab(df3, df3.index.hour)
 
-            d = pd.DataFrame(np.zeros((24, 1))).squeeze()
+            d = pd.DataFrame(np.zeros((23, 1))).squeeze()
             detections = hourly.loc[specie]
             detections = (d + detections).fillna(0)
             fig.add_trace(go.Barpolar(r=detections.tolist(), theta=theta, marker_color='seagreen'), row=1, col=2)
@@ -317,7 +317,7 @@ if daily is False:
 
                 detections2 = pd.crosstab(df3, df3.index.hour)
 
-                d = pd.DataFrame(np.zeros((24, 1))).squeeze()
+                d = pd.DataFrame(np.zeros((23, 1))).squeeze()
                 detections = hourly.loc[specie]
                 detections = (d + detections).fillna(0)
                 fig.add_trace(go.Barpolar(r=detections.tolist(), theta=theta, marker_color='seagreen'), row=1, col=1)
@@ -377,13 +377,13 @@ if daily is False:
                               species[1:],
                               index=0)
 
-        df_counts = int(hourly[hourly.index == specie]['All'])
+        df_counts = int(hourly.loc[hourly.index == specie, 'All'].iloc[0])
 
         fig = make_subplots(rows=1, cols=1)
 
         df4 = df2['Com_Name'][df2['Com_Name'] == specie].resample('15min').count()
-        df4.index = [df4.index.date, df4.index.time]
-        day_hour_freq = df4.unstack().fillna(0)
+        df4.index = pd.MultiIndex.from_arrays([df4.index.date, df4.index.time], names=['date', 'time'])
+        day_hour_freq = df4.unstack(level='time').fillna(0)
 
         saved_time_labels = [hms_to_str(h) for h in day_hour_freq.columns.tolist()]
         fig_dec_y = [hms_to_dec(h) for h in day_hour_freq.columns.tolist()]
