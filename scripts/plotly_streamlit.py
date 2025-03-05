@@ -390,7 +390,7 @@ if daily is False:
         fig_x = [d.strftime('%d-%m-%Y') for d in day_hour_freq.index.tolist()]
         fig_y = [h.strftime('%H:%M') for h in day_hour_freq.columns.tolist()]
         day_hour_freq.columns = fig_dec_y
-        fig_z = day_hour_freq.values.transpose()
+        fig_z = day_hour_freq.values.transpose().tolist()
 
         color_pals = px.colors.named_colorscales()
         selected_pal = st.sidebar.selectbox('Select Color Pallet for Daily Detections', color_pals)
