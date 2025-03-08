@@ -12,6 +12,7 @@ from sqlite3 import Connection
 import plotly.express as px
 from sklearn.preprocessing import normalize
 from suntime import Sun
+from tzlocal import get_localzone
 from utils.helpers import get_settings
 
 profile = False
@@ -190,8 +191,9 @@ def sunrise_sunset_scatter(date_range):
     current_date = start_date
 
     for current_date in date_range:
-        sun_rise = sun.get_local_sunrise_time(current_date, None)
-        sun_dusk = sun.get_local_sunset_time(current_date, None)
+        timezone=get_localzone()
+        sun_rise = sun.get_local_sunrise_time(current_date, timezone)
+        sun_dusk = sun.get_local_sunset_time(current_date, timezone)
 
         sun_rise_time = float(sun_rise.hour) + float(sun_rise.minute) / 60.0
         sun_dusk_time = float(sun_dusk.hour) + float(sun_dusk.minute) / 60.0
