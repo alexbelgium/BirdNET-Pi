@@ -12,7 +12,6 @@ $config = get_config();
 set_timezone();
 $myDate = date('Y-m-d');
 $chart = "Combo-$myDate.png";
-$interactivechart = "interactive_daily_plot.html";
 
 $db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
 $db->busyTimeout(1000);
