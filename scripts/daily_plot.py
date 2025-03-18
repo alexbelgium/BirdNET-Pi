@@ -24,7 +24,6 @@ from datetime import datetime
 from time import sleep
 from functools import lru_cache
 from utils.helpers import DB_PATH, get_settings
-#from utils.interactive_plot import create_plotly_heatmap
 
 # Cache the settings to avoid redundant calls
 @lru_cache(maxsize=None)
@@ -244,12 +243,6 @@ def main(daemon, sleep_m):
                 xlabel='hourly detections',
                 xtick_labels=list(range(24))
             )
-
-            #try:
-            #    data, time = get_data(now)
-            #    create_plotly_heatmap(data, time)
-            #except Exception as e:
-            #    print(f"Failed to create interactive heatmap: {e}")
 
             # Generate yearly plot data and static plot
             suptitle, dataframe = get_yearly_plot_data(conn, now)
