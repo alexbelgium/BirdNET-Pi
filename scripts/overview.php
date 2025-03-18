@@ -450,7 +450,7 @@ function display_species($species_list, $title, $show_last_seen=false) {
 display_species($new_species, 'New Species');
 display_species($rare_species, 'Rare Species', true);
 ?>
-<div class="chart" style="visibility: hidden;">
+<div class="chart">
 <?php
 $refresh = $config['RECORDING_LENGTH'];
 $dividedrefresh = $refresh/4;
@@ -460,9 +460,10 @@ if($dividedrefresh < 1) {
 $time = time();
 if (file_exists('./Charts/'.$chart)) {
   echo "<img id='chart' src=\"Charts/$chart?nocache=$time\">";
-}
+} 
 ?>
 </div>
+
 <div id="most_recent_detection"></div>
 <br>
 <h3>5 Most Recent Detections</h3>
