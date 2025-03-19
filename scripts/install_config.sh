@@ -8,7 +8,7 @@ echo "Beginning $0"
 birdnet_conf=$my_dir/birdnet.conf
 
 # Retrieve latitude and longitude from web
-json=$(curl -s4 http://ip-api.com/json)
+json=$(curl -s4 http://ip-api.com/json || true)
 if [ -n "$json" ] && [ "$(echo "$json" | jq -r .status)" = "success" ]; then
   LATITUDE=$(echo "$json" | jq .lat)
   LONGITUDE=$(echo "$json" | jq .lon)
@@ -135,6 +135,10 @@ COLOR_SCHEME="light"
 ## keep = Keep all data and 'stop_core_services.sh'
 
 FULL_DISK=purge
+
+## PURGE_THRESHOLD can be set to configure at what disk full percentage the
+## purge operations are triggered.
+PURGE_THRESHOLD=95
 
 ## Maximum amount of files to keep for a given specie (0 = keep all)
 ## Files from the last 7 days, and files protected from purge, are not taken into
@@ -269,6 +273,9 @@ RAW_SPECTROGRAM=0
 
 CUSTOM_IMAGE=
 CUSTOM_IMAGE_TITLE=""
+
+## RARE_SPECIES_THRESHOLD defines after how many days a species is considered as rare and highlighted on overview page
+RARE_SPECIES_THRESHOLD=30
 
 ## These are just for debugging
 LAST_RUN=

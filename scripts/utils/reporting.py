@@ -1,4 +1,3 @@
-import datetime
 import glob
 import gzip
 import json
@@ -9,7 +8,6 @@ import subprocess
 from time import sleep
 
 import requests
-from tzlocal import get_localzone
 
 from .helpers import get_settings, ParseFileName, Detection, DB_PATH
 from .notifications import sendAppriseNotifications
@@ -65,8 +63,8 @@ def spectrogram(in_file, title, comment, raw=False):
 
 def extract_detection(file: ParseFileName, detection: Detection):
     conf = get_settings()
-    new_file_name = f'{detection.common_name_safe}-{detection.confidence_pct}-{file.root}.{conf["AUDIOFMT"]}'
-    new_dir = os.path.join(conf['EXTRACTED'], 'By_Date', f'{file.date}', f'{detection.common_name_safe}')
+    new_file_name = f'{detection.common_name_safe}-{detection.confidence_pct}-{detection.date}-birdnet-{file.RTSP_id}{detection.time}.{conf["AUDIOFMT"]}'
+    new_dir = os.path.join(conf['EXTRACTED'], 'By_Date', f'{detection.date}', f'{detection.common_name_safe}')
     new_file = os.path.join(new_dir, new_file_name)
     if os.path.isfile(new_file):
         log.warning('Extraction exists. Moving on: %s', new_file)
@@ -85,8 +83,8 @@ def write_to_db(file: ParseFileName, detection: Detection):
             con = sqlite3.connect(DB_PATH)
             cur = con.cursor()
             cur.execute("INSERT INTO detections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                        (file.date, file.time, detection.scientific_name, detection.common_name, detection.confidence,
-                         conf['LATITUDE'], conf['LONGITUDE'], conf['CONFIDENCE'], str(file.week), conf['SENSITIVITY'],
+                        (detection.date, detection.time, detection.scientific_name, detection.common_name, detection.confidence,
+                         conf['LATITUDE'], conf['LONGITUDE'], conf['CONFIDENCE'], str(detection.week), conf['SENSITIVITY'],
                          conf['OVERLAP'], os.path.basename(detection.file_name_extr)))
             # (Date, Time, Sci_Name, Com_Name, str(score),
             # Lat, Lon, Cutoff, Week, Sens,
@@ -104,9 +102,9 @@ def summary(file: ParseFileName, detection: Detection):
     # Date;Time;Sci_Name;Com_Name;Confidence;Lat;Lon;Cutoff;Week;Sens;Overlap
     # 2023-03-03;12:48:01;Phleocryptes melanops;Wren-like Rushbird;0.76950216;-1;-1;0.7;9;1.25;0.0
     conf = get_settings()
-    s = (f'{file.date};{file.time};{detection.scientific_name};{detection.common_name};'
+    s = (f'{detection.date};{detection.time};{detection.scientific_name};{detection.common_name};'
          f'{detection.confidence};'
-         f'{conf["LATITUDE"]};{conf["LONGITUDE"]};{conf["CONFIDENCE"]};{file.week};{conf["SENSITIVITY"]};'
+         f'{conf["LATITUDE"]};{conf["LONGITUDE"]};{conf["CONFIDENCE"]};{detection.week};{conf["SENSITIVITY"]};'
          f'{conf["OVERLAP"]}')
     return s
 
@@ -148,7 +146,7 @@ def apprise(file: ParseFileName, detections: [Detection]):
         if detection.species not in species_apprised_this_run:
             try:
                 sendAppriseNotifications(detection.species, str(detection.confidence), str(detection.confidence_pct),
-                                         os.path.basename(detection.file_name_extr), file.date, file.time, str(file.week),
+                                         os.path.basename(detection.file_name_extr), detection.date, detection.time, str(detection.week),
                                          conf['LATITUDE'], conf['LONGITUDE'], conf['CONFIDENCE'], conf['SENSITIVITY'],
                                          conf['OVERLAP'], dict(conf), DB_PATH)
             except BaseException as e:
@@ -186,10 +184,7 @@ def bird_weather(file: ParseFileName, detections: [Detection]):
             # POST detection to server
             detection_url = f'https://app.birdweather.com/api/v1/stations/{conf["BIRDWEATHER_ID"]}/detections'
 
-            start = file.file_date + datetime.timedelta(seconds=detection.start)
-            current_iso8601 = start.astimezone(get_localzone()).isoformat()
-
-            data = {'timestamp': current_iso8601, 'lat': conf['LATITUDE'], 'lon': conf['LONGITUDE'],
+            data = {'timestamp': detection.iso8601, 'lat': conf['LATITUDE'], 'lon': conf['LONGITUDE'],
                     'soundscapeId': soundscape_id,
                     'soundscapeStartTime': detection.start, 'soundscapeEndTime': detection.stop,
                     'commonName': detection.common_name, 'scientificName': detection.scientific_name,

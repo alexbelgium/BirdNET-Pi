@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Backup and restore BirdNET data
 
-my_dir=$HOME/BirdNET-Pi/scripts
 source /etc/birdnet/birdnet.conf
+my_dir=/home/$BIRDNET_USER/BirdNET-Pi/scripts
 
 if [ "$EUID" == 0 ]
   then echo "Please run as a non-root user."
@@ -32,13 +32,11 @@ done
 [ -z "$ACTION" ] && usage && exit 1
 if [ $ACTION != "size" ]; then
   [ -z "$ARCHIVE" ] && usage && exit 1
-  [ "$ARCHIVE" == '-' ] && QUIET=1
+  [ "$ARCHIVE" == '-' ] && [ $ACTION == "backup" ] && QUIET=1
 fi
 
 MEG=1048576
-
-PHP_SERVICE=$(systemctl list-unit-files -t service --output json --no-pager php*-fpm.service | jq --raw-output '.[0].unit_file')
-[ -z "$PHP_SERVICE" ] || [ "$PHP_SERVICE" == 'null' ] && echo "Could not determine the php service name, this is most likely a bug." && exit 1
+UNPACK="/home/$BIRDNET_USER/BirdSongs/tmp"
 
 log() {
   [ -z "$QUIET" ] && echo "$1"
@@ -95,29 +93,53 @@ estimated_restore_size() {
 }
 
 restore_check() {
-  [ ! -f "$ARCHIVE" ] && echo "$ARCHIVE" not found && exit 1
-  available_space_for_restore
-  estimated_restore_size
-  AVL_MB=$(printf "%1.f" $(bc <<< "$AVAILABLE / $MEG"))
-  EST_MB=$(printf "%1.f" $(bc <<< "$ESTIMATED / $MEG"))
-  log "Estimated space needed: ${EST_MB}M ($ESTIMATED), space available: ${AVL_MB}M ($AVAILABLE)"
-  [ $ESTIMATED -gt $AVAILABLE ] && echo "Not enough space available on /home/$BIRDNET_USER/"  && exit 1
-  log "Checking backup file"
-  arch_list=$(tar --list --exclude="*/*" -f "$ARCHIVE" | sed 's/\///')
-  for obj in  "${required[@]}";do
-    part2=$(basename "$obj")
-    ! (echo $arch_list | grep -F -q "$part2") && echo corrupted backup file && exit 1
-  done
+  if [ "$ARCHIVE" != '-' ]; then
+    [ ! -f "$ARCHIVE" ] && echo "$ARCHIVE" not found && exit 1
+    available_space_for_restore
+    estimated_restore_size
+    AVL_MB=$(printf "%1.f" $(bc <<< "$AVAILABLE / $MEG"))
+    EST_MB=$(printf "%1.f" $(bc <<< "$ESTIMATED / $MEG"))
+    log "Estimated space needed: ${EST_MB}M ($ESTIMATED), space available: ${AVL_MB}M ($AVAILABLE)"
+    [ $ESTIMATED -gt $AVAILABLE ] && echo "Not enough space available on /home/$BIRDNET_USER/"  && exit 1
+    log "Checking backup file"
+    arch_list=$(tar --list --exclude="*/*" -f "$ARCHIVE" | sed 's/\///')
+    for obj in  "${required[@]}";do
+      part2=$(basename "$obj")
+      ! (echo $arch_list | grep -F -q "$part2") && echo Missing \'"$part2"\': corrupted backup file? && exit 1
+    done
+  fi
+}
+
+late_restore_check() {
+  if [ "$ARCHIVE" == '-' ]; then
+    log "Checking backup file"
+    for obj in  "${required[@]}";do
+      part2=$(basename "$obj")
+      ! [ -e "${UNPACK}/${part2}" ] && echo Missing \'"$part2"\': corrupted backup file? && exit 1
+    done
+  fi
+}
+
+unpack() {
+  log "Starting unpacking, this might take a while"
+  rm -fr ${UNPACK}
+  mkdir ${UNPACK}
+  tar --extract -p -f "$ARCHIVE" -C "${UNPACK}"
 }
 
 restore() {
-  log "Starting restore, this might take a while"
+  log "Starting restore"
   for obj in  "${required[@]}";do
-    tar --extract -p -f "$ARCHIVE" -C "$(dirname "$obj")" "$(basename "$obj")"
+    [ -d "$obj" ] && rm -rf "$obj"
+    mv "${UNPACK}/$(basename "$obj")" "$(dirname "$obj")/"
   done
   log "Trying to restore optional files"
   for obj in  "${optional[@]}";do
-    tar --extract --ignore-failed-read -p -f "$ARCHIVE" -C "$(dirname "$obj")" "$(basename "$obj")" || log "$(basename "$obj") not found in backup file, moving on"
+    if [ -f "${UNPACK}/$(basename "$obj")" ] ; then
+      mv "${UNPACK}/$(basename "$obj")" "$(dirname "$obj")/"
+    else
+      echo No $(basename "$obj") found, moving on
+    fi
   done
   log "Fixing up configuration file"
   CURRENT_BIRDNET_USER="$BIRDNET_USER"
@@ -129,7 +151,16 @@ restore() {
   else
     /home/$CURRENT_BIRDNET_USER/BirdNET-Pi/scripts/install_language_label.sh -l $DATABASE_LANG
   fi
+  rm -fr ${UNPACK}
+  [ -n "${CADDY_PWD}" ] && sudo /usr/local/bin/update_caddyfile.sh > /dev/null 2>&1
   log "Restore done"
+}
+
+function cleanup()
+{
+  rm -fr ${UNPACK}
+  "$my_dir/restart_services.sh" &>/dev/null
+  exit
 }
 
 required=("/home/$BIRDNET_USER/BirdNET-Pi/birdnet.conf"
@@ -153,6 +184,10 @@ if [ $ACTION == "size" ]; then
   exit
 fi
 
+trap cleanup SIGINT SIGTERM SIGABRT
+
+[ $ACTION == "restore" ] && unpack
+[ $ACTION == "restore" ] && late_restore_check
 log "Stopping services"
 "$my_dir/stop_core_services.sh"
 

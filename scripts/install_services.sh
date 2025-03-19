@@ -17,7 +17,7 @@ install_depends() {
   curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
   apt -qqq update && apt -qqy upgrade
   echo "icecast2 icecast2/icecast-setup boolean false" | debconf-set-selections
-  apt install -qqy caddy sqlite3 php-sqlite3 php-fpm php-curl php-xml php-zip php icecast2 \
+  apt install --no-install-recommends -qqy caddy sqlite3 php-sqlite3 php-fpm php-curl php-xml php-zip php icecast2 \
     pulseaudio avahi-utils sox libsox-fmt-mp3 alsa-utils ffmpeg \
     wget curl unzip bc \
     python3-pip python3-venv lsof net-tools inotify-tools
@@ -341,8 +341,6 @@ EOF
 install_phpsysinfo() {
   sudo -u ${USER} git clone https://github.com/phpsysinfo/phpsysinfo.git \
     ${HOME}/phpsysinfo
-  gottyservice="gotty-$(uname -m)"
-  sed -i "s/,gotty,/,${gottyservice},/g" "$HOME"/BirdNET-Pi/templates/phpsysinfo.ini
 }
 
 config_icecast() {
@@ -404,6 +402,7 @@ install_services() {
   set_hostname
   update_etc_hosts
   set_login
+  install_tmp_mount
 
   install_depends
   install_scripts

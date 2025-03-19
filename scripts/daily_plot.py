@@ -85,7 +85,7 @@ def create_plot(df_plt_today, now, is_top=None):
     if conf['COLOR_SCHEME'] == "dark":
         facecolor = 'darkgrey'
     else:
-        facecolor = 'none'
+        facecolor = '#77C487'
 
     f, axs = plt.subplots(1, 2, figsize=(10, height), gridspec_kw=dict(width_ratios=[3, 6]), facecolor=facecolor)
 
@@ -121,7 +121,7 @@ def create_plot(df_plt_today, now, is_top=None):
 
     # Generate frequency plot
     plot = sns.countplot(y='Com_Name', hue='Com_Name', legend=False, data=df_plt_selection_today,
-                         palette=colors, order=freq_order, ax=axs[0], edgecolor='lightgrey')
+                         palette=dict(zip(confmax.index, colors)), order=freq_order, ax=axs[0], edgecolor='lightgrey')
 
     # Prints Max Confidence on bars
     show_values_on_bars(axs[0], confmax)
