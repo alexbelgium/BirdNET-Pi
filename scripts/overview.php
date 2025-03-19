@@ -450,8 +450,8 @@ function display_species($species_list, $title, $show_last_seen=false) {
 
 display_species($new_species, 'New Species');
 display_species($rare_species, 'Rare Species', true);
-<div class="chart" style="visibility: hidden;">
 ?>
+<div class="chart" style="visibility: hidden;">
 <?php
 $refresh = $config['RECORDING_LENGTH'];
 $dividedrefresh = $refresh/4;
@@ -477,9 +477,7 @@ if (file_exists($interactivechart_path)) {
         chartContainer.style.visibility = 'visible';
     });
 </script>
-?>
 </div>
-
 <div id="most_recent_detection"></div>
 <br>
 <h3>5 Most Recent Detections</h3>
