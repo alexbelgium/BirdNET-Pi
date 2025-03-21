@@ -244,9 +244,9 @@ def main(daemon, sleep_m):
                 xlabel='hourly detections',
                 xtick_labels=list(range(24))
             )
-
+            
+            # Add dynamic graph
             try:
-                data, time = get_data(now)
                 create_plotly_heatmap(data, time)
             except Exception as e:
                 print(f"Failed to create interactive heatmap: {e}")
