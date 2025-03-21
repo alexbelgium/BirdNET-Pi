@@ -14,17 +14,11 @@ function service_status($name) {
        return;
     }
   } 
-  $op = shell_exec("sudo systemctl status ".$name." | grep Active");
-  if (stripos($op, " active (running)")) {
-      echo "<span style='color:green'>(active)</span>";
-  } elseif (stripos($op, " inactive ")) {
-      echo "<span style='color:#fc6603'>(inactive)</span>";
+  $op = shell_exec("sudo systemctl status ".$name." | grep Active | grep ' active\| activating\|running\|waiting\|start'");
+  if(strlen($op) > 0) {
+    echo "<span style='color:green'>(active)</span>";
   } else {
-      $status = "ERROR";
-      if (preg_match("/(\S*)\s*\((\S+)\)/", $op, $matches)) {
-          $status =  $matches[1]. " [" . $matches[2] . "]";
-      }
-      echo "<span style='color:red'>($status)</span>";
+    echo "<span style='color:#fc6603'>(inactive)</span>";
   }
 }
 ?>
