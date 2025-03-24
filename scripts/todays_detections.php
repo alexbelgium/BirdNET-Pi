@@ -63,7 +63,7 @@ if(isset($_GET['comname'])) {
 $days = isset($_GET['days']) ? intval($_GET['days']) : 30;
 
 // Prepare a SQL statement to retrieve the detection data for the specified bird
-$stmt = $db->prepare('SELECT Date, COUNT(*) AS Detections FROM detections WHERE Com_Name = :com_name AND Date BETWEEN DATE("now", "-' . $days . ' days") AND DATE("now") GROUP BY Date');
+$stmt = $db->prepare("SELECT Date, COUNT(*) AS Detections FROM detections WHERE Com_Name = :com_name AND Date BETWEEN DATE('now', '-$days days') AND DATE('now') GROUP BY Date");
 
 // Bind the bird name parameter to the SQL statement
 $stmt->bindValue(':com_name', $birdName);
@@ -244,7 +244,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
           <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style=";cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="20"></a>
           <img style=";cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>')" width=20 src="images/chart.svg"><br>
           <b>Confidence:</b> <?php echo round((float)round($todaytable['Confidence'],2) * 100 ) . '%';?><br></div><br>
-          <video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster="<?php echo $filename.".png";?>" preload="none" title="<?php echo $filename;?>"><source preload="none" src="<?php echo $filename;?>"></video>
+          <div class='custom-audio-player' data-audio-src="<?php echo $filename; ?>" data-image-src="<?php echo $filename.".png";?>"></div>
           </td>
         <?php } else { //legacy mode ?>
           <tr class="relative" id="<?php echo $iterations; ?>">
@@ -347,7 +347,6 @@ if (get_included_files()[0] === __FILE__) {
   <script src="static/dialog-polyfill.js"></script>
   <script src="static/Chart.bundle.js"></script>
   <script src="static/chartjs-plugin-trendline.min.js"></script>
-  
   <script>
     function deleteDetection(filename,copylink=false) {
     if (confirm("Are you sure you want to delete this detection from the database?") == true) {
@@ -466,7 +465,7 @@ document.getElementById("searchterm").onkeydown = (function(e) {
         searchDetections(document.getElementById("searchterm").value);
 
         setTimeout(function() {
-            // search auto submitted and now the user is probably scrolling, get the keyboard out of the way & prevent browser from jumping to the top when a video is played
+            // search auto submitted and now the user is probably scrolling, get the keyboard out of the way & prevent browser from jumping to the top when a audio is played
             document.getElementById("searchterm").blur();
         }, 2000);
      }, 1000);
@@ -511,7 +510,8 @@ function loadDetections(detections_limit, element=undefined) {
     } else {
      document.getElementById("detections_table").innerHTML= this.responseText;
     }
-    
+    // Reinitialize custom audio players for newly loaded elements
+    initCustomAudioPlayers();
   }
   if(searchterm != ""){
     xhttp.open("GET", "todays_detections.php?ajax_detections=true&display_limit="+detections_limit+"&searchterm="+searchterm, true);
@@ -560,6 +560,7 @@ window.addEventListener("load", function(){
 }
 </style>
 
+<script src="static/custom-audio-player.js"></script>
 <script>
 function generateMiniGraph(elem, comname) {
   // Make an AJAX call to fetch the number of detections for the bird species

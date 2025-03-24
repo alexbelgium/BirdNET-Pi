@@ -16,6 +16,8 @@ source /etc/birdnet/birdnet.conf &>/dev/null
 OLDNAME="$1" #OLDNAME="Mésange_charbonnière-78-2024-05-02-birdnet-RTSP_1-18:14:08.mp3"
 NEWNAME="$2" #NEWNAME="Lapinus atricapilla_Lapinu à tête noire"
 
+OLDNAME="${OLDNAME//&#39;/\'}"
+
 # Set log level
 OUTPUT_TYPE="${3:-debug}" # Set 3rd argument to debug to have all outputs
 

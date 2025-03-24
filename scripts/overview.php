@@ -12,6 +12,7 @@ $config = get_config();
 set_timezone();
 $myDate = date('Y-m-d');
 $chart = "Combo-$myDate.png";
+$interactivechart = "interactive_daily_plot.html";
 
 $db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
 $db->busyTimeout(1000);
@@ -121,7 +122,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
         <table class="<?php echo ($_GET['previous_detection_identifier'] == 'undefined') ? '' : 'fade-in';  ?>">
           <h3>Most Recent Detection: <span style="font-weight: normal;"><?php echo $mostrecent['Date']." ".$mostrecent['Time'];?></span></h3>
           <tr>
-            <td class="relative"><a target="_blank" href="index.php?filename=<?php echo $mostrecent['File_Name']; ?>"><img class="copyimage" title="Open in new tab" width="25" height="25" src="images/copy.png"></a>
+            <td class="relative"><a target="_blank" href="index.php?filename=<?php echo $mostrecent['File_Name']; ?>"><img class="copyimage" title="Open in new tab" width="25" height="25 max" src="images/copy.png"></a>
             <div class="centered_image_container" style="margin-bottom: 0px !important;">
               <?php if(!empty($config["FLICKR_API_KEY"]) && strlen($image[2]) > 0) { ?>
                 <img onclick='setModalText(<?php echo $iterations; ?>,"<?php echo urlencode($image[2]); ?>", "<?php echo $image[3]; ?>", "<?php echo $image[4]; ?>", "<?php echo $image[1]; ?>", "<?php echo $image[5]; ?>")' src="<?php echo $image[1]; ?>" class="img1">
@@ -136,8 +137,8 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
                   <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style="width: unset !important; display: inline; height: 1em; cursor: pointer;" title="Wikipedia" src="images/wiki.png" width="25"></a>
                   <img style="width: unset !important;display: inline;height: 1em;cursor:pointer" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>')" width=25 src="images/chart.svg">
                   <br>Confidence: <?php echo $percent = round((float)round($mostrecent['Confidence'],2) * 100 ) . '%';?><br></div><br>
-                  <video style="margin-top:10px" onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster="<?php echo $filename.".png";?>" preload="none" title="<?php echo $filename;?>"><source src="<?php echo $filename;?>"></video></td>
-              </form>
+                  <div class='custom-audio-player' data-audio-src="<?php echo $filename; ?>" data-image-src="<?php echo $filename.".png";?>"></div>
+              </td></form>
           </tr>
         </table> <?php break;
       }
@@ -450,7 +451,7 @@ function display_species($species_list, $title, $show_last_seen=false) {
 display_species($new_species, 'New Species');
 display_species($rare_species, 'Rare Species', true);
 ?>
-<div class="chart">
+<div class="chart" style="visibility: hidden;">
 <?php
 $refresh = $config['RECORDING_LENGTH'];
 $dividedrefresh = $refresh/4;
@@ -458,12 +459,25 @@ if($dividedrefresh < 1) {
   $dividedrefresh = 1;
 }
 $time = time();
-if (file_exists('./Charts/'.$chart)) {
-  echo "<img id='chart' src=\"Charts/$chart?nocache=$time\">";
-} 
+$interactivechart_path = './Charts/' . $interactivechart;
+$chart_path = './Charts/' . $chart;
+if (file_exists($interactivechart_path)) {
+    $html_content = file_get_contents($interactivechart_path);
+    echo $html_content;
+} elseif (file_exists($chart_path)) {
+    echo "<img id='chart' src='Charts/$chart?nocache=$time'>";
+}
 ?>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const chartContainer = document.querySelector('.chart');
+        if (window.innerWidth <= 800) {
+            chartContainer.innerHTML = '<img id="chart" src="Charts/<?php echo $chart; ?>?nocache=<?php echo $time; ?>">';
+        }
+        chartContainer.style.visibility = 'visible';
+    });
+</script>
 </div>
-
 <div id="most_recent_detection"></div>
 <br>
 <h3>5 Most Recent Detections</h3>
@@ -496,6 +510,9 @@ function loadDetectionIfNewExists(previous_detection_identifier=undefined) {
       loadLeftChart();
       loadFiveMostRecentDetections();
       refreshTopTen();
+
+      // Reinitialize custom audio players for newly loaded elements
+      initCustomAudioPlayers();
     }
   }
   xhttp.open("GET", "overview.php?ajax_detections=true&previous_detection_identifier="+previous_detection_identifier, true);
@@ -534,15 +551,27 @@ function refreshTopTen() {
 }
 function refreshDetection() {
   if (!document.hidden) {
-    var videoelement = document.getElementsByTagName("video")[0];
-    if(typeof videoelement !== "undefined") {
-      // don't refresh the detection if the user is playing the previous one's audio, wait until they're finished
-      if(!!(videoelement.currentTime > 0 && !videoelement.paused && !videoelement.ended && videoelement.readyState > 2) == false) {
-        loadDetectionIfNewExists(videoelement.title);
-      }
-    } else{
-      // image or audio didn't load for some reason, force a refresh in 5 seconds
+    const audioPlayers = document.querySelectorAll(".custom-audio-player");
+
+    // If no custom-audio-player elements are found, refresh
+    if (audioPlayers.length === 0) {
       loadDetectionIfNewExists();
+      return;
+    }
+
+    // Check if any custom audio player is currently playing
+    let isPlaying = false;
+    audioPlayers.forEach((player) => {
+      const audioEl = player.querySelector("audio");
+      if (audioEl && audioEl.currentTime > 0 && !audioEl.paused && !audioEl.ended && audioEl.readyState > 2) {
+        isPlaying = true;
+      }
+    });
+
+    // If none are playing, refresh detections
+    if (!isPlaying) {
+      const currentIdentifier = audioPlayers[0]?.dataset.audioSrc || undefined;
+      loadDetectionIfNewExists(currentIdentifier);
     }
   }
 }
@@ -613,6 +642,7 @@ startAutoRefresh();
   transition: opacity 0.2s ease-in-out;
 }
 </style>
+<script src="static/custom-audio-player.js"></script>
 <script>
 function generateMiniGraph(elem, comname, days = 30) {
 

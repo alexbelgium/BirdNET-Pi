@@ -1,3 +1,11 @@
+Additional PR vs Nachtzuster, used for HA addon
+- New daily and yearly graph : https://github.com/alexbelgium/BirdNET-Pi/tree/new_daily_graph
+- Confirmed species : https://github.com/alexbelgium/BirdNET-Pi/tree/confirmed_species_feature
+- Calculation of signal quality through SNR : https://github.com/alexbelgium/BirdNET-Pi/tree/SNR
+- Interactive graph : https://github.com/alexbelgium/BirdNET-Pi/tree/dynamic_plots
+- New audio player with progress bar and that still shows the spectrogram on mobile
+- Older CPU support : install tensorflow if avx2 not available
+
 <h1 align="center"><a href="https://github.com/mcguirepr89/BirdNET-Pi/blob/main/LICENSE">Review the license!!</a></h1>
 <h1 align="center">You may not use BirdNET-Pi to develop a commercial product!!!!</h1>
 <h1 align="center">
@@ -196,11 +204,6 @@ I hope that if you find BirdNET-Pi has been worth your time, you will share your
 
 BirdNET-Pi can also be run as a [Homeassistant](https://www.home-assistant.io/) addon through docker.
 For more information : https://github.com/alexbelgium/hassio-addons/blob/master/birdnet-pi/README.md
-
-## Docker
-
-BirdNET-Pi can also be run as as a docker container.
-For more information : https://github.com/alexbelgium/hassio-addons/blob/master/birdnet-pi/README_standalone.md
 
 ## Cool Links
 
