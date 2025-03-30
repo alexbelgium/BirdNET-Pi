@@ -654,16 +654,16 @@ if(isset($_SESSION['date'])) {
   $date = $_SESSION['date'];
   $countQuery = $db->prepare("SELECT COUNT(*) as total FROM detections WHERE Com_Name == \"$name\" AND Date == \"$date\"");
   if(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Confidence DESC LIMIT $limit");
+    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Confidence DESC");
   } else {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Time DESC LIMIT $limit");
+    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Time DESC");
   }
 } else {
   $countQuery = $db->prepare("SELECT COUNT(*) as total FROM detections WHERE Com_Name == \"$name\"");
   if(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Confidence DESC LIMIT $limit");
+    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Confidence DESC");
   } else {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Date DESC, Time DESC LIMIT $limit");
+    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Date DESC, Time DESC");
   }
 }
 ensure_db_ok($statement2);
@@ -761,8 +761,12 @@ echo "><br><i>$sciname</i></span><br>
         </td>
         </tr>";
     }
+    if($iter >= $limit) {
+      break;
+    }
+  }
 
-  }if($iter == 0){ echo "<tr><td><b>No recordings were found.</b><br><br><span style='font-size:medium'>They may have been deleted to make space for new recordings. You can prevent this from happening in the future by clicking the <img src='images/unlock.svg' style='width:20px'> icon in the top right of a recording.<br>You can also modify this behavior globally under \"Full Disk Behavior\" <a href='views.php?view=Advanced'>here.</a></span></td></tr>";}echo "</table>";}
+  if($iter == 0){ echo "<tr><td><b>No recordings were found.</b><br><br><span style='font-size:medium'>They may have been deleted to make space for new recordings. You can prevent this from happening in the future by clicking the <img src='images/unlock.svg' style='width:20px'> icon in the top right of a recording.<br>You can also modify this behavior globally under \"Full Disk Behavior\" <a href='views.php?view=Advanced'>here.</a></span></td></tr>";}echo "</table>";}
 
   if($limit < $totalCount) {
     echo "<div style='text-align:center'>";
