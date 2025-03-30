@@ -570,15 +570,17 @@ if ($fp) {
 }
 
 $name = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
-$limit = isset($_GET['limit']) ? "" : "40";
+$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 40;
 if(isset($_SESSION['date'])) {
   $date = $_SESSION['date'];
+  $countQuery = $db->prepare("SELECT COUNT(*) as total FROM detections WHERE Com_Name == \"$name\" AND Date == \"$date\"");
   if(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
     $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Confidence DESC LIMIT $limit");
   } else {
     $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Time DESC LIMIT $limit");
   }
 } else {
+  $countQuery = $db->prepare("SELECT COUNT(*) as total FROM detections WHERE Com_Name == \"$name\"");
   if(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
     $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Confidence DESC LIMIT $limit");
   } else {
@@ -587,6 +589,8 @@ if(isset($_SESSION['date'])) {
 }
 ensure_db_ok($statement2);
 $result2 = $statement2->execute();
+$totalCount = $countQuery->execute()->fetchArray(SQLITE3_ASSOC)['total'];
+
 $num_rows = 0;
 while ($result2->fetchArray(SQLITE3_ASSOC)) {
     $num_rows++;
