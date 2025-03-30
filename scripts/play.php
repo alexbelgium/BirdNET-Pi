@@ -631,12 +631,6 @@ if(isset($_GET['species'])){ ?>
       <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "confidence"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="confidence">
          <img src="images/sort_conf.svg" title="Sort by confidence" alt="Sort by confidence">
       </button><br>
-      <label style="cursor: pointer; margin-top: 10px; margin-bottom: 10px; font-weight: normal; display: inline-flex; align-items: center; justify-content: center;">
-        <input type="checkbox" name="show_all" <?= isset($_GET['show_all']) ? 'checked' : '' ?> onchange="this.form.submit()" style="display: none;">
-        <span style="width: 40px; height: 20px; background: <?= isset($_GET['show_all']) ? 'rgba(85, 85, 85, 0.3)' : '#555555' ?>; border: 1px solid #777777; border-radius: 20px; display: inline-block; position: relative; margin-right: 8px; transition: background 0.4s, border 0.4s; box-sizing: border-box;">
-        <span style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 1.5px; left: 2px; transition: 0.4s; display: flex; align-items: center; justify-content: center; font-size: 14px; color: black; <?= isset($_GET['show_all']) ? '' : 'transform: translateX(20px);' ?>">
-        <?= isset($_GET['show_all']) ? '' : '✓' ?>
-      </span></span>Top 40 recordings</label><br>
       <label style="cursor: pointer; margin-top: 10px; margin-bottom: 10px;font-weight: normal; display: inline-flex; align-items: center; justify-content: center;">
         <input type="checkbox" name="only_excluded" <?= isset($_GET['only_excluded']) ? 'checked' : '' ?> onchange="submit()" style="display:none;">
         <span style="width: 40px; height: 20px; background: <?= isset($_GET['only_excluded']) ? '#555555' : 'rgba(85, 85, 85, 0.3)' ?>; border: 1px solid #777777; border-radius: 20px; display: inline-block; position: relative; margin-right: 8px; transition: background 0.4s, border 0.4s; box-sizing: border-box;">
@@ -655,23 +649,26 @@ if ($fp) {
 }
 
 $name = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
-$limit = isset($_GET['show_all']) ? "" : "LIMIT 40";
+$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 40;
 if(isset($_SESSION['date'])) {
   $date = $_SESSION['date'];
+  $countQuery = $db->prepare("SELECT COUNT(*) as total FROM detections WHERE Com_Name == \"$name\" AND Date == \"$date\"");
   if(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Confidence DESC $limit");
+    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Confidence DESC LIMIT $limit");
   } else {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Time DESC $limit");
+    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Time DESC LIMIT $limit");
   }
 } else {
+  $countQuery = $db->prepare("SELECT COUNT(*) as total FROM detections WHERE Com_Name == \"$name\"");
   if(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Confidence DESC $limit");
+    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Confidence DESC LIMIT $limit");
   } else {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Date DESC, Time DESC $limit");
+    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Date DESC, Time DESC LIMIT $limit");
   }
 }
 ensure_db_ok($statement2);
 $result2 = $statement2->execute();
+$totalCount = $countQuery->execute()->fetchArray(SQLITE3_ASSOC)['total'];
 $num_rows = 0;
 while ($result2->fetchArray(SQLITE3_ASSOC)) {
     $num_rows++;
@@ -766,6 +763,26 @@ echo "><br><i>$sciname</i></span><br>
     }
 
   }if($iter == 0){ echo "<tr><td><b>No recordings were found.</b><br><br><span style='font-size:medium'>They may have been deleted to make space for new recordings. You can prevent this from happening in the future by clicking the <img src='images/unlock.svg' style='width:20px'> icon in the top right of a recording.<br>You can also modify this behavior globally under \"Full Disk Behavior\" <a href='views.php?view=Advanced'>here.</a></span></td></tr>";}echo "</table>";}
+
+  if($limit < $totalCount) {
+    echo "<div style='text-align:center'>";
+    echo "<form action='views.php' method='GET' style='display:inline'>";
+    echo "<input type='hidden' name='view' value='Recordings'>";
+    echo "<input type='hidden' name='species' value=\"" . htmlspecialchars($_GET['species'], ENT_QUOTES) . "\">";
+    if(isset($_GET['sort'])) {
+      echo "<input type='hidden' name='sort' value=\"" . htmlspecialchars($_GET['sort'], ENT_QUOTES) . "\">";
+    }
+    if(isset($_GET['only_excluded'])) {
+      echo "<input type='hidden' name='only_excluded' value='" . $_GET['only_excluded'] . "'>";
+    }
+    if(isset($_SESSION['date'])) {
+      echo "<input type='hidden' name='date' value='" . $_SESSION['date'] . "'>";
+    }
+    echo "<input type='hidden' name='limit' value='" . ($limit + 40) . "'>";
+    echo "<button type='submit' class='loadmore'>Load 40 more...</button>";
+    echo "</form>";
+    echo "</div>";
+  }
 
   if(isset($_GET['filename'])){
     $name = $_GET['filename'];
