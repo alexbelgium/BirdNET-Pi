@@ -570,18 +570,19 @@ if ($fp) {
 }
 
 $name = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
+$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 40;
 if(isset($_SESSION['date'])) {
   $date = $_SESSION['date'];
   if(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Confidence DESC");
+    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Confidence DESC $limit");
   } else {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Time DESC");
+    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Time DESC $limit");
   }
 } else {
   if(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Confidence DESC");
+    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Confidence DESC $limit");
   } else {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Date DESC, Time DESC");
+    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Date DESC, Time DESC $limit");
   }
 }
 ensure_db_ok($statement2);
@@ -673,6 +674,26 @@ echo "<table>
     }
 
   }if($iter == 0){ echo "<tr><td><b>No recordings were found.</b><br><br><span style='font-size:medium'>They may have been deleted to make space for new recordings. You can prevent this from happening in the future by clicking the <img src='images/unlock.svg' style='width:20px'> icon in the top right of a recording.<br>You can also modify this behavior globally under \"Full Disk Behavior\" <a href='views.php?view=Advanced'>here.</a></span></td></tr>";}echo "</table>";}
+
+  if($limit < $totalCount) {
+    echo "<div style='text-align:center'>";
+    echo "<form action='views.php' method='GET' style='display:inline'>";
+    echo "<input type='hidden' name='view' value='Recordings'>";
+    echo "<input type='hidden' name='species' value=\"".htmlspecialchars($_GET['species'], ENT_QUOTES)."\">";
+    if(isset($_GET['sort'])) {
+      echo "<input type='hidden' name='sort' value=\"".htmlspecialchars($_GET['sort'], ENT_QUOTES)."\">";
+    }
+    if(isset($_GET['only_excluded'])) {
+      echo "<input type='hidden' name='only_excluded' value='".$_GET['only_excluded']."'>";
+    }
+  if(isset($_SESSION['date'])) {
+    echo "<input type='hidden' name='date' value='".$_SESSION['date']."'>";
+    }
+    echo "<input type='hidden' name='limit' value='".($limit + 40)."'>";
+    echo "<button type='submit'>Load 40 more...</button>";
+    echo "</form>";
+    echo "</div>";
+  }
 
   if(isset($_GET['filename'])){
     $name = $_GET['filename'];
