@@ -683,18 +683,18 @@ echo "<table>
     echo "<div style='text-align:center'>";
     echo "<form action='views.php' method='GET' style='display:inline'>";
     echo "<input type='hidden' name='view' value='Recordings'>";
-    echo "<input type='hidden' name='species' value=\"".htmlspecialchars($_GET['species'], ENT_QUOTES)."\">";
+    echo "<input type='hidden' name='species' value=\"" . htmlspecialchars($_GET['species'], ENT_QUOTES) . "\">";
     if(isset($_GET['sort'])) {
-      echo "<input type='hidden' name='sort' value=\"".htmlspecialchars($_GET['sort'], ENT_QUOTES)."\">";
+      echo "<input type='hidden' name='sort' value=\"" . htmlspecialchars($_GET['sort'], ENT_QUOTES) . "\">";
     }
     if(isset($_GET['only_excluded'])) {
-      echo "<input type='hidden' name='only_excluded' value='".$_GET['only_excluded']."'>";
+      echo "<input type='hidden' name='only_excluded' value='" . $_GET['only_excluded'] . "'>";
     }
-  if(isset($_SESSION['date'])) {
-    echo "<input type='hidden' name='date' value='".$_SESSION['date']."'>";
+    if(isset($_SESSION['date'])) {
+      echo "<input type='hidden' name='date' value='" . $_SESSION['date'] . "'>";
     }
-    echo "<input type='hidden' name='limit' value='".($limit + 40)."'>";
-    echo "<button type='submit'>Load 40 more...</button>";
+    echo "<input type='hidden' name='limit' value='" . ($limit + 40) . "'>";
+    echo "<button type='submit' class='loadmore'>Load 40 more...</button>";
     echo "</form>";
     echo "</div>";
   }
