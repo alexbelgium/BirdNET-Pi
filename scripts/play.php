@@ -570,7 +570,7 @@ if ($fp) {
 }
 
 $name = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
-$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 40;
+$limit = isset($_GET['limit']) ? "" : "LIMIT 40";
 if(isset($_SESSION['date'])) {
   $date = $_SESSION['date'];
   if(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
