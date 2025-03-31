@@ -688,6 +688,7 @@ echo "><br><i>$sciname</i></span><br>
     <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
   </th></tr>";
   $iter=0;
+  $iter_additional=false;
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
   {
     $comname = preg_replace('/ /', '_', $results['Com_Name']);
@@ -710,6 +711,10 @@ echo "><br><i>$sciname</i></span><br>
       continue;
     }
     $iter++;
+    if($iter > $limit) {
+      $iter_additional=true;
+      break;
+    }
 
     if($num_rows < 100) {
       $imageelem = "<div class='custom-audio-player' data-audio-src=\"$filename\" data-image-src=\"$filename_png\"></div>";
@@ -758,14 +763,11 @@ echo "><br><i>$sciname</i></span><br>
         </td>
         </tr>";
     }
-    if($iter >= $limit) {
-      break;
-    }
   }
 
   if($iter == 0){ echo "<tr><td><b>No recordings were found.</b><br><br><span style='font-size:medium'>They may have been deleted to make space for new recordings. You can prevent this from happening in the future by clicking the <img src='images/unlock.svg' style='width:20px'> icon in the top right of a recording.<br>You can also modify this behavior globally under \"Full Disk Behavior\" <a href='views.php?view=Advanced'>here.</a></span></td></tr>";}echo "</table>";}
 
-  if (!($iter < $limit)) {
+  if ($iter_additional) {
     echo "<div style='text-align:center'>";
     echo "<form action='views.php' method='GET' style='display:inline'>";
     echo "<input type='hidden' name='view' value='Recordings'>";
