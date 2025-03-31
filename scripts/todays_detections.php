@@ -63,7 +63,7 @@ if(isset($_GET['comname'])) {
 $days = isset($_GET['days']) ? intval($_GET['days']) : 30;
 
 // Prepare a SQL statement to retrieve the detection data for the specified bird
-$stmt = $db->prepare("SELECT Date, COUNT(*) AS Detections FROM detections WHERE Com_Name = :com_name AND Date BETWEEN DATE('now', '-$days days') AND DATE('now') GROUP BY Date");
+$stmt = $db->prepare('SELECT Date, COUNT(*) AS Detections FROM detections WHERE Com_Name = :com_name AND Date BETWEEN DATE("now", "-' . $days . ' days") AND DATE("now") GROUP BY Date');
 
 // Bind the bird name parameter to the SQL statement
 $stmt->bindValue(':com_name', $birdName);
@@ -347,6 +347,7 @@ if (get_included_files()[0] === __FILE__) {
   <script src="static/dialog-polyfill.js"></script>
   <script src="static/Chart.bundle.js"></script>
   <script src="static/chartjs-plugin-trendline.min.js"></script>
+  
   <script>
     function deleteDetection(filename,copylink=false) {
     if (confirm("Are you sure you want to delete this detection from the database?") == true) {
@@ -465,7 +466,7 @@ document.getElementById("searchterm").onkeydown = (function(e) {
         searchDetections(document.getElementById("searchterm").value);
 
         setTimeout(function() {
-            // search auto submitted and now the user is probably scrolling, get the keyboard out of the way & prevent browser from jumping to the top when a audio is played
+            // search auto submitted and now the user is probably scrolling, get the keyboard out of the way & prevent browser from jumping to the top when a video is played
             document.getElementById("searchterm").blur();
         }, 2000);
      }, 1000);
