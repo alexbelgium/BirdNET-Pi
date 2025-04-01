@@ -158,8 +158,6 @@ To restore:
 That being said, some pointers:
 - Use Debian 12
 - The user needs passwordless sudo
-- We use a custom TFLite build that needs AVX2 support. So Intel Haswell or newer, not sure what that means for AMD cpu's, let me know if you do.
-- Some people get around the previous point by uninstalling `tflite_runtime` and replacing with `tensorflow` in the `./birdnet` venv. But beware: analysis will be slower, and the older v1 model won't work.
 
 For Proxmox, a user has reported adding this in their `cpu-models.conf`, in order for the custom TFLite build to work.
 ```

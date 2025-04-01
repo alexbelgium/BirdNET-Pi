@@ -17,7 +17,8 @@ from utils.helpers import DB_PATH, get_settings
 
 
 def get_data(now=None):
-    conn = sqlite3.connect(DB_PATH)
+    uri = f"file:{DB_PATH}?mode=ro"
+    conn = sqlite3.connect(uri, uri=True)
     if now is None:
         now = datetime.now()
     df = pd.read_sql_query(f"SELECT * from detections WHERE Date = DATE('{now.strftime('%Y-%m-%d')}')",

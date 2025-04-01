@@ -15,7 +15,7 @@ function service_status($name) {
     }
   } 
   $op = shell_exec("sudo systemctl status ".$name." | grep Active");
-  if (stripos($op, " active (running)")) {
+  if (stripos($op, " active (running)") || stripos($op, " active (mounted)")) {
       echo "<span style='color:green'>(active)</span>";
   } elseif (stripos($op, " inactive ")) {
       echo "<span style='color:#fc6603'>(inactive)</span>";
