@@ -4,7 +4,7 @@
 HOME=$(getent passwd pi | cut -d: -f6)
 
 source /etc/birdnet/birdnet.conf
-base_dir="$HOME/BirdSongs/Extracted/By_Date"
+base_dir="$(readlink -f "$HOME/BirdSongs/Extracted/By_Date")"
 cd "$base_dir" || exit 1
 
 MAX_FILE_SPECIES="${MAX_FILE_SPECIES:-1000}"
@@ -63,6 +63,7 @@ done <<<"$sanitized_names"
 {
     echo "BirdSongs stored on your drive"
     echo "=============================="
+    echo "Location : $base_dir: "
     echo "Total species : $species_count"
     echo "Total files   : $(format_k "$total_file_count")"
     echo "Total size    : $(du -sh . | sed 's/G/ GB/; s/M/ MB/; s/K/ KB/' | cut -f1)"
