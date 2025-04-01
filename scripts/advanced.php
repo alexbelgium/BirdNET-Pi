@@ -138,14 +138,6 @@ if(isset($_GET['submit'])) {
     }
 }
 
-if (isset($_GET['run_species_count'])) {
-  echo "<script>";
-  $output = shell_exec("sudo -u $user ".$home."/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
-  $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
-  echo "alert(`$escaped_output`);";
-  echo "</script>";
-}
-
 if (isset($_GET["max_files_species"])) {
     $max_files_species = $_GET["max_files_species"];
     if (strcmp($max_files_species, $config['MAX_FILES_SPECIES']) !== 0) {
@@ -646,6 +638,13 @@ foreach($formats as $format){
 <div class="float">
       <button type="submit" id="advancedformsubmit" onclick="collectrtspUrls(); if(document.getElementById('advancedform').checkValidity()){this.innerHTML = 'Updating... please wait.';this.classList.add('disabled')}" name="submit" value="advanced">
 <?php
+if (isset($_GET['run_species_count'])) {
+  echo "<script>";
+  $output = shell_exec("sudo -u $user ".$home."/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
+  $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
+  echo "alert(`$escaped_output`);";
+  echo "</script>";
+}
 if(isset($_GET['submit'])){
   echo '<script>alert("Settings successfully updated");</script>';
 }
