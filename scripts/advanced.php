@@ -179,6 +179,14 @@ if (isset($_GET["max_files_species"])) {
     }
   }
 
+  if (isset($_GET['run_species_count'])) {
+    echo "<script>";
+    $output = shell_exec("/home/pi/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
+    $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
+    echo "alert(`$escaped_output`);";
+    echo "</script>";
+  }
+
   if(isset($_GET["audiofmt"])) {
     $audiofmt = $_GET["audiofmt"];
     if(strcmp($audiofmt,$config['AUDIOFMT']) !== 0) {
@@ -325,6 +333,9 @@ $newconfig = get_config();
       Note only the spectrogram and audio files are deleted, the obsevation data remains in the database.
       The files protected through the "lock" icon are also not affected.
       </td></tr></table><br>
+      <br>
+      <button type="submit" name="run_species_count" value="1">Show species file summary</button>
+
       <table class="settingstable"><tr><td>
 
       <h2>Audio Settings</h2>
