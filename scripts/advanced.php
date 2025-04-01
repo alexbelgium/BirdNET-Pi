@@ -316,7 +316,7 @@ $newconfig = get_config();
       <label for="purge_threshold">Purge Threshold (Disk Used %):</label>
       <input name="purge_threshold" type="number" style="width:6em;" min="20" max="99" step="1" value="<?php print($newconfig['PURGE_THRESHOLD']);?>"/>
       <p>Defines how full the disk should be before the purge operations occur.<br>Note: This variable is still active if Keep is set. This means that the servies will be stopped at the purge threshold.</p><br>
-      <label for="max_files_species">Amount of files to keep for each species :</label>
+      <label for="max_files_species">Minimum amount of files to keep for each species :</label>
       <input name="max_files_species" type="number" style="width:6em;" min="0" step="1" value="<?php print($newconfig['MAX_FILES_SPECIES']);?>"/>
       </td></tr><tr><td>
       If different than 0 (keep all), defines the maximum number of files to be kept for each species, with priority give to files with highest confidence. 
