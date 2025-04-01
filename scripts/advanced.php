@@ -5,6 +5,7 @@ error_reporting(E_ERROR);
 require_once "scripts/common.php";
 $home = get_home();
 $config = get_config();
+$user = get_user();
 
 ensure_authenticated();
 
@@ -137,6 +138,14 @@ if(isset($_GET['submit'])) {
     }
 }
 
+if (isset($_GET['run_species_count'])) {
+  echo "<script>";
+  $output = shell_exec("sudo -u $user ".$home."/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
+  $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
+  echo "alert(`$escaped_output`);";
+  echo "</script>";
+}
+
 if (isset($_GET["max_files_species"])) {
     $max_files_species = $_GET["max_files_species"];
     if (strcmp($max_files_species, $config['MAX_FILES_SPECIES']) !== 0) {
@@ -177,14 +186,6 @@ if (isset($_GET["max_files_species"])) {
     if(strcmp($extraction_length,$config['EXTRACTION_LENGTH']) !== 0) {
       $contents = preg_replace("/EXTRACTION_LENGTH=.*/", "EXTRACTION_LENGTH=$extraction_length", $contents);
     }
-  }
-
-  if (isset($_GET['run_species_count'])) {
-    echo "<script>";
-    $output = shell_exec("/home/pi/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
-    $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
-    echo "alert(`$escaped_output`);";
-    echo "</script>";
   }
 
   if(isset($_GET["audiofmt"])) {
@@ -332,10 +333,9 @@ $newconfig = get_config();
       </td></tr><tr><td>
       Note only the spectrogram and audio files are deleted, the obsevation data remains in the database.
       The files protected through the "lock" icon are also not affected.
-      </td></tr></table><br>
       <br>
-      <button type="submit" name="run_species_count" value="1">Show species file summary</button>
-
+      <button type="submit" name="run_species_count" value="1"><i>[Click here for disk usage summary]</i></button>
+      </td></tr></table><br>
       <table class="settingstable"><tr><td>
 
       <h2>Audio Settings</h2>
