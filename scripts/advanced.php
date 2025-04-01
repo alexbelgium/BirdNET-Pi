@@ -9,6 +9,14 @@ $user = get_user();
 
 ensure_authenticated();
 
+if (isset($_GET['run_species_count'])) {
+  echo "<script>";
+  $output = shell_exec("sudo -u $user ".$home."/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
+  $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
+  echo "alert(`$escaped_output`);";
+  echo "</script>";
+}
+
 if(isset($_GET['submit'])) {
   $contents = file_get_contents('/etc/birdnet/birdnet.conf');
   $restart_livestream = false;
@@ -136,14 +144,6 @@ if(isset($_GET['submit'])) {
     if (strcmp($purge_threshold, $config['PURGE_THRESHOLD']) !== 0) {
         $contents = preg_replace("/PURGE_THRESHOLD=.*/", "PURGE_THRESHOLD=$purge_threshold", $contents);
     }
-}
-
-if (isset($_GET['run_species_count'])) {
-  echo "<script>";
-  $output = shell_exec("sudo -u $user ".$home."/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
-  $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
-  echo "alert(`$escaped_output`);";
-  echo "</script>";
 }
 
 if (isset($_GET["max_files_species"])) {
