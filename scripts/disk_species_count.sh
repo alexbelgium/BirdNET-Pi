@@ -2,9 +2,12 @@
 
 # Always use pi's home directory
 HOME=$(getent passwd pi | cut -d: -f6)
+
 source /etc/birdnet/birdnet.conf
 base_dir="$HOME/BirdSongs/Extracted/By_Date"
 cd "$base_dir" || exit 1
+
+MAX_FILE_SPECIES="${MAX_FILE_SPECIES:-1000}"
 
 # Function to format numbers to k if ≥1000
 format_k() {
@@ -28,12 +31,6 @@ EOF
 sanitized_names="$(echo "$bird_names" | tr ' ' '_' | tr -d "'" | grep '[[:alnum:]]')"
 sanitized_names=$(echo "$sanitized_names" | sed 's/_*$//')
 
-# Handle date format
-dateformat=""
-if date -d "-7 days" '+%Y-%m-%d' >/dev/null 2>&1; then
-    dateformat=" days"
-fi
-
 # Count species
 species_count=$(echo "$sanitized_names" | wc -l)
 total_file_count=0
@@ -48,7 +45,6 @@ while read -r species; do
     total=$(find */"$species" -type f -name "*[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.*" \
         -not -iname "*.png" 2>/dev/null | wc -l)
     total_file_count=$((total_file_count + total))
-    fi
 
     # Format total
     total_display=$(format_k "$total")
@@ -57,7 +53,7 @@ while read -r species; do
     species_display=$(echo "$species" | tr '_' ' ')
 
     # Save padded sort key + display line
-    printf "%05d %s : %s%s\n" "$total" "$total_display" "$species_display" "$protected_display" >> "$data_file"
+    printf "%05d %s : %s\n" "$total" "$species_display" "$total_display" >> "$data_file"
 done <<<"$sanitized_names"
 
 # Avoid TERM error if not running in a terminal
@@ -65,8 +61,9 @@ done <<<"$sanitized_names"
 
 # Build final output
 {
-    echo "BirdSongs stored on your drive. This number is higher than the MAX_FILE_SPECIES (${MAX_FILE_SPECIES:-1000}) as files from the last 7 days are protected, as well as files specifically notified in the disk_check_exclude.txt"
+    echo "BirdSongs stored on your drive"
     echo "=============================="
+    echo "Total species : $species_count"
     echo "Total files   : $(format_k "$total_file_count")"
     echo "Total size    : $(du -sh . | sed 's/G/ GB/; s/M/ MB/; s/K/ KB/' | cut -f1)"
     echo "=============================="
