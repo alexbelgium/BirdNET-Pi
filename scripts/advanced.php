@@ -5,17 +5,9 @@ error_reporting(E_ERROR);
 require_once "scripts/common.php";
 $home = get_home();
 $config = get_config();
-$user = get_user();
 
 ensure_authenticated();
 
-if (isset($_GET['run_species_count'])) {
-  echo "<script>";
-  $output = shell_exec("sudo -u $user ".$home."/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
-  $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
-  echo "alert(`$escaped_output`);";
-  echo "</script>";
-}
 if(isset($_GET['submit'])) {
   $contents = file_get_contents('/etc/birdnet/birdnet.conf');
   $restart_livestream = false;
@@ -332,9 +324,9 @@ $newconfig = get_config();
       </td></tr><tr><td>
       Note only the spectrogram and audio files are deleted, the obsevation data remains in the database.
       The files protected through the "lock" icon are also not affected.
-      <br>
-      <button type="submit" name="run_species_count" value="1"><i>[Click here for disk usage summary]</i></button>
       </td></tr></table><br>
+      <button type="button" onclick="runSpeciesCount()">[Click here for disk usage summary]</button>
+      <dialog id="speciesCountModal"><h3>Disk Usage Summary</h3><pre id="speciesCountOutput">Loading...</pre><button onclick="document.getElementById('speciesCountModal').close()">Close</button></dialog>
       <table class="settingstable"><tr><td>
 
       <h2>Audio Settings</h2>
@@ -446,6 +438,17 @@ foreach($formats as $format){
                               rtsp_stream_input.setAttribute('value', rtsp_stream_string);
                           }
                       }
+	function runSpeciesCount() {
+	  const modal = document.getElementById('speciesCountModal');
+	  const output = document.getElementById('speciesCountOutput');
+	  output.textContent = "Loading...";
+	  modal.showModal();
+	
+	  fetch('disk_species_count.php')
+	    .then(res => res.text())
+	    .then(text => output.textContent = text)
+	    .catch(err => output.textContent = "Error: " + err);
+	}
       </script>
       <p>If you place an RTSP stream URL here, BirdNET-Pi will use that as its audio source.<br>Multiple streams are allowed but may have a impact on rPi performance.<br>Analyze ffmpeg CPU/Memory usage with <b>top</b> or <b>htop</b> if necessary.<br>To remove all and use the soundcard again, just delete the RTSP entries and click Save at the bottom.</p>
       </td></tr></table><br>
