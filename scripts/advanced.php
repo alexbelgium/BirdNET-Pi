@@ -659,6 +659,45 @@ echo "Update Settings";
 </div>
       </form>
 </div>
+<script src="static/dialog-polyfill.js"></script>
+
+<dialog id="modal">
+  <div>
+    <label for="threshold">Threshold:</label>
+    <input type="number" id="threshold" step="0.01" min="0" max="1" value="">
+    <button type="button" id="runProcess">Preview Species List</button>
+  </div>
+  <pre id="output"></pre>
+  <button type="button" id="closeModal">Close</button>
+</dialog>
+
+<style>
+#output {
+  max-width: 100vw;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+#modal {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+#modal div {
+  display: flex;
+  align-items: center;
+}
+
+#modal input[type="number"] {
+  height: 32px;
+}
+
+#modal button {
+  height: 32px;
+  margin-left: 5px;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+</style>
+
 
 <script>
 // Get the button and modal elements
