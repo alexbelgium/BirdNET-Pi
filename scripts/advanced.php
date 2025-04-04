@@ -10,11 +10,20 @@ $user = get_user();
 ensure_authenticated();
 
 if (isset($_GET['run_species_count'])) {
-  $output = shell_exec("sudo -u $user ".$home."/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
-  $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
-  //echo "alert(`$escaped_output`);";
-  echo "$escaped_output";
-  die();
+    echo "<script>";
+    $output = shell_exec("sudo -u $user ".$home."/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
+    $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
+    // Split the output into lines
+    $lines = explode("\n", $escaped_output);    
+    // Display alerts with up to 30 lines each
+    $chunk_size = 30;
+    for ($i = 0; $i < count($lines); $i += $chunk_size) {
+        $chunk = array_slice($lines, $i, $chunk_size);
+        $chunk_output = implode("\n", $chunk);
+        $alert_title = "Disk summary : " . (intdiv($i, $chunk_size) + 1);
+        echo "alert(`$alert_title\n\n$chunk_output`);";
+    }
+    echo "</script>";
 }
 
 if(isset($_GET['submit'])) {
@@ -302,12 +311,12 @@ $newconfig = get_config();
       </div>
       <script>
       var slider = document.getElementById("privacy_threshold");
-      var outputShell = document.getElementById("threshold_value");
-      outputShell.innerHTML = slider.value; // Display the default slider value
+      var output = document.getElementById("threshold_value");
+      output.innerHTML = slider.value; // Display the default slider value
       
       // Update the current slider value (each time you drag the slider handle)
       slider.oninput = function() {
-        outputShell.innerHTML = this.value;
+        output.innerHTML = this.value;
         document.getElementById("predictionCount").innerHTML = parseInt(Math.max(10, (this.value * <?php echo $count; ?>)/100));
       }
       </script>
@@ -334,7 +343,7 @@ $newconfig = get_config();
       Note only the spectrogram and audio files are deleted, the obsevation data remains in the database.
       The files protected through the "lock" icon are also not affected.
       <br>
-      <button type="button" class="testbtn" id="openModal"><i>[Click here for disk usage summary]</i></button>
+      <button type="submit" name="run_species_count" value="1"><i>[Click here for disk usage summary]</i></button>
       </td></tr></table><br>
       <table class="settingstable"><tr><td>
 
@@ -659,57 +668,3 @@ echo "Update Settings";
 </div>
       </form>
 </div>
-<script src="static/dialog-polyfill.js"></script>
-
-<dialog id="modal">
-  <pre id="output">Loading...</pre>
-  <button type="button" id="closeModal">Close</button>
-</dialog>
-
-<style>
-#modal {
-  max-height: 80vh;
-  max-width: 90vw;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  padding: 1em;
-}
-
-#output {
-  margin-bottom: 1em;
-  font-family: monospace;
-  font-size: 0.9em;
-}
-</style>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const openModalBtn = document.getElementById('openModal');
-  const modal = document.getElementById('modal');
-  const output = document.getElementById('output');
-  const closeModalBtn = document.getElementById('closeModal');
-
-  if (typeof dialogPolyfill !== "undefined") {
-    dialogPolyfill.registerDialog(modal);
-  }
-
-  openModalBtn.addEventListener('click', () => {
-    output.textContent = "Loading...";
-    modal.showModal();
-
-    fetch(`scripts/advanced.php?run_species_count=true`)
-      .then(response => response.text())
-      .then(data => {
-        output.textContent = data;
-      })
-      .catch(err => {
-        output.textContent = "Error fetching disk usage summary:\n" + err;
-      });
-  });
-
-  closeModalBtn.addEventListener('click', () => {
-    modal.close();
-  });
-});
-</script>
