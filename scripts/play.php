@@ -722,7 +722,6 @@ echo "><br><i>$sciname</i></span><br>
       $imageelem = "<a href=\"$filename\"><img src=\"$filename_png\"></a>";
     }
 
-    if($config["FULL_DISK"] == "purge") {
       if(!in_array($filename_formatted, $disk_check_exclude_arr)) {
         $imageicon = "images/unlock.svg";
         $title = "This file will be deleted when disk space needs to be freed (>95% usage).";
@@ -738,11 +737,6 @@ echo "><br><i>$sciname</i></span><br>
         $shiftTitle = "This file has been shifted down in frequency."; 
         $shiftAction = "unshift";
   $filename = $filename_shifted;
-      } else {
-        $shiftImageIcon = "images/shift.svg";
-        $shiftTitle = "This file is not shifted in frequency.";
-        $shiftAction = "shift";
-      }
 
       echo "<tr>
   <td class=\"relative\"> 
@@ -832,7 +826,6 @@ echo "><br><i>$sciname</i></span><br>
           $disk_check_exclude_arr = [];
         }
 
-        if($config["FULL_DISK"] == "purge") {
           if(!in_array($filename_formatted, $disk_check_exclude_arr)) {
             $imageicon = "images/unlock.svg";
             $title = "This file will be deleted when disk space needs to be freed (>95% usage).";
@@ -861,12 +854,6 @@ echo "><br><i>$sciname</i></span><br>
 <img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
 <img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
 <img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\">$date $time<br>$values<br>
-<div class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'></div>
-</td></tr>";
-        } else {
-          echo "<tr>
-      <td class=\"relative\">$date $time<br>$values
-<img style='cursor:pointer' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'><br>
 <div class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'></div>
 </td></tr>";
         }
