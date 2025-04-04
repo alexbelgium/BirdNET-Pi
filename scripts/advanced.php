@@ -10,11 +10,20 @@ $user = get_user();
 ensure_authenticated();
 
 if (isset($_GET['run_species_count'])) {
-  echo "<script>";
-  $output = shell_exec("sudo -u $user ".$home."/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
-  $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
-  echo "alert(`$escaped_output`);";
-  echo "</script>";
+    echo "<script>";
+    $output = shell_exec("sudo -u $user ".$home."/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
+    $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
+    // Split the output into lines
+    $lines = explode("\n", $escaped_output);    
+    // Display alerts with up to 30 lines each
+    $chunk_size = 30;
+    for ($i = 0; $i < count($lines); $i += $chunk_size) {
+        $chunk = array_slice($lines, $i, $chunk_size);
+        $chunk_output = implode("\n", $chunk);
+        $alert_title = "Disk summary : " . (intdiv($i, $chunk_size) + 1);
+        echo "alert(`$alert_title\n\n$chunk_output`);";
+    }
+    echo "</script>";
 }
 
 if(isset($_GET['submit'])) {
