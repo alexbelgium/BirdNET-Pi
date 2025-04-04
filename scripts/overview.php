@@ -510,8 +510,6 @@ function loadDetectionIfNewExists(previous_detection_identifier=undefined) {
       loadLeftChart();
       loadFiveMostRecentDetections();
       refreshTopTen();
-
-      // Reinitialize custom audio players for newly loaded elements
       initCustomAudioPlayers();
     }
   }

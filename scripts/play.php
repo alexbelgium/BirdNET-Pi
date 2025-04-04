@@ -289,7 +289,7 @@ function toggleShiftFreq(filename, shiftAction, elem) {
       if (shiftAction == "shift") {
         elem.setAttribute("src", "images/unshift.svg");
         elem.setAttribute("title", "This file has been shifted down in frequency.");
-        elem.setAttribute("onclick", elem.getAttribute("onclick").replace("shift", "unshift"));
+        elem.setAttribute("onclick", elem.getAttribute("onclick").replace("shift","unshift"));
         console.log("shifted freqs of " + filename);
 
         const audioDiv = elem.parentNode.querySelector(".custom-audio-player");
@@ -302,9 +302,9 @@ function toggleShiftFreq(filename, shiftAction, elem) {
           }
         }
       } else {
-        elem.setAttribute("src", "images/shift.svg");
+        elem.setAttribute("src","images/shift.svg");
         elem.setAttribute("title", "This file is not shifted in frequency.");
-        elem.setAttribute("onclick", elem.getAttribute("onclick").replace("unshift", "shift"));
+        elem.setAttribute("onclick", elem.getAttribute("onclick").replace("unshift","shift"));
         console.log("unshifted freqs of " + filename);
 
         const audioDiv = elem.parentNode.querySelector(".custom-audio-player");
@@ -716,7 +716,7 @@ echo "><br><i>$sciname</i></span><br>
       break;
     }
 
-    if($num_rows < 100) {
+    if($num_rows < 100){
       $imageelem = "<div class='custom-audio-player' data-audio-src=\"$filename\" data-image-src=\"$filename_png\"></div>";
     } else {
       $imageelem = "<a href=\"$filename\"><img src=\"$filename_png\"></a>";
