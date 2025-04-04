@@ -302,12 +302,12 @@ $newconfig = get_config();
       </div>
       <script>
       var slider = document.getElementById("privacy_threshold");
-      var output = document.getElementById("threshold_value");
-      output.innerHTML = slider.value; // Display the default slider value
+      var outputShell = document.getElementById("threshold_value");
+      outputShell.innerHTML = slider.value; // Display the default slider value
       
       // Update the current slider value (each time you drag the slider handle)
       slider.oninput = function() {
-        output.innerHTML = this.value;
+        outputShell.innerHTML = this.value;
         document.getElementById("predictionCount").innerHTML = parseInt(Math.max(10, (this.value * <?php echo $count; ?>)/100));
       }
       </script>
@@ -707,15 +707,11 @@ dialogPolyfill.registerDialog(modal);
 const output = document.getElementById('output');
 const thresholdInput = document.getElementById('threshold');
 const runProcessBtn = document.getElementById('runProcess');
-const sfThreshInput = document.getElementsByName('sf_thresh')[0];
 const closeModalBtn = document.getElementById('closeModal');
 
 
 // Add an event listener to the button to open the modal
 openModalBtn.addEventListener('click', () => {
-
-  // Set the initial value of the threshold input element
-  thresholdInput.value = sfThreshInput.value;
 
 // Show the modal
   modal.showModal();
