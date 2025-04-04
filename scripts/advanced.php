@@ -662,89 +662,54 @@ echo "Update Settings";
 <script src="static/dialog-polyfill.js"></script>
 
 <dialog id="modal">
-  <div>
-    <label for="threshold">Threshold:</label>
-    <input type="number" id="threshold" step="0.01" min="0" max="1" value="">
-    <button type="button" id="runProcess">Preview Species List</button>
-  </div>
-  <pre id="output"></pre>
+  <pre id="output">Loading...</pre>
   <button type="button" id="closeModal">Close</button>
 </dialog>
 
 <style>
-#output {
-  max-width: 100vw;
-  word-wrap: break-word;
-  white-space: pre-wrap;
-}
 #modal {
   max-height: 80vh;
+  max-width: 90vw;
   overflow-y: auto;
-}
-#modal div {
-  display: flex;
-  align-items: center;
-}
-
-#modal input[type="number"] {
-  height: 32px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  padding: 1em;
 }
 
-#modal button {
-  height: 32px;
-  margin-left: 5px;
-  padding: 0 10px;
-  box-sizing: border-box;
+#output {
+  margin-bottom: 1em;
+  font-family: monospace;
+  font-size: 0.9em;
 }
 </style>
 
-
 <script>
-// Get the button and modal elements
-const openModalBtn = document.getElementById('openModal');
-const modal = document.getElementById('modal');
-dialogPolyfill.registerDialog(modal);
-const output = document.getElementById('output');
-const thresholdInput = document.getElementById('threshold');
-const runProcessBtn = document.getElementById('runProcess');
-const closeModalBtn = document.getElementById('closeModal');
+document.addEventListener("DOMContentLoaded", () => {
+  const openModalBtn = document.getElementById('openModal');
+  const modal = document.getElementById('modal');
+  const output = document.getElementById('output');
+  const closeModalBtn = document.getElementById('closeModal');
 
+  if (typeof dialogPolyfill !== "undefined") {
+    dialogPolyfill.registerDialog(modal);
+  }
 
-// Add an event listener to the button to open the modal
-openModalBtn.addEventListener('click', () => {
+  openModalBtn.addEventListener('click', () => {
+    output.textContent = "Loading...";
+    modal.showModal();
 
-// Show the modal
-  modal.showModal();
+    fetch(`scripts/advanced.php?run_species_count=true`)
+      .then(response => response.text())
+      .then(data => {
+        output.textContent = data;
+      })
+      .catch(err => {
+        output.textContent = "Error fetching disk usage summary:\n" + err;
+      });
+  });
+
+  closeModalBtn.addEventListener('click', () => {
+    modal.close();
+  });
 });
-
-// Add an event listener to the "Preview Species List" button
-runProcessBtn.addEventListener('click', () => {
-
-  runProcess();
-});
-
-// Add an event listener to the "Close" button
-closeModalBtn.addEventListener('click', () => {
-  modal.close();
-});
-
-// Function to run the process
-function runProcess() {
-  // Get the value of the threshold input element
-  const threshold = thresholdInput.value;
-
- // Set the output to "Loading..."
-  output.innerHTML = "Loading...";
-
-  // Make the AJAX request
-  const xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === XMLHttpRequest.DONE) {
-      // Handle the response
-      output.innerHTML = xhr.responseText;
-    }
-  };
-  xhr.open('GET', `scripts/advanced.php?run_species_count=true`);
-  xhr.send();
-}
 </script>
