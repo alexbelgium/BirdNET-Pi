@@ -53,7 +53,7 @@ while read -r species; do
     species_display=$(echo "$species" | tr '_' ' ')
 
     # Save padded sort key + display line
-    printf "%05d %s : %s\n" "$total" "$species_display" "$total_display" >> "$data_file"
+    printf "%05d %s : %s\n" "$total" "$total_display" "$species_display" >> "$data_file"
 done <<<"$sanitized_names"
 
 # Avoid TERM error if not running in a terminal
