@@ -62,12 +62,13 @@ done <<<"$sanitized_names"
 # Build final output
 {
     echo "BirdSongs stored on your drive. This number is higher than the MAX_FILE_SPECIES (${MAX_FILE_SPECIES:-1000}) as files from the last 7 days are protected, as well as files specifically notified in the disk_check_exclude.txt"
+    echo " "
     echo "Location : $base_dir: "
     echo "Free space    : $(df -h "$base_dir" | awk 'NR==2 {print $4}' | sed 's/G/ GB/; s/M/ MB/; s/K/ KB/')"
     echo "Total species : $species_count"
     echo "Total files   : $(format_k "$total_file_count")"
     echo "Total size    : $(du -sh . | sed 's/G/ GB/; s/M/ MB/; s/K/ KB/' | cut -f1)"
-    echo "=============================="
+    echo " "
     sort -r "$data_file" | sed 's/^[0-9]* //'
 } > "$output_file"
 
