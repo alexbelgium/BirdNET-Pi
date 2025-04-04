@@ -20,11 +20,7 @@ function service_status($name) {
   } elseif (stripos($op, " inactive ")) {
       echo "<span style='color:#fc6603'>(inactive)</span>";
   } else {
-      $status = "ERROR";
-      if (preg_match("/(\S*)\s*\((\S+)\)/", $op, $matches)) {
-          $status =  $matches[1]. " [" . $matches[2] . "]";
-      }
-      echo "<span style='color:red'>($status)</span>";
+    echo "<span style='color:#fc6603'>(inactive)</span>";
   }
 }
 ?>
