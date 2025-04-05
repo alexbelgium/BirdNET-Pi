@@ -391,14 +391,14 @@ function initCustomAudioPlayers() {
     bigPlayOverlay.appendChild(bigPlayBtn);
     wrapper.appendChild(bigPlayOverlay);
 
-    // Bottom control overlay (100px tall)
+    // Bottom control overlay
     const controlOverlay = document.createElement("div");
     applyStyles(controlOverlay, {
       position: "absolute",
       left: "0",
       bottom: "0",
       width: "100%",
-      height: "20%",
+      height: "15%",
       display: "none",
       alignItems: "center",
       justifyContent: "space-between",
@@ -406,13 +406,16 @@ function initCustomAudioPlayers() {
       borderRadius: "0 0 12px 12px",
       background: "rgba(0,0,0,0.2)",
       backdropFilter: "blur(8px)",
-      WebkitBackdropFilter: "blur(8px)", // for Safari
+      WebkitBackdropFilter: "blur(8px)",
     });
 
-    // Small play/pause button
+    // Hidden small play/pause button
     const controlPlayBtn = createButton(controlOverlay, {
       html: icons.play,
-      styles: iconBtnStyle,
+      styles: {
+        ...iconBtnStyle,
+        display: "none", // hide it
+      },
       onClick: debouncedPlayPause,
     });
 
@@ -424,7 +427,7 @@ function initCustomAudioPlayers() {
     progress.max = "100";
     applyStyles(progress, {
       flex: "1",
-      margin: "0 0.5rem",
+      margin: "0 1rem", // bigger margin
       verticalAlign: "middle",
     });
     controlOverlay.appendChild(progress);
@@ -435,16 +438,16 @@ function initCustomAudioPlayers() {
       styles: iconBtnStyle,
     });
 
-    // Menu container (with blur & partial transparency)
+    // Menu container
     const menu = document.createElement("div");
     applyStyles(menu, {
       position: "absolute",
       right: "10px",
-      bottom: "110px", // just above the 100px overlay
-      background: "rgba(0,0,0,0.7)",
+      bottom: "calc(20% + 30px)", // place above the 20% overlay
+      background: "rgba(0,0,0,0.7)", // 0.7 transparency
       backdropFilter: "blur(8px)",
       WebkitBackdropFilter: "blur(8px)",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.5)", // 0.5 shadow
       color: "white",
       borderRadius: "8px",
       padding: "0.75rem",
