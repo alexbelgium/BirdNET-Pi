@@ -52,7 +52,7 @@ function initCustomAudioPlayers() {
   const savedHighpass = safeGet("customAudioPlayerFilterHigh", "Off");
   const savedLowpass = safeGet("customAudioPlayerFilterLow", "Off");
 
-  // Style helper
+  // Helper to apply multiple style properties
   const applyStyles = (elem, styles) => Object.assign(elem.style, styles);
 
   // Basic styling for small control buttons
@@ -198,11 +198,27 @@ function initCustomAudioPlayers() {
     applyStyles(wrapper, { position: "relative" });
 
     // Spectrogram image
+    let indicator = null;
     if (imageSrc) {
       const img = wrapper.appendChild(document.createElement("img"));
       img.src = imageSrc;
       img.onerror = () => wrapper.removeChild(img);
       applyStyles(img, { width: "100%", borderRadius: "8px" });
+
+      // Dark vertical progression bar
+      indicator = document.createElement("div");
+      applyStyles(indicator, {
+        position: "absolute",
+        top: "0",
+        bottom: "0",
+        // Start at left margin
+        left: CONFIG.LEFT_MARGIN_PERCENT + "%",
+        width: "2px",
+        background: "rgba(0,0,0,0.8)",
+        pointerEvents: "none",
+        borderRadius: "2px",
+      });
+      wrapper.appendChild(indicator);
     }
 
     // Loading spinner
@@ -388,9 +404,9 @@ function initCustomAudioPlayers() {
       justifyContent: "space-between",
       padding: "0 10px",
       borderRadius: "0 0 12px 12px",
-      background: "rgba(0,0,0,0.2)",
+      background: "rgba(0,0,0,0.3)",
       backdropFilter: "blur(8px)",
-      WebkitBackdropFilter: "blur(8px)",
+      WebkitBackdropFilter: "blur(8px)", // for Safari
     });
 
     // Small play/pause button
@@ -400,7 +416,7 @@ function initCustomAudioPlayers() {
       onClick: debouncedPlayPause,
     });
 
-    // Progress bar (reverting to a simpler “visual” style)
+    // Progress bar
     const progress = document.createElement("input");
     progress.type = "range";
     progress.value = "0";
@@ -424,11 +440,11 @@ function initCustomAudioPlayers() {
     applyStyles(menu, {
       position: "absolute",
       right: "10px",
-      bottom: "110px",
-      background: "rgba(0,0,0,0.7)",
+      bottom: "110px", // just above the 100px overlay
+      background: "rgba(0,0,0,0.5)",
       backdropFilter: "blur(8px)",
       WebkitBackdropFilter: "blur(8px)",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
       color: "white",
       borderRadius: "8px",
       padding: "0.75rem",
@@ -590,7 +606,16 @@ Channels: ${channels}`
     const updateProgress = () => {
       if (!audioEl.duration) return;
       const frac = audioEl.currentTime / audioEl.duration;
+      // Update horizontal progress bar
       progress.value = frac * 100;
+
+      // Update vertical bar if we have an indicator
+      if (indicator) {
+        const leftPosition =
+          CONFIG.LEFT_MARGIN_PERCENT +
+          frac * (100 - CONFIG.LEFT_MARGIN_PERCENT - CONFIG.RIGHT_MARGIN_PERCENT);
+        indicator.style.left = leftPosition + "%";
+      }
     };
 
     const clearProgressInterval = () => {
