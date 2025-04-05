@@ -398,13 +398,13 @@ function initCustomAudioPlayers() {
       left: "0",
       bottom: "0",
       width: "100%",
-      height: "100px",
+      height: "20%",
       display: "none",
       alignItems: "center",
       justifyContent: "space-between",
       padding: "0 10px",
       borderRadius: "0 0 12px 12px",
-      background: "rgba(0,0,0,0.3)",
+      background: "rgba(0,0,0,0.2)",
       backdropFilter: "blur(8px)",
       WebkitBackdropFilter: "blur(8px)", // for Safari
     });
@@ -441,10 +441,10 @@ function initCustomAudioPlayers() {
       position: "absolute",
       right: "10px",
       bottom: "110px", // just above the 100px overlay
-      background: "rgba(0,0,0,0.5)",
+      background: "rgba(0,0,0,0.7)",
       backdropFilter: "blur(8px)",
       WebkitBackdropFilter: "blur(8px)",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
       color: "white",
       borderRadius: "8px",
       padding: "0.75rem",
