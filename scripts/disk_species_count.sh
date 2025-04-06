@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# Always use pi's home directory
-HOME=$(getent passwd pi | cut -d: -f6)
-
+# Get default values
 source /etc/birdnet/birdnet.conf
 base_dir="$(readlink -f "$HOME/BirdSongs/Extracted/By_Date")"
 cd "$base_dir" || exit 1
@@ -61,7 +59,7 @@ done <<<"$sanitized_names"
 
 # Build final output
 {
-    echo "BirdSongs stored on your drive. This number is higher than the MAX_FILE_SPECIES (${MAX_FILE_SPECIES:-1000}) as files from the last 7 days are protected, as well as files specifically notified in the disk_check_exclude.txt"
+    echo "BirdSongs stored on your drive. This value is higher than MAX_FILE_SPECIES (${MAX_FILE_SPECIES:-1000}) as includes protected files"
     echo " "
     echo "Location : $base_dir: "
     echo "Free space    : $(df -h "$base_dir" | awk 'NR==2 {print $4}' | sed 's/G/ GB/; s/M/ MB/; s/K/ KB/')"
