@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# Always use pi's home directory
-HOME=$(getent passwd pi | cut -d: -f6)
-
+# Get default values
 source /etc/birdnet/birdnet.conf
 base_dir="$(readlink -f "$HOME/BirdSongs/Extracted/By_Date")"
 cd "$base_dir" || exit 1
