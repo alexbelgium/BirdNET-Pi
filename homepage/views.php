@@ -319,6 +319,9 @@ if(isset($_GET['view'])){
         if($initcommand == "update_birdnet.sh") {
           session_unset();
         }
+        if($command == $restore) {
+          $command = "$restore && rm -f $backup_file";
+        }
         $results = shell_exec("$command 2>&1");
         $results = str_replace("FAILURE", "<span style='color:red'>FAILURE</span>", $results);
         $results = str_replace("failed", "<span style='color:red'>failed</span>",$results);
@@ -385,19 +388,21 @@ function myFunction() {
   }
 }
 function setLiveStreamVolume(vol) {
-  var audioelement =  window.parent.document.getElementsByTagName("audio")[0];
-  if (typeof(audioelement) != 'undefined' && audioelement != null)
-  {
-    audioelement.volume = vol
-  }
+  var audioElements = document.querySelectorAll(".custom-audio-player audio");
+  audioElements.forEach(audioEl => {
+    if (audioEl) {
+      audioEl.volume = vol;
+    }
+  });
 }
 window.onbeforeunload = function(event) {
   // if the user is playing a video and then navigates away mid-play, the live stream audio should be unmuted again
-  var audioelement =  window.parent.document.getElementsByTagName("audio")[0];
-  if (typeof(audioelement) != 'undefined' && audioelement != null)
-  {
-    audioelement.volume = 1
-  }
+  var audioElements = document.querySelectorAll(".custom-audio-player audio");
+  audioElements.forEach(audioEl => {
+    if (audioEl) {
+      audioEl.volume = 1;
+    }
+  });
 }
 
 function getTheDate(increment) {
