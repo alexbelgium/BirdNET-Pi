@@ -403,7 +403,7 @@ function initCustomAudioPlayers() {
       alignItems: "center",
       justifyContent: "space-between",
       padding: "0 10px",
-      borderRadius: "0 0 12px 12px",
+      borderRadius: "0 0 8px 8px",
       background: "rgba(0,0,0,0.2)",
       backdropFilter: "blur(8px)",
       WebkitBackdropFilter: "blur(8px)",
