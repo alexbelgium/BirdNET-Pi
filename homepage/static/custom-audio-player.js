@@ -195,7 +195,11 @@ function initCustomAudioPlayers() {
 
     // Wrapper for spectrogram & overlays
     const wrapper = player.appendChild(document.createElement("div"));
-    applyStyles(wrapper, { position: "relative" });
+    applyStyles(wrapper, {
+      position: "relative",
+      overflow: "hidden",
+      borderRadius: "12px",
+    });
 
     // Spectrogram image
     let indicator = null;
@@ -203,7 +207,11 @@ function initCustomAudioPlayers() {
       const img = wrapper.appendChild(document.createElement("img"));
       img.src = imageSrc;
       img.onerror = () => wrapper.removeChild(img);
-      applyStyles(img, { width: "100%", borderRadius: "8px" });
+      applyStyles(img, {
+        width: "100%",
+        display: "block",
+        borderRadius: "12px",
+      });
 
       // Dark vertical progression bar
       indicator = document.createElement("div");
@@ -403,7 +411,7 @@ function initCustomAudioPlayers() {
       alignItems: "center",
       justifyContent: "space-between",
       padding: "0 10px",
-      borderRadius: "0 0 8px 8px",
+      borderRadius: "0 0 10px 10px",
       background: "rgba(0,0,0,0.2)",
       backdropFilter: "blur(8px)",
       WebkitBackdropFilter: "blur(8px)",
