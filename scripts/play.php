@@ -623,7 +623,7 @@ echo "<table>
     }
     $iter++;
 
-    if($num_rows < 100){
+    if($iter < 100){
       $imageelem = "<div class='custom-audio-player' data-audio-src=\"$filename\" data-image-src=\"$filename_png\"></div>";
     } else {
       $imageelem = "<a href=\"$filename\"><img src=\"$filename_png\"></a>";
