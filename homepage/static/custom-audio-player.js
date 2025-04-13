@@ -214,6 +214,7 @@ function initCustomAudioPlayers() {
       });
 
       // Dark vertical progression bar
+      img.addEventListener("load", () => {
       indicator = document.createElement("div");
       applyStyles(indicator, {
         position: "absolute",
@@ -227,6 +228,7 @@ function initCustomAudioPlayers() {
         borderRadius: "2px",
       });
       wrapper.appendChild(indicator);
+    });
     }
 
     // Loading spinner
