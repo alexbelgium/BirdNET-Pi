@@ -180,6 +180,23 @@ button:hover {
   text-align: center; /* Center the content */
 }
 
+.sp-viewer {
+  position: relative;
+  background-repeat: no-repeat;
+}
+
+.sp-axis {
+  position: absolute;
+}
+
+.sp-timeBar {
+  width: 1px;
+  height: 100%;
+  position: absolute;
+  left: 50%;
+  background-color: #555;
+}
+
 @media (max-width: 768px) {
   .modal-content {
     width: 95%;

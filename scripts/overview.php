@@ -12,6 +12,7 @@ $config = get_config();
 set_timezone();
 $myDate = date('Y-m-d');
 $chart = "Combo-$myDate.png";
+$interactivechart = "interactive_daily_plot.html";
 
 $db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
 $db->busyTimeout(1000);
@@ -121,7 +122,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
         <table class="<?php echo ($_GET['previous_detection_identifier'] == 'undefined') ? '' : 'fade-in';  ?>">
           <h3>Most Recent Detection: <span style="font-weight: normal;"><?php echo $mostrecent['Date']." ".$mostrecent['Time'];?></span></h3>
           <tr>
-            <td class="relative"><a target="_blank" href="index.php?filename=<?php echo $mostrecent['File_Name']; ?>"><img class="copyimage" title="Open in new tab" width="25" height="25" src="images/copy.png"></a>
+            <td class="relative"><a target="_blank" href="index.php?filename=<?php echo $mostrecent['File_Name']; ?>"><img class="copyimage" title="Open in new tab" width="25" height="25 max" src="images/copy.png"></a>
             <div class="centered_image_container" style="margin-bottom: 0px !important;">
               <?php if(!empty($config["FLICKR_API_KEY"]) && strlen($image[2]) > 0) { ?>
                 <img onclick='setModalText(<?php echo $iterations; ?>,"<?php echo urlencode($image[2]); ?>", "<?php echo $image[3]; ?>", "<?php echo $image[4]; ?>", "<?php echo $image[1]; ?>", "<?php echo $image[5]; ?>")' src="<?php echo $image[1]; ?>" class="img1">
@@ -450,7 +451,7 @@ function display_species($species_list, $title, $show_last_seen=false) {
 display_species($new_species, 'New Species');
 display_species($rare_species, 'Rare Species', true);
 ?>
-<div class="chart">
+<div class="chart" style="visibility: hidden;">
 <?php
 $refresh = $config['RECORDING_LENGTH'];
 $dividedrefresh = $refresh/4;
@@ -458,12 +459,25 @@ if($dividedrefresh < 1) {
   $dividedrefresh = 1;
 }
 $time = time();
-if (file_exists('./Charts/'.$chart)) {
-  echo "<img id='chart' src=\"Charts/$chart?nocache=$time\">";
-} 
+$interactivechart_path = './Charts/' . $interactivechart;
+$chart_path = './Charts/' . $chart;
+if (file_exists($interactivechart_path)) {
+    $html_content = file_get_contents($interactivechart_path);
+    echo $html_content;
+} elseif (file_exists($chart_path)) {
+    echo "<img id='chart' src='Charts/$chart?nocache=$time'>";
+}
 ?>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const chartContainer = document.querySelector('.chart');
+        if (window.innerWidth <= 800) {
+            chartContainer.innerHTML = '<img id="chart" src="Charts/<?php echo $chart; ?>?nocache=<?php echo $time; ?>">';
+        }
+        chartContainer.style.visibility = 'visible';
+    });
+</script>
 </div>
-
 <div id="most_recent_detection"></div>
 <br>
 <h3>5 Most Recent Detections</h3>
