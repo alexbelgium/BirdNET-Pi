@@ -11,7 +11,6 @@ ensure_authenticated();
 
 if (isset($_GET['run_species_count'])) {
     echo "<script>";
-    echo "alert('Please click ok to start disk summary gathering. This might take up to a couple minutes');";
     $output = shell_exec("sudo -u $user ".$home."/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
     $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
     // Split the output into lines
@@ -344,7 +343,7 @@ $newconfig = get_config();
       Note only the spectrogram and audio files are deleted, the obsevation data remains in the database.
       The files protected through the "lock" icon are also not affected.
       <br>
-      <button type="submit" name="run_species_count" value="1" onclick="this.innerHTML='Loading...';"><i>[Click here for disk usage summary]</i></button>
+      <button type="submit" name="run_species_count" value="1" onclick="this.innerHTML='Loading please wait...';><i>[Click here for disk usage summary]</i></button>
       </td></tr></table><br>
       <table class="settingstable"><tr><td>
 
