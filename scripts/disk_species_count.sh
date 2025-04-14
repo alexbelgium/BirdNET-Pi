@@ -59,7 +59,7 @@ done <<<"$sanitized_names"
 
 # Build final output
 {
-    echo "BirdSongs stored on your drive. This value is higher than MAX_FILE_SPECIES (${MAX_FILE_SPECIES:-1000}) as includes protected files"
+    echo "BirdSongs stored on your drive"
     echo " "
     echo "Location : $base_dir: "
     echo "Free space    : $(df -h "$base_dir" | awk 'NR==2 {print $4}' | sed 's/G/ GB/; s/M/ MB/; s/K/ KB/')"
