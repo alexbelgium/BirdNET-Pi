@@ -138,7 +138,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
                   <img style="width: unset !important;display: inline;height: 1em;cursor:pointer" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>')" width=25 src="images/chart.svg">
                   <br>Confidence: <?php echo $percent = round((float)round($mostrecent['Confidence'],2) * 100 ) . '%';?><br></div><br>
                   <div class='custom-audio-player' data-audio-src="<?php echo $filename; ?>" data-image-src="<?php echo $filename.".png";?>"></div>
-              </td></form>
+                  </td></form>
           </tr>
         </table> <?php break;
       }
@@ -511,7 +511,7 @@ function loadDetectionIfNewExists(previous_detection_identifier=undefined) {
       loadFiveMostRecentDetections();
       refreshTopTen();
 
-      // Reinitialize custom audio players for newly loaded elements
+      // Now that new HTML is inserted, re-run player init:
       initCustomAudioPlayers();
     }
   }
@@ -552,13 +552,11 @@ function refreshTopTen() {
 function refreshDetection() {
   if (!document.hidden) {
     const audioPlayers = document.querySelectorAll(".custom-audio-player");
-
     // If no custom-audio-player elements are found, refresh
     if (audioPlayers.length === 0) {
       loadDetectionIfNewExists();
       return;
     }
-
     // Check if any custom audio player is currently playing
     let isPlaying = false;
     audioPlayers.forEach((player) => {
@@ -567,7 +565,6 @@ function refreshDetection() {
         isPlaying = true;
       }
     });
-
     // If none are playing, refresh detections
     if (!isPlaying) {
       const currentIdentifier = audioPlayers[0]?.dataset.audioSrc || undefined;

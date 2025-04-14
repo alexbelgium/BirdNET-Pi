@@ -289,9 +289,8 @@ function toggleShiftFreq(filename, shiftAction, elem) {
       if (shiftAction == "shift") {
         elem.setAttribute("src", "images/unshift.svg");
         elem.setAttribute("title", "This file has been shifted down in frequency.");
-        elem.setAttribute("onclick", elem.getAttribute("onclick").replace("shift", "unshift"));
-        console.log("shifted freqs of " + filename);
-
+        elem.setAttribute("onclick", elem.getAttribute("onclick").replace("shift","unshift"));
+	console.log("shifted freqs of " + filename);
         const audioDiv = elem.parentNode.querySelector(".custom-audio-player");
         if (audioDiv) {
           audioDiv.setAttribute("data-audio-src", audioDiv.getAttribute("data-audio-src").replace("/By_Date/", "/By_Date/shifted/"));
@@ -306,7 +305,6 @@ function toggleShiftFreq(filename, shiftAction, elem) {
         elem.setAttribute("title", "This file is not shifted in frequency.");
         elem.setAttribute("onclick", elem.getAttribute("onclick").replace("unshift", "shift"));
         console.log("unshifted freqs of " + filename);
-
         const audioDiv = elem.parentNode.querySelector(".custom-audio-player");
         if (audioDiv) {
           audioDiv.setAttribute("data-audio-src", audioDiv.getAttribute("data-audio-src").replace("/By_Date/shifted/", "/By_Date/"));
@@ -716,7 +714,7 @@ echo "><br><i>$sciname</i></span><br>
       break;
     }
 
-    if($iter < 100) {
+    if($iter < 100){
       $imageelem = "<div class='custom-audio-player' data-audio-src=\"$filename\" data-image-src=\"$filename_png\"></div>";
     } else {
       $imageelem = "<a href=\"$filename\"><img src=\"$filename_png\"></a>";
@@ -757,6 +755,26 @@ echo "><br><i>$sciname</i></span><br>
   }
 
   if($iter == 0){ echo "<tr><td><b>No recordings were found.</b><br><br><span style='font-size:medium'>They may have been deleted to make space for new recordings. You can prevent this from happening in the future by clicking the <img src='images/unlock.svg' style='width:20px'> icon in the top right of a recording.<br>You can also modify this behavior globally under \"Full Disk Behavior\" <a href='views.php?view=Advanced'>here.</a></span></td></tr>";}echo "</table>";}
+
+  if ($iter_additional) {
+    echo "<div style='text-align:center'>";
+    echo "<form action='views.php' method='GET' style='display:inline'>";
+    echo "<input type='hidden' name='view' value='Recordings'>";
+    echo "<input type='hidden' name='species' value=\"" . htmlspecialchars($_GET['species'], ENT_QUOTES) . "\">";
+    if(isset($_GET['sort'])) {
+      echo "<input type='hidden' name='sort' value=\"" . htmlspecialchars($_GET['sort'], ENT_QUOTES) . "\">";
+    }
+    if(isset($_GET['only_excluded'])) {
+      echo "<input type='hidden' name='only_excluded' value='" . $_GET['only_excluded'] . "'>";
+    }
+    if(isset($_SESSION['date'])) {
+      echo "<input type='hidden' name='date' value='" . $_SESSION['date'] . "'>";
+    }
+    echo "<input type='hidden' name='limit' value='" . ($limit + 40) . "'>";
+    echo "<button type='submit' class='loadmore'>Load 40 more...</button>";
+    echo "</form>";
+    echo "</div>";
+  }
 
   if ($iter_additional) {
     echo "<div style='text-align:center'>";
@@ -851,6 +869,7 @@ echo "><br><i>$sciname</i></span><br>
 <img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
 <img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
 <img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\">$date $time<br>$values<br>
+
 <div class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'></div>
 </td></tr>";
 

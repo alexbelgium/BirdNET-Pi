@@ -44,4 +44,5 @@ exclude_species_list.txt
 firstrun.ini
 HUMAN.txt
 include_species_list.txt
+whitelist_species_list.txt
 /nbproject/private/

@@ -512,7 +512,7 @@ function loadDetections(detections_limit, element=undefined) {
      document.getElementById("detections_table").innerHTML= this.responseText;
     }
     // Reinitialize custom audio players for newly loaded elements
-    initCustomAudioPlayers();
+    initCustomAudioPlayers();    
   }
   if(searchterm != ""){
     xhttp.open("GET", "todays_detections.php?ajax_detections=true&display_limit="+detections_limit+"&searchterm="+searchterm, true);
