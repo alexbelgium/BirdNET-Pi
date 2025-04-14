@@ -5,6 +5,15 @@ if [ "$EUID" == 0 ]
   exit
 fi
 
+if [ "$#" -eq 0 ] || [ "$1" = "birdnet" ]; then
+    INSTALL_VARIANT="birdnet"
+elif [ "$1" = "battybirdnet" ]; then
+    INSTALL_VARIANT="battybirdnet"
+else
+    echo "Usage: $0 [birdnet], or $0 [battybirdnet]"
+    exit 1
+fi
+
 if [ "$(uname -m)" != "aarch64" ] && [ "$(uname -m)" != "x86_64" ];then
   echo "BirdNET-Pi requires a 64-bit OS.
 It looks like your operating system is using $(uname -m),
@@ -45,6 +54,17 @@ fi
 
 branch=main
 git clone -b $branch --depth=1 https://github.com/Nachtzuster/BirdNET-Pi.git ${HOME}/BirdNET-Pi &&
+
+# If battybirdnet option was provided, run additional installation steps
+if [ "$INSTALL_VARIANT" = "battybirdnet" ]; then
+    branch_classifier=main
+    echo "Installing BattyBirdNET-Analyzer..."
+    git clone -b $branch_classifier --depth=1 https://github.com/rdz-oss/BattyBirdNET-Analyzer.git ${HOME}/BattyBirdNET-Analyzer ||
+    { echo "Failed to clone BattyBirdNET-Analyzer"; exit 1; }
+    echo "Replacing files with Battybirdnet variants..."
+    cp -rf "${HOME}"/BirdNET-Pi/battybirdnet/* "${HOME}"/BirdNET-Pi/
+    echo "Battybirdnet modifications applied successfully."
+fi
 
 $HOME/BirdNET-Pi/scripts/install_birdnet.sh
 if [ ${PIPESTATUS[0]} -eq 0 ];then
