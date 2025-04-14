@@ -11,6 +11,7 @@ ensure_authenticated();
 
 if (isset($_GET['run_species_count'])) {
    echo "<script>";
+   echo "alert('Please click ok to start disk summary gathering. This might take up to a couple minutes');";
    $output = shell_exec("sudo -u $user ".$home."/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
    $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
    echo "alert(`$escaped_output`);";
