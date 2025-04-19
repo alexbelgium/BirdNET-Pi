@@ -5,8 +5,6 @@ source /etc/birdnet/birdnet.conf
 base_dir="$(readlink -f "$HOME/BirdSongs/Extracted/By_Date")"
 cd "$base_dir" || exit 1
 
-MAX_FILE_SPECIES="${MAX_FILE_SPECIES:-1000}"
-
 # Function to format numbers to k if ≥1000
 format_k() {
     local value=$1
