@@ -316,11 +316,10 @@ $newconfig = get_config();
       <label for="purge_threshold">Purge Threshold (Disk Used %):</label>
       <input name="purge_threshold" type="number" style="width:6em;" min="20" max="99" step="1" value="<?php print($newconfig['PURGE_THRESHOLD']);?>"/>
       <p>Defines how full the disk should be before the purge operations occur.<br>Note: This variable is still active if Keep is set. This means that the servies will be stopped at the purge threshold.</p><br>
-      <label for="max_files_species">Minimum amount of files to keep for each species :</label>
+      <label for="max_files_species">Number of files to keep for each species :</label>
       <input name="max_files_species" type="number" style="width:6em;" min="0" step="1" value="<?php print($newconfig['MAX_FILES_SPECIES']);?>"/>
       </td></tr><tr><td>
-      If different than 0 (keep all), defines the maximum number of files to be kept for each species, with priority give to files with highest confidence. 
-      This value does not take into account the last 7 days (protected by default).
+      If different than 0 (keep all), defines the number of files to keep for each species, with priority give to files with higher confidence. This value does not include files from the last 7 days, these new files are protected against auto-deletion.
       </td></tr><tr><td>
       Note only the spectrogram and audio files are deleted, the obsevation data remains in the database.
       The files protected through the "lock" icon are also not affected.
