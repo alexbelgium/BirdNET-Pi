@@ -390,8 +390,8 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
 
         # restart the server
         python_bin = os.path.expanduser("~/BirdNET-Pi/birdnet/bin/python3")
-        server_script = os.path.expanduser("~/BattyBirdNET-Analyzer/server.py")
-        os.chdir(os.path.expanduser("~/BattyBirdNET-Analyzer"))
+        server_script = os.path.expanduser("~/BirdNET-Pi/BattyBirdNET-Analyzer/server.py")
+        os.chdir(os.path.expanduser("~/BirdNET-Pi/BattyBirdNET-Analyzer"))
         area_arg = conf.get("BATS_CLASSIFIER")
         cmd = [python_bin, server_script, "--area", area_arg]
         subprocess.Popen(cmd)
