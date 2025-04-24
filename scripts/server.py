@@ -353,62 +353,57 @@ def run_analysis(file):
     return confident_detections
 
 
-def run_bats_analysis(file, host="127.0.0.1", port=7667):
+def manage_batsanalyzer_server(host="127.0.0.1", port=7667, classifier=None):
     """
-    0. Health-check the analyzer server; if not healthy, kill & restart it.
-    1. Build metadata and POST the file for analysis.
-    2. Parse & filter results into Detection objects (with start ≤ stop).
+    0. Ping /healthcheck.
+    1. If non‐200 or exception, kill any process on `:port` and restart
+       the BattyBirdNET-Analyzer with --area=classifier.
     """
     log = logging.getLogger(__name__)
-    conf = get_settings()
-
-    # -----------------------------------------------------------------
-    # 0. Health-check & (re)start server if needed
-    # -----------------------------------------------------------------
-    health_url = f"http://{host}:{port}/healthcheck"
+    url = f"http://{host}:{port}/healthcheck"
     try:
-        hc = requests.get(health_url, timeout=5)
-        if hc.status_code != 200:
-            raise RuntimeError(f"Bad status: {hc.status_code}")
+        if requests.get(url, timeout=5).status_code == 200:
+            return
+        raise RuntimeError("bad status")
     except Exception as e:
-        log.warning("Healthcheck failed (%s); restarting analyzer server...", e)
+        log.warning("Analyzer down (%s); restarting…", e)
 
-        # kill any process on that port
+        # kill existing
         try:
-            pids = (
-                subprocess.check_output(["lsof", "-ti", f":{port}"])
-                .decode()
-                .split()
-            )
+            pids = subprocess.check_output(["lsof", "-ti", f":{port}"], text=True).split()
             for pid in pids:
                 subprocess.run(["kill", "-9", pid], check=False)
-                log.info("Killed process %s on port %s", pid, port)
+                log.info("Killed PID %s on port %s", pid, port)
         except subprocess.CalledProcessError:
-            log.info("No existing process found on port %s", port)
-        except Exception as kill_e:
-            log.error("Error killing process on port %s: %s", port, kill_e)
+            pass
 
-        # restart the server
-        python_bin    = os.path.expanduser("~/BirdNET-Pi/birdnet/bin/python3")
-        server_script = os.path.expanduser("~/BirdNET-Pi/BattyBirdNET-Analyzer/server.py")
-        os.chdir(os.path.expanduser("~/BirdNET-Pi/BattyBirdNET-Analyzer"))
-        area_arg = conf.get("BATS_CLASSIFIER")
-        cmd = [python_bin, server_script, "--area", area_arg]
-        subprocess.Popen(cmd)
-        log.info("Restarted analyzer server with: %s", " ".join(cmd))
-        time.sleep(2)  # give it a moment
+        # restart
+        pybin = os.path.expanduser("~/BirdNET-Pi/birdnet/bin/python3")
+        svr   = os.path.expanduser("~/BirdNET-Pi/BattyBirdNET-Analyzer/server.py")
+        cwd   = os.path.dirname(svr)
+        cmd   = [pybin, svr]
+        if classifier:
+            cmd += ["--area", classifier]
 
-    # -----------------------------------------------------------------
-    # 1. Load include/exclude lists & build metadata payload
-    # -----------------------------------------------------------------
-    INCLUDE_LIST = loadCustomSpeciesList(
-        os.path.expanduser("~/BirdNET-Pi/include_species_list.txt")
-    )
-    EXCLUDE_LIST = loadCustomSpeciesList(
-        os.path.expanduser("~/BirdNET-Pi/exclude_species_list.txt")
-    )
+        subprocess.Popen(cmd, cwd=cwd)
+        time.sleep(5)
 
-    mdata = {
+
+def run_bats_analysis(file, host="127.0.0.1", port=7667):
+    """
+    1. manage_batsanalyzer_server()
+    2. POST file for analysis
+    3. Convert & filter to Detection objects (start ≤ stop)
+    """
+    log  = logging.getLogger(__name__)
+    conf = get_settings()
+
+    manage_batsanalyzer_server(host, port, conf.get("BATS_CLASSIFIER"))
+
+    include = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/include_species_list.txt"))
+    exclude = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/exclude_species_list.txt"))
+
+    meta = {
         "lat":         conf.getfloat("LATITUDE"),
         "lon":         conf.getfloat("LONGITUDE"),
         "week":        file.week,
@@ -417,42 +412,34 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
         "pmode":       "max",
     }
 
-    # -----------------------------------------------------------------
-    # 2. Send file & metadata for analysis
-    # -----------------------------------------------------------------
     url = f"http://{host}:{port}/analyze"
-    files = {
-        "audio": (os.path.basename(file.file_name), open(file.file_name, "rb")),
-        "meta":  (None, json.dumps(mdata)),
-    }
-
     try:
-        resp = requests.post(url, files=files, timeout=120)
-        resp.raise_for_status()
-        data = resp.json()
+        with open(file.file_name, "rb") as wav:
+            files = {
+                "audio": (os.path.basename(file.file_name), wav),
+                "meta":  (None, json.dumps(meta)),
+            }
+            resp = requests.post(url, files=files, timeout=120)
+            resp.raise_for_status()
+            data = resp.json()
     except Exception as e:
         log.error("Remote analysis failed for %s: %s", file.file_name, e)
-        return []  # fall back gracefully
+        return []
 
-    raw_detections = data.get("results", {})
-
-    # -----------------------------------------------------------------
-    # 3. Filter & convert to Detection objects (swap if inverted)
-    # -----------------------------------------------------------------
-    confident_detections = []
+    raw = data.get("results", {})
+    detections = []
     min_conf = conf.getfloat("CONFIDENCE")
 
-    for segment, entries in raw_detections.items():
-        # segment is "start-end"; split only at first dash
-        try:
-            s_str, e_str = segment.split("-", 1)
-            s = float(s_str)
-            e = float(e_str)
-        except ValueError:
-            log.error("Bad segment format: %r", segment)
+    for segment, entries in raw.items():
+        parts = segment.split("-", 1)
+        if len(parts) != 2:
+            log.error("Bad segment %r", segment)
             continue
-
-        # Ensure start ≤ stop
+        try:
+            s, e = float(parts[0]), float(parts[1])
+        except ValueError:
+            log.error("Non-numeric segment %r", segment)
+            continue
         if e < s:
             s, e = e, s
 
@@ -460,18 +447,12 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
             score = float(score_str)
             if score < min_conf:
                 continue
-            if INCLUDE_LIST and species not in INCLUDE_LIST:
-                log.debug("Skipped (%s) – not in INCLUDE_LIST", species)
+            if include and species not in include:
                 continue
-            if EXCLUDE_LIST and species in EXCLUDE_LIST:
-                log.debug("Skipped (%s) – in EXCLUDE_LIST", species)
+            if exclude and species in exclude:
                 continue
             if PREDICTED_SPECIES_LIST and species not in PREDICTED_SPECIES_LIST:
-                log.debug("Skipped (%s) – below occurrence threshold", species)
                 continue
+            detections.append(Detection(file.file_date, s, e, species, score))
 
-            confident_detections.append(
-                Detection(file.file_date, s, e, species, score)
-            )
-
-    return confident_detections
+    return detections
