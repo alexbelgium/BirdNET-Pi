@@ -15,3 +15,4 @@ suntime
 inotify
 requests
 matplotlib
+bottle==0.12.25
