@@ -8,6 +8,10 @@ import time
 import librosa
 import numpy as np
 
+import json
+import subprocess
+import requests
+
 from utils.helpers import get_settings, Detection
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -346,4 +350,121 @@ def run_analysis(file):
                         entry[1],
                     )
                     confident_detections.append(d)
+    return confident_detections
+
+
+def run_bats_analysis(file, host="127.0.0.1", port=7667):
+    """
+    0. Health-check the analyzer server; if not healthy, kill & restart it.
+    1. Build metadata and POST the file for analysis.
+    2. Parse & filter results into Detection objects.
+    """
+    log = logging.getLogger(__name__)
+    conf = get_settings()
+
+    # -----------------------------------------------------------------
+    # 0. Health-check & (re)start server if needed
+    # -----------------------------------------------------------------
+    health_url = f"http://{host}:{port}/healthcheck"
+    try:
+        hc = requests.get(health_url, timeout=5)
+        if hc.status_code != 200:
+            raise RuntimeError(f"Bad status: {hc.status_code}")
+    except Exception as e:
+        log.warning("Healthcheck failed (%s); restarting analyzer server...", e)
+
+        # kill any process on that port
+        try:
+            pids = (
+                subprocess.check_output(["lsof", "-ti", f":{port}"])
+                .decode()
+                .split()
+            )
+            for pid in pids:
+                subprocess.run(["kill", "-9", pid], check=False)
+                log.info("Killed process %s on port %s", pid, port)
+        except subprocess.CalledProcessError:
+            log.info("No existing process found on port %s", port)
+        except Exception as kill_e:
+            log.error("Error killing process on port %s: %s", port, kill_e)
+
+        # restart the server
+        python_bin = os.environ.get("PYTHON_VIRTUAL_ENV")
+        server_script = os.path.expanduser("~/BattyBirdNET-Analyzer/server-py")
+        area_arg = conf.get("BATS_CLASSIFIER")
+        if not python_bin:
+            log.error(
+                "PYTHON_VIRTUAL_ENV not set; cannot restart analyzer server."
+            )
+        else:
+            cmd = [python_bin, server_script, "--area", area_arg]
+            subprocess.Popen(cmd)
+            log.info("Restarted analyzer server with: %s", " ".join(cmd))
+        # give it a moment to come up
+        time.sleep(2)
+
+    # -----------------------------------------------------------------
+    # 1. Load include/exclude lists & build metadata payload
+    # -----------------------------------------------------------------
+    INCLUDE_LIST = loadCustomSpeciesList(
+        os.path.expanduser("~/BirdNET-Pi/include_species_list.txt")
+    )
+    EXCLUDE_LIST = loadCustomSpeciesList(
+        os.path.expanduser("~/BirdNET-Pi/exclude_species_list.txt")
+    )
+
+    mdata = {
+        "lat":         conf.getfloat("LATITUDE"),
+        "lon":         conf.getfloat("LONGITUDE"),
+        "week":        file.week,
+        "overlap":     conf.getfloat("OVERLAP"),
+        "sensitivity": conf.getfloat("SENSITIVITY"),
+        "pmode":       "max",
+    }
+
+    # -----------------------------------------------------------------
+    # 2. Send file & metadata for analysis
+    # -----------------------------------------------------------------
+    url = f"http://{host}:{port}/analyze"
+    files = {
+        "audio": (os.path.basename(file.file_name), open(file.file_name, "rb")),
+        "meta":  (None, json.dumps(mdata)),
+    }
+
+    try:
+        resp = requests.post(url, files=files, timeout=120)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        log.error("Remote analysis failed for %s: %s", file.file_name, e)
+        return []  # fall back gracefully
+
+    raw_detections = data.get("results", {})
+
+    # -----------------------------------------------------------------
+    # 3. Filter & convert to Detection objects
+    # -----------------------------------------------------------------
+    confident_detections = []
+    min_conf = conf.getfloat("CONFIDENCE")
+
+    for segment, entries in raw_detections.items():
+        start_time, end_time = segment.replace("-", ";").split(";")
+        for species, score_str in entries:
+            score = float(score_str)
+            if score < min_conf:
+                continue
+            if INCLUDE_LIST and species not in INCLUDE_LIST:
+                log.debug("Skipped (%s) – not in INCLUDE_LIST", species)
+                continue
+            if EXCLUDE_LIST and species in EXCLUDE_LIST:
+                log.debug("Skipped (%s) – in EXCLUDE_LIST", species)
+                continue
+            if PREDICTED_SPECIES_LIST and species not in PREDICTED_SPECIES_LIST:
+                log.debug("Skipped (%s) – below occurrence threshold", species)
+                continue
+
+            confident_detections.append(
+                Detection(file.file_date, start_time, end_time, species, score)
+            )
+
     return confident_detections
