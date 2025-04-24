@@ -389,8 +389,8 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
             log.error("Error killing process on port %s: %s", port, kill_e)
 
         # restart the server
-        python_bin = os.environ.get("PYTHON_VIRTUAL_ENV")
-        server_script = os.path.expanduser("~/BattyBirdNET-Analyzer/server-py")
+        python_bin = os.path.expanduser("~/BirdNET-Pi/birdnet/bin/python3")
+        server_script = os.path.expanduser("~/BattyBirdNET-Analyzer/server.py")
         area_arg = conf.get("BATS_CLASSIFIER")
         if not python_bin:
             log.error(
