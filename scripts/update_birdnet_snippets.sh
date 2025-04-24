@@ -118,12 +118,12 @@ if ! grep -E '^BATS_ANALYSIS=' /etc/birdnet/birdnet.conf &>/dev/null;then
   echo "BATS_ANALYSIS=0" >> /etc/birdnet/birdnet.conf
 fi
 
-if ! grep -E '^BATS_SAMPLING_RATE=' /etc/birdnet/birdnet.conf &>/dev/null;then
+if ! grep -E '^BATS_SAMPLING_RATE=' /etc/birdnet/birdnet.conf &>/dev/null; then
   echo '# BATS_SAMPLING_RATE : if using the bats model, please define your SAMPLING RATE' >> /etc/birdnet/birdnet.conf
   echo "BATS_SAMPLING_RATE=256000" >> /etc/birdnet/birdnet.conf
 fi
 
-if ! grep -E '^BATS_CLASSIFIER=' /etc/birdnet/birdnet.conf &>/dev/null;then
+if ! grep -E '^BATS_CLASSIFIER=' /etc/birdnet/birdnet.conf &>/dev/null; then
   echo '# BATS_CLASSIFIER : type of model to use' >> /etc/birdnet/birdnet.conf
   echo "BATS_CLASSIFIER=Bavaria" >> /etc/birdnet/birdnet.conf
 fi
