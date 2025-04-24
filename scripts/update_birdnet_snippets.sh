@@ -113,6 +113,26 @@ if ! grep -E '^RARE_SPECIES_THRESHOLD=' /etc/birdnet/birdnet.conf &>/dev/null;th
   echo "RARE_SPECIES_THRESHOLD=\"30\"" >> /etc/birdnet/birdnet.conf
 fi
 
+if ! grep -E '^BATS_ANALYSIS=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo '# BATS_ANALYSIS defines if the model analyses birds or bats. Set to 1 to use BattyBirdNET-Analyzer model' >> /etc/birdnet/birdnet.conf
+  echo "BATS_ANALYSIS=0" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^BATS_SAMPLING_RATE=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo '# BATS_SAMPLING_RATE : if using the bats model, please define your SAMPLING RATE' >> /etc/birdnet/birdnet.conf
+  echo "BATS_SAMPLING_RATE=256000" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^BATS_CLASSIFIER=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo '# BATS_CLASSIFIER : type of model to use' >> /etc/birdnet/birdnet.conf
+  echo "BATS_CLASSIFIER=Bavaria" >> /etc/birdnet/birdnet.conf
+fi
+
+if [ ! -d "$HOME"/BattyBirdNET-Analyzer/server.py ]; then
+  branch_classifier=main
+  git clone -b $branch_classifier --depth=1 https://github.com/rdz-oss/BattyBirdNET-Analyzer.git ${HOME}/BattyBirdNET-Analyzer &&
+fi
+
 [ -d $RECS_DIR/StreamData ] || sudo_with_user mkdir -p $RECS_DIR/StreamData
 [ -L ${EXTRACTED}/spectrogram.png ] || sudo_with_user ln -sf ${RECS_DIR}/StreamData/spectrogram.png ${EXTRACTED}/spectrogram.png
 
