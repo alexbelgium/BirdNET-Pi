@@ -354,11 +354,6 @@ def run_analysis(file):
 
 
 def manage_batsanalyzer_server(host="127.0.0.1", port=7667, classifier=None):
-    """
-    0. Ping /healthcheck.
-    1. If non‐200 or exception, kill any process on `:port` and restart
-       the BattyBirdNET‐Analyzer with --area=classifier.
-    """
     log = logging.getLogger(__name__)
     url = f"http://{host}:{port}/healthcheck"
     try:
@@ -367,7 +362,6 @@ def manage_batsanalyzer_server(host="127.0.0.1", port=7667, classifier=None):
         raise RuntimeError("bad status")
     except Exception as e:
         log.warning("Analyzer down (%s); restarting…", e)
-        # kill existing processes on that port
         try:
             pids = subprocess.check_output(["lsof", "-ti", f":{port}"], text=True).split()
             for pid in pids:
@@ -375,92 +369,88 @@ def manage_batsanalyzer_server(host="127.0.0.1", port=7667, classifier=None):
                 log.info("Killed PID %s on port %s", pid, port)
         except subprocess.CalledProcessError:
             pass
-
-        # restart the analyzer server
         pybin = os.path.expanduser("~/BirdNET-Pi/birdnet/bin/python3")
         svr   = os.path.expanduser("~/BirdNET-Pi/BattyBirdNET-Analyzer/server.py")
-        cwd   = os.path.dirname(svr)
-        cmd   = [pybin, svr]
-        if classifier:
-            cmd += ["--area", classifier]
-
-        subprocess.Popen(cmd, cwd=cwd)
-        time.sleep(5)  # give it a moment to come up
+        cmd   = [pybin, svr] + (["--area", classifier] if classifier else [])
+        subprocess.Popen(cmd, cwd=os.path.dirname(svr))
+        time.sleep(5)
 
 
 def run_bats_analysis(file, host="127.0.0.1", port=7667):
     """
-    1. manage_batsanalyzer_server()
+    1. ensure analyzer server
     2. POST file for analysis
-    3. Convert & filter to Detection objects (guaranteeing start ≤ stop).
+    3. Convert & filter to Detection objects
+    4. NEW: clamp & shift detections so extract_safe() never gets inverted trim
     """
     log  = logging.getLogger(__name__)
     conf = get_settings()
-
-    # ensure the analyzer is up
     manage_batsanalyzer_server(host, port, conf.get("BATS_CLASSIFIER"))
 
-    # load include/exclude lists
-    include = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/include_species_list.txt"))
-    exclude = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/exclude_species_list.txt"))
+    include = loadCustomSpeciesList("~/BirdNET-Pi/include_species_list.txt")
+    exclude = loadCustomSpeciesList("~/BirdNET-Pi/exclude_species_list.txt")
 
-    # build metadata
-    meta = {
-        "lat":         conf.getfloat("LATITUDE"),
-        "lon":         conf.getfloat("LONGITUDE"),
-        "week":        file.week,
-        "overlap":     conf.getfloat("OVERLAP"),
-        "sensitivity": conf.getfloat("SENSITIVITY"),
-        "pmode":       "max",
-    }
+    meta = dict(
+        lat=conf.getfloat("LATITUDE"),
+        lon=conf.getfloat("LONGITUDE"),
+        week=file.week,
+        overlap=conf.getfloat("OVERLAP"),
+        sensitivity=conf.getfloat("SENSITIVITY"),
+        pmode="max",
+    )
 
-    # send to /analyze
-    url = f"http://{host}:{port}/analyze"
     try:
         with open(file.file_name, "rb") as wav:
-            files = {
-                "audio": (os.path.basename(file.file_name), wav),
-                "meta":  (None, json.dumps(meta)),
-            }
-            resp = requests.post(url, files=files, timeout=120)
+            resp = requests.post(
+                f"http://{host}:{port}/analyze",
+                files={
+                    "audio": (os.path.basename(file.file_name), wav),
+                    "meta":  (None, json.dumps(meta)),
+                },
+                timeout=120,
+            )
             resp.raise_for_status()
             data = resp.json()
     except Exception as e:
         log.error("Remote analysis failed for %s: %s", file.file_name, e)
         return []
 
-    raw = data.get("results", {})
+    min_conf   = conf.getfloat("CONFIDENCE")
     detections = []
-    min_conf = conf.getfloat("CONFIDENCE")
 
-    # convert & filter
-    for segment, entries in raw.items():
-        # split only once in case species names contain '-'
-        parts = segment.split("-", 1)
-        if len(parts) != 2:
-            log.error("Bad segment format %r", segment)
-            continue
-
+    for segment, entries in data.get("results", {}).items():
         try:
-            start, stop = float(parts[0]), float(parts[1])
+            start, stop = map(float, segment.split("-", 1))
         except ValueError:
-            log.error("Non-numeric segment %r", segment)
+            log.error("Bad segment %r", segment)
             continue
-
-        # guarantee start ≤ stop
         if stop < start:
             start, stop = stop, start
 
         for species, score_str in entries:
             score = float(score_str)
-            if score < min_conf:
-                continue
-            if include and species not in include:
-                continue
-            if exclude and species in exclude:
-                continue
-            if PREDICTED_SPECIES_LIST and species not in PREDICTED_SPECIES_LIST:
+            if score < min_conf or \
+               (include and species not in include) or \
+               (exclude and species in exclude) or \
+               (PREDICTED_SPECIES_LIST and species not in PREDICTED_SPECIES_LIST):
                 continue
             detections.append(Detection(file.file_date, start, stop, species, score))
+
+    # ── 5. make every Detection safe for extract_safe()  ───────────────
+    rec_len  = conf.getint("RECORDING_LENGTH")
+    ex_len   = conf.getint("EXTRACTION_LENGTH", fallback=6)
+    spacer   = max(0.0, (ex_len - 3) / 2)
+
+    for d in detections:
+        d.start = max(0.0, min(d.start, rec_len))
+        d.stop  = max(0.0, min(d.stop,  rec_len))
+
+        overflow = (d.stop + spacer) - rec_len
+        if overflow > 0:
+            d.start -= overflow
+            d.stop  -= overflow
+
+        if d.stop < d.start:
+            d.start, d.stop = d.stop, d.start
 
     return detections
