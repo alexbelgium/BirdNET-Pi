@@ -130,7 +130,7 @@ fi
 
 if [ ! -d "$HOME"/BattyBirdNET-Analyzer/server.py ]; then
   branch_classifier=main
-  git clone -b $branch_classifier --depth=1 https://github.com/rdz-oss/BattyBirdNET-Analyzer.git ${HOME}/BattyBirdNET-Analyzer &&
+  git clone -b $branch_classifier --depth=1 https://github.com/rdz-oss/BattyBirdNET-Analyzer.git ${HOME}/BattyBirdNET-Analyzer && true
 fi
 
 [ -d $RECS_DIR/StreamData ] || sudo_with_user mkdir -p $RECS_DIR/StreamData
