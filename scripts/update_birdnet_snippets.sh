@@ -129,8 +129,12 @@ if ! grep -E '^BATS_CLASSIFIER=' /etc/birdnet/birdnet.conf &>/dev/null; then
 fi
 
 if [ ! -d "$HOME"/BattyBirdNET-Analyzer/server.py ]; then
+  if [ -d "$HOME"/BattyBirdNET-Analyzer ]; then
+    rm -r "$HOME"/BattyBirdNET-Analyzer
+  fi
   branch_classifier=main
   git clone -b $branch_classifier --depth=1 https://github.com/rdz-oss/BattyBirdNET-Analyzer.git ${HOME}/BattyBirdNET-Analyzer && true
+  chown pi:pi ${HOME}/BattyBirdNET-Analyzer
 fi
 
 [ -d $RECS_DIR/StreamData ] || sudo_with_user mkdir -p $RECS_DIR/StreamData
