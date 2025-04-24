@@ -357,7 +357,7 @@ def manage_batsanalyzer_server(host="127.0.0.1", port=7667, classifier=None):
     """
     0. Ping /healthcheck.
     1. If non‐200 or exception, kill any process on `:port` and restart
-       the BattyBirdNET-Analyzer with --area=classifier.
+       the BattyBirdNET‐Analyzer with --area=classifier.
     """
     log = logging.getLogger(__name__)
     url = f"http://{host}:{port}/healthcheck"
@@ -367,8 +367,7 @@ def manage_batsanalyzer_server(host="127.0.0.1", port=7667, classifier=None):
         raise RuntimeError("bad status")
     except Exception as e:
         log.warning("Analyzer down (%s); restarting…", e)
-
-        # kill existing
+        # kill existing processes on that port
         try:
             pids = subprocess.check_output(["lsof", "-ti", f":{port}"], text=True).split()
             for pid in pids:
@@ -377,7 +376,7 @@ def manage_batsanalyzer_server(host="127.0.0.1", port=7667, classifier=None):
         except subprocess.CalledProcessError:
             pass
 
-        # restart
+        # restart the analyzer server
         pybin = os.path.expanduser("~/BirdNET-Pi/birdnet/bin/python3")
         svr   = os.path.expanduser("~/BirdNET-Pi/BattyBirdNET-Analyzer/server.py")
         cwd   = os.path.dirname(svr)
@@ -386,23 +385,26 @@ def manage_batsanalyzer_server(host="127.0.0.1", port=7667, classifier=None):
             cmd += ["--area", classifier]
 
         subprocess.Popen(cmd, cwd=cwd)
-        time.sleep(5)
+        time.sleep(5)  # give it a moment to come up
 
 
 def run_bats_analysis(file, host="127.0.0.1", port=7667):
     """
     1. manage_batsanalyzer_server()
     2. POST file for analysis
-    3. Convert & filter to Detection objects (start ≤ stop)
+    3. Convert & filter to Detection objects (guaranteeing start ≤ stop).
     """
     log  = logging.getLogger(__name__)
     conf = get_settings()
 
+    # ensure the analyzer is up
     manage_batsanalyzer_server(host, port, conf.get("BATS_CLASSIFIER"))
 
+    # load include/exclude lists
     include = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/include_species_list.txt"))
     exclude = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/exclude_species_list.txt"))
 
+    # build metadata
     meta = {
         "lat":         conf.getfloat("LATITUDE"),
         "lon":         conf.getfloat("LONGITUDE"),
@@ -412,6 +414,7 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
         "pmode":       "max",
     }
 
+    # send to /analyze
     url = f"http://{host}:{port}/analyze"
     try:
         with open(file.file_name, "rb") as wav:
@@ -430,18 +433,23 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
     detections = []
     min_conf = conf.getfloat("CONFIDENCE")
 
+    # convert & filter
     for segment, entries in raw.items():
+        # split only once in case species names contain '-'
         parts = segment.split("-", 1)
         if len(parts) != 2:
-            log.error("Bad segment %r", segment)
+            log.error("Bad segment format %r", segment)
             continue
+
         try:
-            s, e = float(parts[0]), float(parts[1])
+            start, stop = float(parts[0]), float(parts[1])
         except ValueError:
             log.error("Non-numeric segment %r", segment)
             continue
-        if e < s:
-            s, e = e, s
+
+        # guarantee start ≤ stop
+        if stop < start:
+            start, stop = stop, start
 
         for species, score_str in entries:
             score = float(score_str)
@@ -453,6 +461,6 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
                 continue
             if PREDICTED_SPECIES_LIST and species not in PREDICTED_SPECIES_LIST:
                 continue
-            detections.append(Detection(file.file_date, s, e, species, score))
+            detections.append(Detection(file.file_date, start, stop, species, score))
 
     return detections
