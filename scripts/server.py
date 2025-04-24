@@ -357,7 +357,7 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
     """
     0. Health-check the analyzer server; if not healthy, kill & restart it.
     1. Build metadata and POST the file for analysis.
-    2. Parse & filter results into Detection objects (with start≤stop).
+    2. Parse & filter results into Detection objects (with start ≤ stop).
     """
     log = logging.getLogger(__name__)
     conf = get_settings()
@@ -389,15 +389,14 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
             log.error("Error killing process on port %s: %s", port, kill_e)
 
         # restart the server
-        python_bin = os.path.expanduser("~/BirdNET-Pi/birdnet/bin/python3")
+        python_bin    = os.path.expanduser("~/BirdNET-Pi/birdnet/bin/python3")
         server_script = os.path.expanduser("~/BirdNET-Pi/BattyBirdNET-Analyzer/server.py")
         os.chdir(os.path.expanduser("~/BirdNET-Pi/BattyBirdNET-Analyzer"))
         area_arg = conf.get("BATS_CLASSIFIER")
         cmd = [python_bin, server_script, "--area", area_arg]
         subprocess.Popen(cmd)
         log.info("Restarted analyzer server with: %s", " ".join(cmd))
-        # give it a moment to come up
-        time.sleep(2)
+        time.sleep(2)  # give it a moment
 
     # -----------------------------------------------------------------
     # 1. Load include/exclude lists & build metadata payload
@@ -426,6 +425,7 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
         "audio": (os.path.basename(file.file_name), open(file.file_name, "rb")),
         "meta":  (None, json.dumps(mdata)),
     }
+
     try:
         resp = requests.post(url, files=files, timeout=120)
         resp.raise_for_status()
@@ -443,7 +443,7 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
     min_conf = conf.getfloat("CONFIDENCE")
 
     for segment, entries in raw_detections.items():
-        # segment is "start-end" (floats); split once
+        # segment is "start-end"; split only at first dash
         try:
             s_str, e_str = segment.split("-", 1)
             s = float(s_str)
@@ -452,7 +452,7 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
             log.error("Bad segment format: %r", segment)
             continue
 
-        # *** Ensure start ≤ stop ***
+        # Ensure start ≤ stop
         if e < s:
             s, e = e, s
 
