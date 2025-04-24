@@ -437,9 +437,9 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
             detections.append(Detection(file.file_date, start, stop, species, score))
 
     # ── 5. make every Detection safe for extract_safe()  ───────────────
-    rec_len  = conf.getint("RECORDING_LENGTH")
-    ex_len   = conf.getint("EXTRACTION_LENGTH", fallback=6)
-    spacer   = max(0.0, (ex_len - 3) / 2)
+    ex_len = 288000 / conf.getint('BATS_SAMPLING_RATE', fallback=256000)
+    spacer = max(0.0, (ex_len - 3) / 2)
+    rec_len = conf.getint('RECORDING_LENGTH', fallback=int(spacer + 3))
 
     for d in detections:
         d.start = max(0.0, min(d.start, rec_len))
