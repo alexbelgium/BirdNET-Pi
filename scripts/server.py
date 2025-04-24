@@ -372,30 +372,31 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
             raise RuntimeError(f"Bad status: {hc.status_code}")
     except Exception as e:
         log.warning("Healthcheck failed (%s); restarting analyzer server...", e)
+
         # kill any process on that port
-         try:
-             pids = (
-                 subprocess.check_output(["lsof", "-ti", f":{port}"])
-                 .decode()
-                 .split()
-             )
-             for pid in pids:
-                 subprocess.run(["kill", "-9", pid], check=False)
-                 log.info("Killed process %s on port %s", pid, port)
-         except subprocess.CalledProcessError:
-             log.info("No existing process found on port %s", port)
-         except Exception as kill_e:
-             log.error("Error killing process on port %s: %s", port, kill_e)
- 
-         # restart the server
-         python_bin = os.path.expanduser("~/BirdNET-Pi/birdnet/bin/python3")
-         server_script = os.path.expanduser("~/BattyBirdNET-Analyzer/server.py")
-         os.chdir(os.path.expanduser("~/BattyBirdNET-Analyzer"))
-         area_arg = conf.get("BATS_CLASSIFIER")
-         cmd = [python_bin, server_script, "--area", area_arg]
-         subprocess.Popen(cmd)
-         log.info("Restarted analyzer server with: %s", " ".join(cmd))
-         # give it a moment to come up
+        try:
+            pids = (
+                subprocess.check_output(["lsof", "-ti", f":{port}"])
+                .decode()
+                .split()
+            )
+            for pid in pids:
+                subprocess.run(["kill", "-9", pid], check=False)
+                log.info("Killed process %s on port %s", pid, port)
+        except subprocess.CalledProcessError:
+            log.info("No existing process found on port %s", port)
+        except Exception as kill_e:
+            log.error("Error killing process on port %s: %s", port, kill_e)
+
+        # restart the server
+        python_bin = os.path.expanduser("~/BirdNET-Pi/birdnet/bin/python3")
+        server_script = os.path.expanduser("~/BattyBirdNET-Analyzer/server.py")
+        os.chdir(os.path.expanduser("~/BattyBirdNET-Analyzer"))
+        area_arg = conf.get("BATS_CLASSIFIER")
+        cmd = [python_bin, server_script, "--area", area_arg]
+        subprocess.Popen(cmd)
+        log.info("Restarted analyzer server with: %s", " ".join(cmd))
+        # give it a moment to come up
         time.sleep(2)
 
     # -----------------------------------------------------------------

@@ -128,13 +128,13 @@ if ! grep -E '^BATS_CLASSIFIER=' /etc/birdnet/birdnet.conf &>/dev/null; then
   echo "BATS_CLASSIFIER=Bavaria" >> /etc/birdnet/birdnet.conf
 fi
 
-if [ ! -d "$HOME"/BattyBirdNET-Analyzer/server.py ]; then
-  if [ -d "$HOME"/BattyBirdNET-Analyzer ]; then
-    rm -r "$HOME"/BattyBirdNET-Analyzer
+if [ ! -d "$HOME"/BirdNET-Pi/BattyBirdNET-Analyzer/server.py ]; then
+  if [ -d "$HOME"/BirdNET-Pi/BattyBirdNET-Analyzer ]; then
+    rm -r "$HOME"/BirdNET-Pi/BattyBirdNET-Analyzer
   fi
   branch_classifier=main
-  git clone -b $branch_classifier --depth=1 https://github.com/rdz-oss/BattyBirdNET-Analyzer.git ${HOME}/BattyBirdNET-Analyzer && true
-  chown pi:pi ${HOME}/BattyBirdNET-Analyzer
+  git clone -b $branch_classifier --depth=1 https://github.com/rdz-oss/BattyBirdNET-Analyzer.git ${HOME}/BirdNET-Pi/BattyBirdNET-Analyzer
+  chown pi:pi ${HOME}/BirdNET-Pi
 fi
 
 [ -d $RECS_DIR/StreamData ] || sudo_with_user mkdir -p $RECS_DIR/StreamData
