@@ -57,7 +57,7 @@ def spectrogram(in_file, title, comment, raw=False):
     if conf.getint('BATS_ANALYSIS', fallback=0) == 1:
         rate = conf.getint('BATS_SAMPLING_RATE', fallback=256000) // 2
     else:
-        rate = 24k
+        rate = 24000
     args = ['sox', '-V1', f'{in_file}', '-n', 'remix', '1', 'rate', f'{rate}', 'spectrogram',
             '-t', f'{get_safe_title(title)}', '-c', f'{comment}', '-o', f'{in_file}.png']
     args += ['-r'] if raw else []
