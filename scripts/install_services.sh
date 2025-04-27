@@ -60,19 +60,15 @@ install_birdnet_timer() {
   cat << EOF > $HOME/BirdNET-Pi/templates/birdnet_timer.service
 [Unit]
 Description=BirdNET Timer Service (Specific recording periods, and switch bat/bird mode automatically)
-After=network.target
-
 [Service]
 Restart=always
-RestartSec=2
 Type=simple
+RestartSec=2
 User=${USER}
-ExecStart=/usr/local/bin/birdnet_timer.sh
-
+ExecStart=$PYTHON_VIRTUAL_ENV /usr/local/bin/birdnet_timer.py
 [Install]
 WantedBy=multi-user.target
 EOF
-
   ln -sf $HOME/BirdNET-Pi/templates/birdnet_timer.service /usr/lib/systemd/system
   systemctl enable birdnet_timer.service
 }
