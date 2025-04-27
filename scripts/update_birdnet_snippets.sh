@@ -148,6 +148,11 @@ if ! grep -E '^TIMER_STOP=' /etc/birdnet/birdnet.conf &>/dev/null; then
   echo "TIMER_STOP=Sunset" >> /etc/birdnet/birdnet.conf
 fi
 
+if [ ! -L "$HOME/BirdNET-Pi/templates/birdnet_timer.service" ]; then
+  install_services.sh
+  systemctl daemon-reload && restart_services.sh
+fi
+
 if [ ! -d "$HOME"/BirdNET-Pi/BattyBirdNET-Analyzer/server.py ]; then
   if [ -d "$HOME"/BirdNET-Pi/BattyBirdNET-Analyzer ]; then
     rm -r "$HOME"/BirdNET-Pi/BattyBirdNET-Analyzer
