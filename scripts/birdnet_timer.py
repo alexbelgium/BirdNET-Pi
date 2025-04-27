@@ -3,7 +3,7 @@
 import time
 import subprocess
 from datetime import datetime, date
-from sun import Sun
+from suntime import Sun
 from dateutil import tz
 from utils.helpers import get_settings
 
