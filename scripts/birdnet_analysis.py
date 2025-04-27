@@ -28,14 +28,8 @@ def sig_handler(sig_num, curr_stack_frame):
 
 
 def main():
-    bats_enabled = conf.getint('BATS_ANALYSIS') == 1
-    birds_enabled = conf.getint('BIRDS_ANALYSIS') == 1
-    
-    if bats_enabled and not birds_enabled:
+    if conf.getint('BATS_ANALYSIS') == 1:
         model_type = "bats"
-    elif bats_enabled and birds_enabled:
-        model_type = "birds-bats"
-        load_global_model()
     else:
         model_type = "birds"
         load_global_model()
@@ -100,8 +94,6 @@ def process_file(file_name, report_queue, model_type):
         file = ParseFileName(file_name)
         if model_type == "bats":
             detections = run_bats_analysis(file)
-        elif model_type == "birds-bats":
-            detections = run_analysis(file) + run_bats_analysis(file)
         else:
             detections = run_analysis(file)
         # we join() to make sure te reporting queue does not get behind
