@@ -148,6 +148,21 @@ if ! grep -E '^TIMER_STOP=' /etc/birdnet/birdnet.conf &>/dev/null; then
   echo "TIMER_STOP=Sunset" >> /etc/birdnet/birdnet.conf
 fi
 
+if ! grep -E '^DENOISING=' /etc/birdnet/birdnet.conf &>/dev/null; then
+  echo '# DENOISING : if set to 1, will perform denoising on the files. Mostly useful for bats' >> /etc/birdnet/birdnet.conf
+  echo "DENOISING=0" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^DENOISING_PROFILE=' /etc/birdnet/birdnet.conf &>/dev/null; then
+  echo '# DENOISING_PROFILE : define the model, relative to the path of your BirdNET-Pi installation. Mostly useful for bats.' >> /etc/birdnet/birdnet.conf
+  echo "DENOISING_PROFILE=BattyBirdNET-Analyzer/checkpoints/bats/mic-noise/audiomoth_v12.prof" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^DENOISING_FACTOR=' /etc/birdnet/birdnet.conf &>/dev/null; then
+  echo '# DENOISING_FACTOR : factor for denoising' >> /etc/birdnet/birdnet.conf
+  echo "DENOISING_FACTOR=0.22" >> /etc/birdnet/birdnet.conf
+fi
+
 if [ ! -L "$HOME/BirdNET-Pi/templates/birdnet_timer.service" ]; then
   ln -sf "$HOME/BirdNET-Pi"/scripts/birdnet_timer.py /usr/local/bin/
   chown "$USER:$USER" "$HOME/BirdNET-Pi"/scripts/birdnet_timer.py
