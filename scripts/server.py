@@ -12,6 +12,7 @@ import json
 import subprocess
 import requests
 
+from suntime import Sun
 from utils.helpers import get_settings, Detection
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
