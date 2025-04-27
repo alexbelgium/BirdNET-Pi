@@ -253,6 +253,49 @@ if (isset($_GET["max_files_species"])) {
     $contents = preg_replace("/TIMER_STOP=.*/", "TIMER_STOP=$timer_stop", $contents);
   }
 
+  if (isset($_GET["bats_analysis"])) {
+    $bats_analysis = $_GET["bats_analysis"];
+    if (strcmp($bats_analysis, $config['BATS_ANALYSIS']) !== 0) {
+      $contents = preg_replace("/BATS_ANALYSIS=.*/", "BATS_ANALYSIS=$bats_analysis", $contents);
+    }
+  }
+
+  if (isset($_GET["bats_sampling_rate"])) {
+    $bats_sampling_rate = $_GET["bats_sampling_rate"];
+    if (strcmp($bats_sampling_rate, $config['BATS_SAMPLING_RATE']) !== 0) {
+      $contents = preg_replace("/BATS_SAMPLING_RATE=.*/", "BATS_SAMPLING_RATE=$bats_sampling_rate", $contents);
+    }
+  }
+
+  if (isset($_GET["bats_classifier"])) {
+    $bats_classifier = $_GET["bats_classifier"];
+    if (strcmp($bats_classifier, $config['BATS_CLASSIFIER']) !== 0) {
+      $contents = preg_replace("/BATS_CLASSIFIER=.*/", "BATS_CLASSIFIER=\"$bats_classifier\"", $contents);
+    }
+  }
+
+  if (isset($_GET["denoising"])) {
+    $denoising = $_GET["denoising"];
+    if (strcmp($denoising, $config['DENOISING']) !== 0) {
+      $contents = preg_replace("/DENOISING=.*/", "DENOISING=$denoising", $contents);
+    }
+  }
+
+  if (isset($_GET["denoising_factor"])) {
+    $denoising_factor = $_GET["denoising_factor"];
+    if (strcmp($denoising_factor, $config['DENOISING_FACTOR']) !== 0) {
+      $contents = preg_replace("/DENOISING_FACTOR=.*/", "DENOISING_FACTOR=$denoising_factor", $contents);
+    }
+  }
+
+  if (isset($_GET["denoising_profile"])) {
+    $denoising_profile = $_GET["denoising_profile"];
+    $full_profile_path = "BattyBirdNET-Analyzer/checkpoints/bats/mic-noise/" . $denoising_profile;
+    if (strcmp($full_profile_path, $config['DENOISING_PROFILE']) !== 0) {
+      $contents = preg_replace("/DENOISING_PROFILE=.*/", "DENOISING_PROFILE=\"$full_profile_path\"", $contents);
+    }
+  }
+
   if(isset($_GET["custom_image"])) {
     $custom_image = $_GET["custom_image"];
     if(strcmp($custom_image,$config['CUSTOM_IMAGE']) !== 0) {
@@ -522,6 +565,40 @@ foreach($formats as $format){
       <input type="time" name="timer_stop_time" value="<?php echo (!in_array($newconfig['TIMER_STOP'], array('Sunset', 'Sunrise')) ? $newconfig['TIMER_STOP'] : '18:00'); ?>"><br>
       <br><br>
       </td></tr></table><br>
+
+      <table class="settingstable"><tr><td>
+      <h2>BattyBirdNET Settings</h2>
+      <p>Enable Bat Detection Analysis:</p>
+      <label for="bats_analysis">Use BattyBirdNET Analyzer: </label>
+      <input type="checkbox" name="bats_analysis" <?php if(isset($newconfig['BATS_ANALYSIS']) && $newconfig['BATS_ANALYSIS'] == 1) { echo "checked"; } ?> ><br><br>
+      <label for="bats_sampling_rate">Sampling Rate (Hz):</label><br>
+      <input name="bats_sampling_rate" type="number" style="width:6em;" min="100000" max="512000" step="1000" value="<?php echo isset($newconfig['BATS_SAMPLING_RATE']) ? $newconfig['BATS_SAMPLING_RATE'] : '256000'; ?>" required><br><br>
+      <label for="bats_classifier">Bat Classifier:</label><br>
+      <select name="bats_classifier" class="testbtn">
+          <option selected><?php echo isset($newconfig['BATS_CLASSIFIER']) ? $newconfig['BATS_CLASSIFIER'] : ''; ?></option>
+          <?php
+          $formats = array("Bavaria", "South-Wales", "USA", "USA-EAST", "USA-WEST", "UK", "BIRDS", "CUSTOM_BAT", "CUSTOM_BIRD");
+          foreach($formats as $format){
+              echo "<option value='$format'>$format</option>";
+          }
+          ?>
+      </select><br><br>
+      <p>Noise Reduction Settings:</p>
+      <label for="denoising">Apply Noise Reduction (Takes out most of microphone-related noise in recordings with detections):</label><br>
+      <input type="checkbox" name="denoising" <?php if(isset($newconfig['DENOISING']) && $newconfig['DENOISING'] == 1) { echo "checked"; } ?> ><br><br>
+      <label for="denoising_factor">Noise Reduction Factor (Between 0 and 1, e.g., 0.5):</label><br>
+      <input name="denoising_factor" type="number" step="0.01" min="0" max="1" style="width:6em;" value="<?php echo isset($newconfig['DENOISING_FACTOR']) ? $newconfig['DENOISING_FACTOR'] : '0.1'; ?>"><br>
+      <p>Larger values increase risk of information loss.</p><br>
+      <label for="denoising_profile">Microphone Noise Profile:</label><br>
+      <select name="denoising_profile" class="testbtn">
+          <option selected><?php echo isset($newconfig['DENOISING_PROFILE']) ? $newconfig['DENOISING_PROFILE'] : ''; ?></option>
+          <?php
+          $formats = array("audiomoth_v12.prof", "waem2.prof", "waem2pro.prof", "banzerhaus.prof");
+          foreach($formats as $format){
+              echo "<option value='$format'>$format</option>";
+          }
+          ?>
+      </select><br></td></tr></table><br>
 
       <table class="settingstable"><tr><td>
       <h2>Custom Image</h2>
