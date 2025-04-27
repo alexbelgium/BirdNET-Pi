@@ -376,6 +376,24 @@ def manage_batsanalyzer_server(host="127.0.0.1", port=7667, classifier=None):
         time.sleep(5)
 
 
+def denoise_file(file_path, noise_profile_path, noise_reduction_factor):
+    """
+    Apply noise reduction to the given audio file using SoX.
+    It overwrites the original file safely if successful.
+    """
+    out_file = file_path + ".out.wav"
+
+    subprocess.run([
+        "sox", file_path, out_file,
+        "noisered", noise_profile_path, str(noise_reduction_factor)
+    ], check=True)
+
+    if not os.path.exists(out_file):
+        raise RuntimeError(f"Denoised file {out_file} was not created.")
+
+    os.replace(out_file, file_path)
+
+
 def run_bats_analysis(file, host="127.0.0.1", port=7667):
     """
     1. ensure analyzer server
@@ -398,7 +416,17 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
         sensitivity=conf.getfloat("SENSITIVITY"),
         pmode="max",
     )
-
+    # Apply noise reduction if enabled
+    try:
+        if conf.getboolean("INPUT_NOISERED", fallback=False):
+            noise_profile = os.path.expanduser("~/BirdNET-Pi/noise.prof")
+            noise_factor = conf.getfloat("NOISE_PROF_FACTOR", fallback=0.5)
+            denoise_file(file.file_name, noise_profile, noise_factor)
+    except Exception as e:
+        log.error("Denoising failed failed for %s: %s", file.file_name, e)
+        return []
+    
+    # Perform analysis
     try:
         with open(file.file_name, "rb") as wav:
             resp = requests.post(
