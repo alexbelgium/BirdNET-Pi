@@ -221,6 +221,38 @@ if (isset($_GET["max_files_species"])) {
       $contents = preg_replace("/RARE_SPECIES_THRESHOLD=.*/", "RARE_SPECIES_THRESHOLD=30", $contents);
   }
 
+  if(isset($_GET["timer"])) {
+    $contents = preg_replace("/TIMER=.*/", "TIMER=1", $contents);
+  } else {
+    $contents = preg_replace("/TIMER=.*/", "TIMER=0", $contents);
+  }
+
+  if(isset($_GET["timer_switch"])) {
+    $contents = preg_replace("/TIMER_SWITCH=.*/", "TIMER_SWITCH=1", $contents);
+  } else {
+    $contents = preg_replace("/TIMER_SWITCH=.*/", "TIMER_SWITCH=0", $contents);
+  }
+
+  if(isset($_GET["timer_start_mode"])) {
+    $start_mode = $_GET["timer_start_mode"];
+    if ($start_mode == "time" && isset($_GET["timer_start_time"])) {
+      $timer_start = $_GET["timer_start_time"];
+    } else {
+      $timer_start = $start_mode;
+    }
+    $contents = preg_replace("/TIMER_START=.*/", "TIMER_START=$timer_start", $contents);
+  }
+
+  if(isset($_GET["timer_stop_mode"])) {
+    $stop_mode = $_GET["timer_stop_mode"];
+    if ($stop_mode == "time" && isset($_GET["timer_stop_time"])) {
+      $timer_stop = $_GET["timer_stop_time"];
+    } else {
+      $timer_stop = $stop_mode;
+    }
+    $contents = preg_replace("/TIMER_STOP=.*/", "TIMER_STOP=$timer_stop", $contents);
+  }
+
   if(isset($_GET["custom_image"])) {
     $custom_image = $_GET["custom_image"];
     if(strcmp($custom_image,$config['CUSTOM_IMAGE']) !== 0) {
