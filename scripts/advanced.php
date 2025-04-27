@@ -470,6 +470,28 @@ foreach($formats as $format){
       </td></tr></table><br>
 
       <table class="settingstable"><tr><td>
+      <h2>Timer</h2>
+      <label for="timer">Enable Timer: </label>
+      <input type="checkbox" name="timer" <?php if($newconfig['TIMER'] == 1) { echo "checked"; } ?> >
+      <p>If checked, the system will use the primary analyzer (birds or bats) between the start and stop times defined below.</p><br>
+      <label for="timer_switch">Timer Switch: </label>
+      <input type="checkbox" name="timer_switch" <?php if($newconfig['TIMER_SWITCH'] == 1) { echo "checked"; } ?> >
+      <p>If checked, the system will switch to the alternate analyzer during off-hours. If unchecked, the services will stop during off-hours.</p><br>
+      <h3>Timer Start</h3>
+      <label><input type="radio" name="timer_start_mode" value="time" <?php if(!in_array($newconfig['TIMER_START'], array('Sunrise', 'Sunset'))) { echo "checked"; } ?>> Time</label><br>
+      <label><input type="radio" name="timer_start_mode" value="Sunrise" <?php if($newconfig['TIMER_START'] == 'Sunrise') { echo "checked"; } ?>> Sunrise</label><br>
+      <label><input type="radio" name="timer_start_mode" value="Sunset" <?php if($newconfig['TIMER_START'] == 'Sunset') { echo "checked"; } ?>> Sunset</label><br>
+      <input type="time" name="timer_start_time" value="<?php echo (!in_array($newconfig['TIMER_START'], array('Sunrise', 'Sunset')) ? $newconfig['TIMER_START'] : '06:00'); ?>">
+      <br><br>
+      <h3>Timer Stop</h3>
+      <label><input type="radio" name="timer_stop_mode" value="time" <?php if(!in_array($newconfig['TIMER_STOP'], array('Sunset', 'Sunrise'))) { echo "checked"; } ?>> Time</label><br>
+      <label><input type="radio" name="timer_stop_mode" value="Sunset" <?php if($newconfig['TIMER_STOP'] == 'Sunset') { echo "checked"; } ?>> Sunset</label><br>
+      <label><input type="radio" name="timer_stop_mode" value="Sunrise" <?php if($newconfig['TIMER_STOP'] == 'Sunrise') { echo "checked"; } ?>> Sunrise</label><br>
+      <input type="time" name="timer_stop_time" value="<?php echo (!in_array($newconfig['TIMER_STOP'], array('Sunset', 'Sunrise')) ? $newconfig['TIMER_STOP'] : '18:00'); ?>">
+      <br><br>
+      </td></tr></table><br>
+
+      <table class="settingstable"><tr><td>
       <h2>Custom Image</h2>
       <label for="custom_image">Custom Image Absolute Path: </label>
         <input name="custom_image" type="text" value="<?php print($newconfig['CUSTOM_IMAGE']);?>"/><br>
