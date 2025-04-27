@@ -40,12 +40,14 @@ def extract_safe(in_file, out_file, start, stop):
     # within 3.5 seconds of audio context before and after.
     if conf.getint('BATS_ANALYSIS', fallback=0) == 1:
         ex_len = 288000 / conf.getint('BATS_SAMPLING_RATE', fallback=256000)
+        spacer = (ex_len / 3)
     else:
         try:
             ex_len = conf.getint('EXTRACTION_LENGTH')
         except (ValueError, KeyError):
             ex_len = 6
-    spacer = (ex_len - 3) / 2
+        spacer = 3
+        spacer = (ex_len - spacer) / 2
     safe_start = max(0, start - spacer)
     safe_stop = min(conf.getint('RECORDING_LENGTH'), stop + spacer)
 
