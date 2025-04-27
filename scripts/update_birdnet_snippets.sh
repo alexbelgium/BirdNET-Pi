@@ -149,7 +149,21 @@ if ! grep -E '^TIMER_STOP=' /etc/birdnet/birdnet.conf &>/dev/null; then
 fi
 
 if [ ! -L "$HOME/BirdNET-Pi/templates/birdnet_timer.service" ]; then
-  install_services.sh
+  echo "Installing birdnet_timer.service"
+  cat << EOF > $HOME/BirdNET-Pi/templates/birdnet_timer.service
+[Unit]
+Description=BirdNET Timer Service (Specific recording periods, and switch bat/bird mode automatically)
+[Service]
+Restart=always
+Type=simple
+RestartSec=2
+User=${USER}
+ExecStart=$PYTHON_VIRTUAL_ENV /usr/local/bin/birdnet_timer.py
+[Install]
+WantedBy=multi-user.target
+EOF
+  ln -sf $HOME/BirdNET-Pi/templates/birdnet_timer.service /usr/lib/systemd/system
+  systemctl enable birdnet_timer.service
   systemctl daemon-reload && restart_services.sh
 fi
 
