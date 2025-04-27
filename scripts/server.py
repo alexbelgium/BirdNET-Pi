@@ -418,12 +418,12 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
     )
     # Apply noise reduction if enabled
     try:
-        if conf.getboolean("INPUT_NOISERED", fallback=False):
-            noise_profile = os.path.expanduser("~/BirdNET-Pi/noise.prof")
-            noise_factor = conf.getfloat("NOISE_PROF_FACTOR", fallback=0.5)
+        if conf.getboolean('DENOISING', fallback=False):
+            noise_profile = os.path.expanduser(conf['DENOISING_PROFILE'])
+            noise_factor = conf.getfloat('DENOISING_FACTOR', fallback=0.1)
             denoise_file(file.file_name, noise_profile, noise_factor)
     except Exception as e:
-        log.error("Denoising failed failed for %s: %s", file.file_name, e)
+        log.error("Denoising failed for %s: %s", file.file_name, e)
         return []
     
     # Perform analysis
