@@ -55,7 +55,7 @@ EOF
   systemctl enable birdnet_analysis.service
 }
 
-install_timer_service() {
+install_birdnet_timer() {
   echo "Installing birdnet_timer.service"
   cat << EOF > $HOME/BirdNET-Pi/templates/birdnet_timer.service
 [Unit]
@@ -433,7 +433,7 @@ install_services() {
   install_birdnet_analysis
   install_birdnet_stats_service
   install_recording_service
-  install_timer_service
+  install_birdnet_timer
   install_custom_recording_service # But does not enable
   install_spectrogram_service
   install_chart_viewer_service
