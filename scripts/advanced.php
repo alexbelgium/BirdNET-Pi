@@ -290,8 +290,9 @@ if (isset($_GET["max_files_species"])) {
 
   if (isset($_GET["denoising_profile"])) {
     $denoising_profile = $_GET["denoising_profile"];
-    $full_profile_path = "BattyBirdNET-Analyzer/checkpoints/bats/mic-noise/" . $denoising_profile;
-    if (strcmp($full_profile_path, $config['DENOISING_PROFILE']) !== 0) {
+    $current_profile = basename($config['DENOISING_PROFILE']);
+    if (strcmp($denoising_profile, $current_profile) !== 0) {
+      $full_profile_path = "BattyBirdNET-Analyzer/checkpoints/bats/mic-noise/" . $denoising_profile;
       $contents = preg_replace("/DENOISING_PROFILE=.*/", "DENOISING_PROFILE=\"$full_profile_path\"", $contents);
     }
   }
