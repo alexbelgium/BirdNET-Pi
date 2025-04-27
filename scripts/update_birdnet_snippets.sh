@@ -128,6 +128,26 @@ if ! grep -E '^BATS_CLASSIFIER=' /etc/birdnet/birdnet.conf &>/dev/null; then
   echo "BATS_CLASSIFIER=Bavaria" >> /etc/birdnet/birdnet.conf
 fi
 
+if ! grep -E '^TIMER=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo '# Set this value to 0 to have a continuous monitoring, and 1 to enable automated services control according to time' >> /etc/birdnet/birdnet.conf
+  echo "TIMER=0" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^TIMER_SWITCH=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo '# If you set TIMER_SWITCH to 1, your system will use your main analyzer during the start-stop defined (birds, except if BATS_ANALYSIS is set to 1), and the alternate analyzer during the night' >> /etc/birdnet/birdnet.conf
+  echo "TIMER_SWITCH=0" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^TIMER_START=' /etc/birdnet/birdnet.conf &>/dev/null; then
+  echo '# TIMER_START : can be "Sunrise", "Sunset", or a specific time such as "06:00"' >> /etc/birdnet/birdnet.conf
+  echo "TIMER_START=Sunrise" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^TIMER_STOP=' /etc/birdnet/birdnet.conf &>/dev/null; then
+  echo '# TIMER_STOP : can be "Sunset", "Sunrise", or a specific time such as "18:00"' >> /etc/birdnet/birdnet.conf
+  echo "TIMER_STOP=Sunset" >> /etc/birdnet/birdnet.conf
+fi
+
 if [ ! -d "$HOME"/BirdNET-Pi/BattyBirdNET-Analyzer/server.py ]; then
   if [ -d "$HOME"/BirdNET-Pi/BattyBirdNET-Analyzer ]; then
     rm -r "$HOME"/BirdNET-Pi/BattyBirdNET-Analyzer
