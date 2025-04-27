@@ -149,6 +149,8 @@ if ! grep -E '^TIMER_STOP=' /etc/birdnet/birdnet.conf &>/dev/null; then
 fi
 
 if [ ! -L "$HOME/BirdNET-Pi/templates/birdnet_timer.service" ]; then
+  ln -sf "$HOME/BirdNET-Pi"/scripts/birdnet_timer.py /usr/local/bin/
+  chown "$USER:$USER" "$HOME/BirdNET-Pi"/scripts/birdnet_timer.py
   echo "Installing birdnet_timer.service"
   cat << EOF > $HOME/BirdNET-Pi/templates/birdnet_timer.service
 [Unit]
