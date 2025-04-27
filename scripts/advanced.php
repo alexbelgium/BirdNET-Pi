@@ -254,10 +254,9 @@ if (isset($_GET["max_files_species"])) {
   }
 
   if (isset($_GET["bats_analysis"])) {
-    $bats_analysis = $_GET["bats_analysis"];
-    if (strcmp($bats_analysis, $config['BATS_ANALYSIS']) !== 0) {
-      $contents = preg_replace("/BATS_ANALYSIS=.*/", "BATS_ANALYSIS=$bats_analysis", $contents);
-    }
+    $contents = preg_replace("/BATS_ANALYSIS=.*/", "BATS_ANALYSIS=1", $contents);
+  } else {
+    $contents = preg_replace("/BATS_ANALYSIS=.*/", "BATS_ANALYSIS=0", $contents);
   }
 
   if (isset($_GET["bats_sampling_rate"])) {
@@ -275,10 +274,9 @@ if (isset($_GET["max_files_species"])) {
   }
 
   if (isset($_GET["denoising"])) {
-    $denoising = $_GET["denoising"];
-    if (strcmp($denoising, $config['DENOISING']) !== 0) {
-      $contents = preg_replace("/DENOISING=.*/", "DENOISING=$denoising", $contents);
-    }
+    $contents = preg_replace("/DENOISING=.*/", "DENOISING=1", $contents);
+  } else {
+    $contents = preg_replace("/DENOISING=.*/", "DENOISING=0", $contents);
   }
 
   if (isset($_GET["denoising_factor"])) {
