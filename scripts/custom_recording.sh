@@ -16,7 +16,7 @@ PAUSE_DURATION=240
 now=$(date +%H)
 
 SAMPLING_RATE=48000
-if [ "$BATS_ANALYSIS" = "1" ]; then
+if conf.get('ANALYSIS_MODE', fallback='BirdNET') in ('BattyBirdNET', 'Both'):
     SAMPLING_RATE="${BATS_SAMPLING_RATE:-256000}"
 fi
 

@@ -30,7 +30,7 @@ echo "<a href=\"https://github.com/Nachtzuster/BirdNET-Pi.git\" target=\"_blank\
 
   <div class="stream">
 <?php
-$logo = ($config['BATS_ANALYSIS'] == 1) ? "bnp_bats.png" : "bnp.png";
+$logo = ($config['ANALYSIS_MODE'] === 'BattyBirdNET') ? "bnp_bats.png" : "bnp.png";
 if(isset($_GET['stream'])){
   ensure_authenticated('You cannot listen to the live audio stream');
       echo "

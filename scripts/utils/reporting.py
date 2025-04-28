@@ -38,7 +38,7 @@ def extract_safe(in_file, out_file, start, stop):
     # context. If EXTRACTION_LENGTH is 10, for instance, 3 seconds are removed
     # from that value and divided by 2, so that the 3 seconds of the call are
     # within 3.5 seconds of audio context before and after.
-    if conf.getint('BATS_ANALYSIS', fallback=0) == 1:
+    if conf.get('ANALYSIS_MODE', fallback='BirdNET') in ('BattyBirdNET', 'Both'):
         ex_len = 288000 / conf.getint('BATS_SAMPLING_RATE', fallback=256000)
         spacer = (ex_len / 3)
     else:
@@ -56,7 +56,7 @@ def extract_safe(in_file, out_file, start, stop):
 
 def spectrogram(in_file, title, comment, raw=False):
     conf = get_settings()
-    if conf.getint('BATS_ANALYSIS', fallback=0) == 1:
+    if conf.get('ANALYSIS_MODE', fallback='BirdNET') in ('BattyBirdNET', 'Both'):
         rate = conf.getint('BATS_SAMPLING_RATE', fallback=256000) // 2
     else:
         rate = 24000
@@ -73,7 +73,7 @@ def spectrogram(in_file, title, comment, raw=False):
 
 def extract_detection(file: ParseFileName, detection: Detection):
     conf = get_settings()
-    if conf.getint('BATS_ANALYSIS', fallback=0) == 1:
+    if conf.get('ANALYSIS_MODE', fallback='BirdNET') in ('BattyBirdNET', 'Both'):
         file_format = "wav"
     else:
         file_format = conf["AUDIOFMT"]
