@@ -16,7 +16,7 @@ fi
 [ -d $RECS_DIR/StreamData ] || mkdir -p $RECS_DIR/StreamData
 
 SAMPLING_RATE=48000
-if conf.get('ANALYSIS_MODE', fallback='BirdNET') in ('BattyBirdNET', 'Both'):
+if [ "$BATS_ANALYSIS" = "1" ]; then
     SAMPLING_RATE="${BATS_SAMPLING_RATE:-256000}"
 fi
 

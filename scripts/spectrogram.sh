@@ -16,7 +16,7 @@ next=0
 looptime=$(( RECORDING_LENGTH * 2 / 3 ))
 
 SAMPLING_RATE=24k
-if conf.get('ANALYSIS_MODE', fallback='BirdNET') in ('BattyBirdNET', 'Both'):
+if [ "$BATS_ANALYSIS" = "1" ]; then
     SAMPLING_RATE=$(( ${BATS_SAMPLING_RATE:-256000} / 2 ))
 fi
 

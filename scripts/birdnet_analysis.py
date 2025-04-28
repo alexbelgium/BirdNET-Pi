@@ -28,11 +28,11 @@ def sig_handler(sig_num, curr_stack_frame):
 
 
 def main():
-    model_type = conf.get('ANALYSIS_MODE', fallback='BirdNET')
-    model_type = model_type if model_type in ('BirdNET', 'BattyBirdNET', 'Both') else 'BirdNET'
-    if model_type in ('BirdNET', 'Both'):
+    if conf.getint('BATS_ANALYSIS') == 1:
+        model_type = "bats"
+    else:
+        model_type = "birds"
         load_global_model()
-
     log.info("Starting in '%s' analysis mode", model_type)
     i = inotify.adapters.Inotify()
     i.add_watch(os.path.join(conf['RECS_DIR'], 'StreamData'), mask=IN_CLOSE_WRITE)
@@ -92,12 +92,10 @@ def process_file(file_name, report_queue, model_type):
         with open(ANALYZING_NOW, 'w') as analyzing:
             analyzing.write(file_name)
         file = ParseFileName(file_name)
-        if model_type == "BattyBirdNET":
+        if model_type == "bats":
             detections = run_bats_analysis(file)
-        elif model_type == 'BirdNET':
-            detections = run_analysis(file)
         else:
-            detections = run_analysis(file) + run_bats_analysis(file)
+            detections = run_analysis(file)
         # we join() to make sure te reporting queue does not get behind
         if not report_queue.empty():
             log.warning('reporting queue not yet empty')
