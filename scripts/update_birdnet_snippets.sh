@@ -113,9 +113,9 @@ if ! grep -E '^RARE_SPECIES_THRESHOLD=' /etc/birdnet/birdnet.conf &>/dev/null;th
   echo "RARE_SPECIES_THRESHOLD=\"30\"" >> /etc/birdnet/birdnet.conf
 fi
 
-if ! grep -E '^BATS_ANALYSIS=' /etc/birdnet/birdnet.conf &>/dev/null;then
-  echo '# BATS_ANALYSIS defines if the model analyses birds or bats. Set to 1 to use BattyBirdNET-Analyzer model' >> /etc/birdnet/birdnet.conf
-  echo "BATS_ANALYSIS=0" >> /etc/birdnet/birdnet.conf
+if ! grep -E '^ANALYSIS_MODE=' /etc/birdnet/birdnet.conf &>/dev/null; then
+  echo '# Can be set to BirdNET (default, same as empty), BattyBirdNET, or Both (for simultaneous analysis)' >> /etc/birdnet/birdnet.conf
+  echo 'ANALYSIS_MODE=BirdNET' >> /etc/birdnet/birdnet.conf
 fi
 
 if ! grep -E '^BATS_SAMPLING_RATE=' /etc/birdnet/birdnet.conf &>/dev/null; then
@@ -133,9 +133,9 @@ if ! grep -E '^TIMER=' /etc/birdnet/birdnet.conf &>/dev/null;then
   echo "TIMER=0" >> /etc/birdnet/birdnet.conf
 fi
 
-if ! grep -E '^TIMER_SWITCH=' /etc/birdnet/birdnet.conf &>/dev/null;then
-  echo '# If you set TIMER_SWITCH to 1, your system will use your main analyzer during the start-stop defined (birds, except if BATS_ANALYSIS is set to 1), and the alternate analyzer during the night' >> /etc/birdnet/birdnet.conf
-  echo "TIMER_SWITCH=0" >> /etc/birdnet/birdnet.conf
+if ! grep -E '^TIMER_LOGIC=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo '# Can be alternate (analyse birds during start-stop ; bats during stop-start) ; or either Bats or Birds (analyse only those during start-stop)' >> /etc/birdnet/birdnet.conf
+  echo "TIMER_LOGIC=0" >> /etc/birdnet/birdnet.conf
 fi
 
 if ! grep -E '^TIMER_START=' /etc/birdnet/birdnet.conf &>/dev/null; then
