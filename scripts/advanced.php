@@ -590,7 +590,7 @@ foreach($formats as $format){
       <p>Larger values increase risk of information loss.</p><br>
       <label for="denoising_profile">Microphone Noise Profile:</label><br>
       <select name="denoising_profile" class="testbtn">
-          <option selected><?php echo isset($newconfig['DENOISING_PROFILE']) ? $newconfig['DENOISING_PROFILE'] : ''; ?></option>
+	  <option selected><?php echo isset($newconfig['DENOISING_PROFILE']) ? basename($newconfig['DENOISING_PROFILE']) : ''; ?></option>
           <?php
           $formats = array("audiomoth_v12.prof", "waem2.prof", "waem2pro.prof", "banzerhaus.prof");
           foreach($formats as $format){
