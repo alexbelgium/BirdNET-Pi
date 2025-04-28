@@ -253,10 +253,15 @@ if (isset($_GET["max_files_species"])) {
     $contents = preg_replace("/TIMER_STOP=.*/", "TIMER_STOP=$timer_stop", $contents);
   }
 
-  if (isset($_GET["bats_analysis"])) {
-    $contents = preg_replace("/BATS_ANALYSIS=.*/", "BATS_ANALYSIS=1", $contents);
-  } else {
-    $contents = preg_replace("/BATS_ANALYSIS=.*/", "BATS_ANALYSIS=0", $contents);
+  if (isset($_GET["analysis_mode"])) {
+    $mode = $_GET["analysis_mode"];
+    if (strcmp($mode, $config['ANALYSIS_MODE']) !== 0) {
+      $contents = preg_replace(
+        "/ANALYSIS_MODE=.*/",
+        "ANALYSIS_MODE=$mode",
+        $contents
+      );
+    }
   }
 
   if (isset($_GET["bats_sampling_rate"])) {
@@ -568,8 +573,23 @@ foreach($formats as $format){
       <table class="settingstable"><tr><td>
       <h2>BattyBirdNET Settings</h2>
       <p>Enable Bat Detection Analysis:</p>
-      <label for="bats_analysis">Use BattyBirdNET Analyzer: </label>
-      <input type="checkbox" name="bats_analysis" <?php if(isset($newconfig['BATS_ANALYSIS']) && $newconfig['BATS_ANALYSIS'] == 1) { echo "checked"; } ?> ><br><br>
+      <h2>Analysis Mode</h2>
+      <p>Choose which model(s) to run:</p>
+      <select name="analysis_mode">
+        <option value="BirdNET"
+          <?php if ($newconfig['ANALYSIS_MODE'] === 'BirdNET') echo 'selected'; ?>>
+          BirdNET Only
+        </option>
+        <option value="BattyBirdNET"
+          <?php if ($newconfig['ANALYSIS_MODE'] === 'BattyBirdNET') echo 'selected'; ?>>
+          BattyBirdNET Only
+        </option>
+        <option value="Both"
+          <?php if ($newconfig['ANALYSIS_MODE'] === 'Both') echo 'selected'; ?>>
+          Both (BirdNET + BattyBirdNET)
+        </option>
+      </select>
+      <br><br>
       <label for="bats_sampling_rate">Sampling Rate (Hz):</label><br>
       <input name="bats_sampling_rate" type="number" style="width:6em;" min="100000" max="512000" step="1000" value="<?php echo isset($newconfig['BATS_SAMPLING_RATE']) ? $newconfig['BATS_SAMPLING_RATE'] : '256000'; ?>" required><br><br>
       <label for="bats_classifier">Bat Classifier:</label><br>
