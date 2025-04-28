@@ -190,7 +190,7 @@ if [ ! -d "$HOME"/BirdNET-Pi/BattyBirdNET-Analyzer/server.py ]; then
   fi
   branch_classifier=main
   git clone -b $branch_classifier --depth=1 https://github.com/rdz-oss/BattyBirdNET-Analyzer.git ${HOME}/BirdNET-Pi/BattyBirdNET-Analyzer
-  chown pi:pi ${HOME}/BirdNET-Pi
+  chown -R pi:pi ${HOME}/BirdNET-Pi/BattyBirdNET-Analyzer
 fi
 
 [ -d $RECS_DIR/StreamData ] || sudo_with_user mkdir -p $RECS_DIR/StreamData
