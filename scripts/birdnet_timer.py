@@ -53,14 +53,14 @@ def update_bats_analysis(new_value):
                 f.write(line)
 
 def restart_services():
-    """Restart BirdNET services via the configured script."""
-    log.info('Running restart script: %s', RESTART_SCRIPT)
-    subprocess.run(["bash", RESTART_SCRIPT], check=True)
+    """Restart BirdNET services via the configured script with sudo."""
+    log.info('Running restart script with sudo: %s', RESTART_SCRIPT)
+    subprocess.run(["sudo", "bash", RESTART_SCRIPT], check=True)
 
 def stop_services():
-    """Stop BirdNET core services via the configured script."""
-    log.info('Running stop script: %s', STOP_SCRIPT)
-    subprocess.run(["bash", STOP_SCRIPT], check=True)
+    """Stop BirdNET core services via the configured script with sudo."""
+    log.info('Running stop script with sudo: %s', STOP_SCRIPT)
+    subprocess.run(["sudo", "bash", STOP_SCRIPT], check=True)
 
 def is_service_active():
     """Return True if the birdnet_analysis systemd service is active."""
