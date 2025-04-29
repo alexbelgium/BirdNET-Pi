@@ -3,14 +3,29 @@
 import re
 import time
 import subprocess
+import os
+import logging
+import sys
 from datetime import datetime, date
 from suntime import Sun
 from dateutil import tz
 from utils.helpers import get_settings
-import os
 
-# Configuration
-CONFIG_FILE = '/etc/birdnet/birdnet.conf'
+# Configure logging
+log = logging.getLogger(__name__)
+
+def setup_logging():
+    """Set up root logger to output to stdout with a simple format."""
+    logger = logging.getLogger()
+    formatter = logging.Formatter("[%(name)s][%(levelname)s] %(message)s")
+    handler = logging.StreamHandler(stream=sys.stdout)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    global log
+    log = logging.getLogger('birdnet_timer')
+
+# Configuration paths\CONFIG_FILE = '/etc/birdnet/birdnet.conf'
 RESTART_SCRIPT = os.path.expanduser('~/BirdNET-Pi/scripts/restart_services.sh')
 STOP_SCRIPT    = os.path.expanduser('~/BirdNET-Pi/scripts/stop_core_services.sh')
 
@@ -29,15 +44,17 @@ def update_bats_analysis(new_value):
 
 
 def restart_services():
+    """Restart BirdNET services via the configured script."""
     subprocess.run(["bash", RESTART_SCRIPT], check=True)
 
 
 def stop_services():
+    """Stop BirdNET core services via the configured script."""
     subprocess.run(["bash", STOP_SCRIPT], check=True)
 
 
 def is_service_active():
-    """Return True if birdnet_analysis service is active."""
+    """Return True if the birdnet_analysis systemd service is active."""
     res = subprocess.run(
         ['systemctl', 'is-active', 'birdnet_analysis'],
         capture_output=True, text=True
@@ -46,7 +63,7 @@ def is_service_active():
 
 
 def get_sun_times():
-    """Returns (sunrise_str, sunset_str) for today in HH:MM format."""
+    """Return today's sunrise and sunset times as 'HH:MM'."""
     conf = get_settings()
     lat = conf.getfloat('LATITUDE')
     lon = conf.getfloat('LONGITUDE')
@@ -59,18 +76,17 @@ def get_sun_times():
 
 
 def error_and_sleep(msg):
-    print(f"[ERROR] {msg}")
+    """Log an error message, then sleep forever."""
+    log.error(msg)
     while True:
         time.sleep(3600)
 
 
 def parse_time_field(field_name, value, sunrise, sunset):
     """
-    Parse a config time value:
-      - "Sunrise"  -> sunrise
-      - "Sunset"   -> sunset
-      - "HH:MM"    -> itself
-      - otherwise   -> error + sleep
+    Parse a TIMER_* value into an 'HH:MM' string.
+    Accepts 'Sunrise', 'Sunset', or explicit 'HH:MM'.
+    Otherwise logs error and sleeps indefinitely.
     """
     if value == 'Sunrise':
         return sunrise
@@ -82,17 +98,19 @@ def parse_time_field(field_name, value, sunrise, sunset):
 
 
 def time_to_minutes(timestr):
+    """Convert 'HH:MM' to minutes since midnight."""
     h, m = map(int, timestr.split(':'))
     return h * 60 + m
 
 
 if __name__ == '__main__':
+    setup_logging()
     conf = get_settings()
-    timer_enabled = conf.getint('TIMER', fallback=0)
 
     # 1) If TIMER is 0, sleep forever
+    timer_enabled = conf.getint('TIMER', fallback=0)
     if timer_enabled == 0:
-        print("Timer disabled: sleeping until restart...")
+        log.info("Timer disabled: sleeping until restart...")
         while True:
             time.sleep(3600)
 
@@ -114,7 +132,8 @@ if __name__ == '__main__':
     start_min = time_to_minutes(start_str)
     stop_min  = time_to_minutes(stop_str)
 
-    print(f"Timer: start={start_str}, stop={stop_str}, switch={'ON' if timer_switch else 'OFF'}")
+    log.info("Timer configured: start=%s, stop=%s, switch=%s",
+             start_str, stop_str, 'ON' if timer_switch else 'OFF')
 
     # Main loop
     today = date.today()
@@ -126,14 +145,13 @@ if __name__ == '__main__':
         if now.date() != today:
             sunrise, sunset = get_sun_times()
             today = now.date()
-            # re-parse fields
             raw_start = conf.get('TIMER_START', fallback=None)
             raw_stop  = conf.get('TIMER_STOP',  fallback=None)
             start_str = parse_time_field('TIMER_START', raw_start, sunrise, sunset)
             stop_str  = parse_time_field('TIMER_STOP',  raw_stop,  sunrise, sunset)
             start_min = time_to_minutes(start_str)
             stop_min  = time_to_minutes(stop_str)
-            print(f"[New day] start={start_str}, stop={stop_str}")
+            log.info("[New day] start=%s, stop=%s", start_str, stop_str)
 
         # Determine if within active window
         if start_min < stop_min:
@@ -146,12 +164,12 @@ if __name__ == '__main__':
         if in_window:
             # should be active
             if not service_active:
-                print(f"[{now}] Window start: service inactive -> restarting")
+                log.info("Window start: service inactive -> restarting")
                 restart_services()
         else:
             # should be inactive
             if service_active and not timer_switch:
-                print(f"[{now}] Window end: service active -> stopping")
+                log.info("Window end: service active -> stopping")
                 stop_services()
 
         time.sleep(60)
