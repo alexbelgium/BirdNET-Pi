@@ -54,10 +54,12 @@ def update_bats_analysis(new_value):
 
 def restart_services():
     """Restart BirdNET services via the configured script."""
+    log.info('Running restart script: %s', RESTART_SCRIPT)
     subprocess.run(["bash", RESTART_SCRIPT], check=True)
 
 def stop_services():
     """Stop BirdNET core services via the configured script."""
+    log.info('Running stop script: %s', STOP_SCRIPT)
     subprocess.run(["bash", STOP_SCRIPT], check=True)
 
 def is_service_active():
@@ -65,12 +67,13 @@ def is_service_active():
     res = subprocess.run([
         'systemctl', 'is-active', 'birdnet_analysis'
     ], capture_output=True, text=True)
-    return res.stdout.strip() == 'active'
+    active = res.stdout.strip() == 'active'
+    log.debug('Service birdnet_analysis active: %s', active)
+    return active
 
 def get_sun_times():
     """Return today's sunrise and sunset times as 'HH:MM'."""
     conf = get_settings()
-    # require LATITUDE and LONGITUDE
     raw_lat = conf.get('LATITUDE', fallback=None)
     raw_lon = conf.get('LONGITUDE', fallback=None)
     if raw_lat is None or raw_lon is None:
@@ -82,6 +85,7 @@ def get_sun_times():
     today_dt = datetime.combine(date.today(), datetime.min.time())
     sr = sun.get_sunrise_time(today_dt, local_tz).strftime("%H:%M")
     ss = sun.get_sunset_time(today_dt, local_tz).strftime("%H:%M")
+    log.debug('Today sunrise=%s sunset=%s', sr, ss)
     return sr, ss
 
 def error_and_sleep(msg):
@@ -114,7 +118,6 @@ if __name__ == '__main__':
     # Initialization with strict config checks
     try:
         conf = get_settings()
-        # TIMER
         raw_timer = conf.get('TIMER', fallback=None)
         if raw_timer is None:
             error_and_sleep("Missing TIMER in configuration.")
@@ -124,7 +127,6 @@ if __name__ == '__main__':
             while not shutdown:
                 time.sleep(3600)
             sys.exit(0)
-        # TIMER_START/STOP
         raw_start = conf.get('TIMER_START', fallback=None)
         raw_stop  = conf.get('TIMER_STOP',  fallback=None)
         if raw_start is None or raw_stop is None:
@@ -134,12 +136,10 @@ if __name__ == '__main__':
         stop_str  = parse_time_field('TIMER_STOP',  raw_stop,  sunrise, sunset)
         if start_str == stop_str:
             error_and_sleep("TIMER_START and TIMER_STOP cannot be the same.")
-        # TIMER_SWITCH
         raw_switch = conf.get('TIMER_SWITCH', fallback=None)
         if raw_switch is None:
             error_and_sleep("Missing TIMER_SWITCH in configuration.")
         timer_switch = raw_switch.lower() in ('1','true','yes','on')
-        # Compute minutes
         start_min = time_to_minutes(start_str)
         stop_min  = time_to_minutes(stop_str)
         log.info("Timer configured: start=%s, stop=%s, switch=%s", start_str, stop_str,
@@ -154,7 +154,6 @@ if __name__ == '__main__':
         try:
             now = datetime.now()
             now_min = now.hour * 60 + now.minute
-            # Reload at midnight
             if now.date() != today:
                 sunrise, sunset = get_sun_times()
                 today = now.date()
@@ -165,7 +164,6 @@ if __name__ == '__main__':
                 start_min = time_to_minutes(start_str)
                 stop_min  = time_to_minutes(stop_str)
                 log.info("[New day] start=%s, stop=%s", start_str, stop_str)
-            # Determine window
             if start_min < stop_min:
                 in_window = start_min <= now_min < stop_min
             else:
@@ -176,9 +174,12 @@ if __name__ == '__main__':
                     log.info("Window start: service inactive -> restarting")
                     restart_services()
             else:
-                if service_active and not timer_switch:
-                    log.info("Window end: service active -> stopping")
-                    stop_services()
+                if service_active:
+                    if not timer_switch:
+                        log.info("Window end: service active & switch OFF -> stopping core services")
+                        stop_services()
+                    else:
+                        log.info("Window end: switch ON, leaving services running")
         except BaseException:
             log.exception("Unexpected error in main loop")
         time.sleep(60)
