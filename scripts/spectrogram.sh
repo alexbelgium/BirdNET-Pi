@@ -17,7 +17,7 @@ looptime=$(( RECORDING_LENGTH * 2 / 3 ))
 
 SAMPLING_RATE=24k
 if [ "$BATS_ANALYSIS" = "1" ]; then
-    SAMPLING_RATE=$(( ${BATS_SAMPLING_RATE:-256000} / 2 ))
+    SAMPLING_RATE="${BATS_SAMPLING_RATE:-256000}"
 fi
 
 touch "$HOME/BirdSongs/StreamData/analyzing_now.txt"
