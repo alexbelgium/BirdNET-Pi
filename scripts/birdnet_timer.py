@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
 
+import re
 import time
 import subprocess
 from datetime import datetime, date
 from suntime import Sun
 from dateutil import tz
 from utils.helpers import get_settings
+import os
 
+# Configuration
 CONFIG_FILE = '/etc/birdnet/birdnet.conf'
-RESTART_SCRIPT = '/home/pi/BirdNET-Pi/scripts/restart_services.sh'
+RESTART_SCRIPT = os.path.expanduser('~/BirdNET-Pi/scripts/restart_services.sh')
+STOP_SCRIPT    = os.path.expanduser('~/BirdNET-Pi/scripts/stop_core_services.sh')
+
+# Helpers
 
 def update_bats_analysis(new_value):
+    """Write BATS_ANALYSIS=<new_value> into the config file."""
     with open(CONFIG_FILE, 'r') as f:
         lines = f.readlines()
     with open(CONFIG_FILE, 'w') as f:
@@ -20,102 +27,131 @@ def update_bats_analysis(new_value):
             else:
                 f.write(line)
 
+
 def restart_services():
-    subprocess.run(["bash", RESTART_SCRIPT])
+    subprocess.run(["bash", RESTART_SCRIPT], check=True)
 
-def get_today_sunrise_sunset():
+
+def stop_services():
+    subprocess.run(["bash", STOP_SCRIPT], check=True)
+
+
+def is_service_active():
+    """Return True if birdnet_analysis service is active."""
+    res = subprocess.run(
+        ['systemctl', 'is-active', 'birdnet_analysis'],
+        capture_output=True, text=True
+    )
+    return res.stdout.strip() == 'active'
+
+
+def get_sun_times():
+    """Returns (sunrise_str, sunset_str) for today in HH:MM format."""
     conf = get_settings()
-    latitude = conf.getfloat('LATITUDE')
-    longitude = conf.getfloat('LONGITUDE')
+    lat = conf.getfloat('LATITUDE')
+    lon = conf.getfloat('LONGITUDE')
+    sun = Sun(lat, lon)
+    local_tz = tz.tzlocal()
+    today_dt = datetime.combine(date.today(), datetime.min.time())
+    sr = sun.get_sunrise_time(today_dt, local_tz).strftime("%H:%M")
+    ss = sun.get_sunset_time(today_dt, local_tz).strftime("%H:%M")
+    return sr, ss
 
-    sun = Sun(latitude, longitude)
-    local_timezone = tz.tzlocal()
-    today = datetime.now().date()
-    current_datetime = datetime.combine(today, datetime.min.time())
 
-    sunrise_dt = sun.get_sunrise_time(current_datetime, local_timezone)
-    sunset_dt = sun.get_sunset_time(current_datetime, local_timezone)
+def error_and_sleep(msg):
+    print(f"[ERROR] {msg}")
+    while True:
+        time.sleep(3600)
 
-    sunrise_time = sunrise_dt.strftime("%H:%M")
-    sunset_time = sunset_dt.strftime("%H:%M")
-    return sunrise_time, sunset_time
+
+def parse_time_field(field_name, value, sunrise, sunset):
+    """
+    Parse a config time value:
+      - "Sunrise"  -> sunrise
+      - "Sunset"   -> sunset
+      - "HH:MM"    -> itself
+      - otherwise   -> error + sleep
+    """
+    if value == 'Sunrise':
+        return sunrise
+    if value == 'Sunset':
+        return sunset
+    if re.match(r'^\d{2}:\d{2}$', value):
+        return value
+    error_and_sleep(f"Invalid {field_name}: '{value}' (must be 'Sunrise', 'Sunset' or HH:MM)")
+
 
 def time_to_minutes(timestr):
     h, m = map(int, timestr.split(':'))
     return h * 60 + m
 
-if __name__ == "__main__":
-    conf = get_settings()
 
-    if conf.getint('TIMER', fallback=0) == 0:
+if __name__ == '__main__':
+    conf = get_settings()
+    timer_enabled = conf.getint('TIMER', fallback=0)
+
+    # 1) If TIMER is 0, sleep forever
+    if timer_enabled == 0:
+        print("Timer disabled: sleeping until restart...")
         while True:
             time.sleep(3600)
 
-    bats_analysis = conf.getint('BATS_ANALYSIS', fallback=0)
-    default_start = "18:00" if bats_analysis == 1 else "06:00"
-    default_stop = "06:00" if bats_analysis == 1 else "18:00"
+    # 2) Compute start/stop times
+    sunrise, sunset = get_sun_times()
+    raw_start = conf.get('TIMER_START', fallback=None)
+    raw_stop  = conf.get('TIMER_STOP',  fallback=None)
 
-    timer_start = conf.get('TIMER_START', fallback=default_start)
-    timer_end = conf.get('TIMER_STOP', fallback=default_stop)
+    start_str = parse_time_field('TIMER_START', raw_start, sunrise, sunset)
+    stop_str  = parse_time_field('TIMER_STOP',  raw_stop,  sunrise, sunset)
 
-    sunrise, sunset = get_today_sunrise_sunset()
+    # 3) Ensure they differ
+    if start_str == stop_str:
+        error_and_sleep("TIMER_START and TIMER_STOP cannot be the same.")
+
+    # 4) Read TIMER_SWITCH
+    timer_switch = conf.getboolean('TIMER_SWITCH', fallback=False)
+
+    start_min = time_to_minutes(start_str)
+    stop_min  = time_to_minutes(stop_str)
+
+    print(f"Timer: start={start_str}, stop={stop_str}, switch={'ON' if timer_switch else 'OFF'}")
+
+    # Main loop
     today = date.today()
-
-    if timer_start == "Sunrise":
-        timer_start = sunrise
-    elif timer_start == "Sunset":
-        timer_start = sunset
-
-    if timer_end == "Sunrise":
-        timer_end = sunrise
-    elif timer_end == "Sunset":
-        timer_end = sunset
-
-    print(f"Timer active: will switch at {timer_start} and {timer_end}.")
-
-    start_minutes = time_to_minutes(timer_start)
-    stop_minutes = time_to_minutes(timer_end)
-    current_mode = bats_analysis
-
     while True:
         now = datetime.now()
-        now_minutes = now.hour * 60 + now.minute
+        now_min = now.hour * 60 + now.minute
 
-        # Reload sunrise/sunset after midnight
+        # Reload sunrise/sunset at midnight
         if now.date() != today:
-            sunrise, sunset = get_today_sunrise_sunset()
+            sunrise, sunset = get_sun_times()
             today = now.date()
+            # re-parse fields
+            raw_start = conf.get('TIMER_START', fallback=None)
+            raw_stop  = conf.get('TIMER_STOP',  fallback=None)
+            start_str = parse_time_field('TIMER_START', raw_start, sunrise, sunset)
+            stop_str  = parse_time_field('TIMER_STOP',  raw_stop,  sunrise, sunset)
+            start_min = time_to_minutes(start_str)
+            stop_min  = time_to_minutes(stop_str)
+            print(f"[New day] start={start_str}, stop={stop_str}")
 
-            conf = get_settings()
-            timer_start = conf.get('TIMER_START', fallback=default_start)
-            timer_end = conf.get('TIMER_STOP', fallback=default_stop)
-
-            if timer_start == "Sunrise":
-                timer_start = sunrise
-            elif timer_start == "Sunset":
-                timer_start = sunset
-
-            if timer_end == "Sunrise":
-                timer_end = sunrise
-            elif timer_end == "Sunset":
-                timer_end = sunset
-
-            start_minutes = time_to_minutes(timer_start)
-            stop_minutes = time_to_minutes(timer_end)
-
-            print(f"[New day] Updated times: start at {timer_start}, end at {timer_end}")
-
-        if start_minutes < stop_minutes:
-            # Timer window does NOT cross midnight
-            desired_mode = 1 if (start_minutes <= now_minutes < stop_minutes) else 0
+        # Determine if within active window
+        if start_min < stop_min:
+            in_window = start_min <= now_min < stop_min
         else:
-            # Timer window crosses midnight
-            desired_mode = 1 if (now_minutes >= start_minutes or now_minutes < stop_minutes) else 0
+            in_window = now_min >= start_min or now_min < stop_min
 
-        if desired_mode != current_mode:
-            print(f"Switching BATS_ANALYSIS to {desired_mode}")
-            update_bats_analysis(desired_mode)
-            restart_services()
-            current_mode = desired_mode
+        service_active = is_service_active()
+
+        if in_window:
+            # should be active
+            if not service_active:
+                print(f"[{now}] Window start: service inactive -> restarting")
+                restart_services()
+        else:
+            # should be inactive
+            if service_active and not timer_switch:
+                print(f"[{now}] Window end: service active -> stopping")
+                stop_services()
 
         time.sleep(60)
