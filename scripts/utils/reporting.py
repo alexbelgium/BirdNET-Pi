@@ -57,7 +57,7 @@ def extract_safe(in_file, out_file, start, stop):
 def spectrogram(in_file, title, comment, raw=False):
     conf = get_settings()
     if conf.getint('BATS_ANALYSIS', fallback=0) == 1:
-        rate = conf.getint('BATS_SAMPLING_RATE', fallback=256000) // 2
+        rate = conf.getint('BATS_SAMPLING_RATE', fallback=256000)
     else:
         rate = 24000
     args = ['sox', '-V1', f'{in_file}', '-n', 'remix', '1', 'rate', f'{rate}', 'spectrogram',
