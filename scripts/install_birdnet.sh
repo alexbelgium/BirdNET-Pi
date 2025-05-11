@@ -44,6 +44,6 @@ cd $my_dir/scripts || exit 1
 CURRENT_TIMEZONE=$(timedatectl show --value --property=Timezone)
 [ -f /etc/timezone ] && echo "$CURRENT_TIMEZONE" | sudo tee /etc/timezone > /dev/null
 
-./install_language_label_nm.sh -l $DATABASE_LANG || exit 1
+./install_language_label.sh || exit 1
 
 exit 0
