@@ -23,7 +23,7 @@ from matplotlib.ticker import FormatStrFormatter
 from datetime import datetime
 from time import sleep
 from functools import lru_cache
-from utils.helpers import DB_PATH, get_settings
+from utils.helpers import DB_PATH, FONT_DIR, get_settings, get_font
 from utils.interactive_plot import create_plotly_heatmap
 
 # Cache the settings to avoid redundant calls
@@ -33,17 +33,11 @@ def get_settings_cached():
 
 def load_fonts():
     # Add every font at the specified location
-    font_dir = [os.path.expanduser('~/BirdNET-Pi/homepage/static')]
+    font_dir = [FONT_DIR]
     for font in font_manager.findSystemFonts(font_dir, fontext='ttf'):
         font_manager.fontManager.addfont(font)
     # Set font family globally
-    lang = get_settings_cached()['DATABASE_LANG']
-    if lang in ['ja', 'zh']:
-        rcParams['font.family'] = 'Noto Sans JP'
-    elif lang == 'th':
-        rcParams['font.family'] = 'Noto Sans Thai'
-    else:
-        rcParams['font.family'] = 'Roboto Flex'
+    rcParams['font.family'] = get_font()['font.family']
 
 def my_int_fmt(number, converthundreds=False):
     try:
