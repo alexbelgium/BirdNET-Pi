@@ -404,12 +404,6 @@ button:hover {
   height: 80%;
 }
 
-.column4 {
-  text-align: justify;
-  width: 10%;
-  height: 50%;
-}
-
 .column1 form,.column3 form {
   width: 80%;
   margin-left: auto;
@@ -502,7 +496,7 @@ button:hover {
 }
 
 @media screen and (max-width: 1290px) {
-  .column1,.column2,.column3,.column4 {
+  .column1,.column2,.column3 {
     height: 90%
   }
   .center-column {
@@ -542,7 +536,7 @@ button:hover {
     background-color: #333; /* dark background */
     color: #fff; /* white text */
   }
-  .column2,.column4 {
+  .column2 {
     display: none;
   }
   .smaller{

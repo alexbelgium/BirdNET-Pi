@@ -13,11 +13,12 @@ import seaborn as sns
 from matplotlib import rcParams
 from matplotlib.colors import LogNorm
 
-from utils.helpers import DB_PATH, get_settings
+from utils.helpers import DB_PATH, FONT_DIR, get_settings, get_font
 
 
 def get_data(now=None):
-    conn = sqlite3.connect(DB_PATH)
+    uri = f"file:{DB_PATH}?mode=ro"
+    conn = sqlite3.connect(uri, uri=True)
     if now is None:
         now = datetime.now()
     df = pd.read_sql_query(f"SELECT * from detections WHERE Date = DATE('{now.strftime('%Y-%m-%d')}')",
@@ -84,7 +85,7 @@ def create_plot(df_plt_today, now, is_top=None):
     if conf['COLOR_SCHEME'] == "dark":
         facecolor = 'darkgrey'
     else:
-        facecolor = 'none'
+        facecolor = '#77C487'
 
     f, axs = plt.subplots(1, 2, figsize=(10, height), gridspec_kw=dict(width_ratios=[3, 6]), facecolor=facecolor)
 
@@ -182,18 +183,12 @@ def create_plot(df_plt_today, now, is_top=None):
 
 
 def load_fonts():
-    conf = get_settings()
     # Add every font at the specified location
-    font_dir = [os.path.expanduser('~/BirdNET-Pi/homepage/static')]
+    font_dir = [FONT_DIR]
     for font in font_manager.findSystemFonts(font_dir, fontext='ttf'):
         font_manager.fontManager.addfont(font)
     # Set font family globally
-    if conf['DATABASE_LANG'] in ['ja', 'zh']:
-        rcParams['font.family'] = 'Noto Sans JP'
-    elif conf['DATABASE_LANG'] == 'th':
-        rcParams['font.family'] = 'Noto Sans Thai'
-    else:
-        rcParams['font.family'] = 'Roboto Flex'
+    rcParams['font.family'] = get_font()['font.family']
 
 
 def main(daemon, sleep_m):

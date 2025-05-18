@@ -33,7 +33,7 @@ if [ ! -z $RTSP_STREAM ];then
     # Loop over the streams
     for i in "${RTSP_STREAMS_EXPLODED_ARRAY[@]}"
     do
-      if [[ "$i" == "rtsp://"* ]]; then
+      if [[ "$i" =~ ^rtsps?:// ]]; then
         [ $FFMPEG_VERSION -lt 5 ] && PARAM=-stimeout || PARAM=-timeout
         TIMEOUT_PARAM="$PARAM 10000000"
       elif [[ "$i" =~ ^[a-z]+:// ]]; then

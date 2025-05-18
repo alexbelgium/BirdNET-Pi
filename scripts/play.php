@@ -189,6 +189,7 @@ if (get_included_files()[0] === __FILE__) {
 }
 
 ?>
+<script src="static/custom-audio-player.js"></script>
 <script>
 
 function deleteDetection(filename,copylink=false) {
@@ -242,32 +243,30 @@ function toggleShiftFreq(filename, shiftAction, elem) {
         elem.setAttribute("src","images/unshift.svg");
         elem.setAttribute("title", "This file has been shifted down in frequency.");
         elem.setAttribute("onclick", elem.getAttribute("onclick").replace("shift","unshift"));
-        console.log("shifted freqs of " + filename);
-          video=elem.parentNode.getElementsByTagName("video");
-          if (video.length > 0) {
-            video[0].setAttribute("title", video[0].getAttribute("title").replace("/By_Date/","/By_Date/shifted/"));
-            source = video[0].getElementsByTagName("source")[0];
-            source.setAttribute("src", source.getAttribute("src").replace("/By_Date/","/By_Date/shifted/"));
-            video[0].load();
-          } else {
-            atag=elem.parentNode.getElementsByTagName("a")[0];
-            atag.setAttribute("href", atag.getAttribute("href").replace("/By_Date/","/By_Date/shifted/"));
+	console.log("shifted freqs of " + filename);
+        const audioDiv = elem.parentNode.querySelector(".custom-audio-player");
+        if (audioDiv) {
+          audioDiv.setAttribute("data-audio-src", audioDiv.getAttribute("data-audio-src").replace("/By_Date/", "/By_Date/shifted/"));
+        } else {
+          const atag = elem.parentNode.querySelector("a");
+          if (atag) {
+            atag.setAttribute("href", atag.getAttribute("href").replace("/By_Date/", "/By_Date/shifted/"));
           }
+        }
       } else {
         elem.setAttribute("src","images/shift.svg");
         elem.setAttribute("title", "This file is not shifted in frequency.");
         elem.setAttribute("onclick", elem.getAttribute("onclick").replace("unshift","shift"));
         console.log("unshifted freqs of " + filename);
-          video=elem.parentNode.getElementsByTagName("video");
-          if (video.length > 0) {
-            video[0].setAttribute("title", video[0].getAttribute("title").replace("/By_Date/shifted/","/By_Date/"));
-            source = video[0].getElementsByTagName("source")[0];
-            source.setAttribute("src", source.getAttribute("src").replace("/By_Date/shifted/","/By_Date/"));
-            video[0].load();
-          } else {
-            atag=elem.parentNode.getElementsByTagName("a")[0];
-            atag.setAttribute("href", atag.getAttribute("href").replace("/By_Date/shifted/","/By_Date/"));
+        const audioDiv = elem.parentNode.querySelector(".custom-audio-player");
+        if (audioDiv) {
+          audioDiv.setAttribute("data-audio-src", audioDiv.getAttribute("data-audio-src").replace("/By_Date/shifted/", "/By_Date/"));
+        } else {
+          const atag = elem.parentNode.querySelector("a");
+          if (atag) {
+            atag.setAttribute("href", atag.getAttribute("href").replace("/By_Date/shifted/", "/By_Date/"));
           }
+        }
       }
     }
   }
@@ -570,6 +569,7 @@ if ($fp) {
 }
 
 $name = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
+$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 40;
 if(isset($_SESSION['date'])) {
   $date = $_SESSION['date'];
   if(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
@@ -623,14 +623,17 @@ echo "<table>
       continue;
     }
     $iter++;
+    if($iter > $limit) {
+      $iter_additional=true;
+      break;
+    }
 
-    if($num_rows < 100){
-      $imageelem = "<video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster=\"$filename_png\" preload=\"none\" title=\"$filename\"><source src=\"$filename\"></video>";
+    if($iter < 100){
+      $imageelem = "<div class='custom-audio-player' data-audio-src=\"$filename\" data-image-src=\"$filename_png\"></div>";
     } else {
       $imageelem = "<a href=\"$filename\"><img src=\"$filename_png\"></a>";
     }
 
-    if($config["FULL_DISK"] == "purge") {
       if(!in_array($filename_formatted, $disk_check_exclude_arr)) {
         $imageicon = "images/unlock.svg";
         $title = "This file will be deleted when disk space needs to be freed (>95% usage).";
@@ -663,16 +666,28 @@ echo "<table>
         ".$imageelem."
         </td>
         </tr>";
-    } else {
-      echo "<tr>
-  <td class=\"relative\">$date $time<br>$values
-<img style='cursor:pointer' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Delete Detection'><br>
-        ".$imageelem."
-        </td>
-        </tr>";
-    }
 
   }if($iter == 0){ echo "<tr><td><b>No recordings were found.</b><br><br><span style='font-size:medium'>They may have been deleted to make space for new recordings. You can prevent this from happening in the future by clicking the <img src='images/unlock.svg' style='width:20px'> icon in the top right of a recording.<br>You can also modify this behavior globally under \"Full Disk Behavior\" <a href='views.php?view=Advanced'>here.</a></span></td></tr>";}echo "</table>";}
+
+  if ($iter_additional) {
+    echo "<div style='text-align:center'>";
+    echo "<form action='views.php' method='GET' style='display:inline'>";
+    echo "<input type='hidden' name='view' value='Recordings'>";
+    echo "<input type='hidden' name='species' value=\"" . htmlspecialchars($_GET['species'], ENT_QUOTES) . "\">";
+    if(isset($_GET['sort'])) {
+      echo "<input type='hidden' name='sort' value=\"" . htmlspecialchars($_GET['sort'], ENT_QUOTES) . "\">";
+    }
+    if(isset($_GET['only_excluded'])) {
+      echo "<input type='hidden' name='only_excluded' value='" . $_GET['only_excluded'] . "'>";
+    }
+    if(isset($_SESSION['date'])) {
+      echo "<input type='hidden' name='date' value='" . $_SESSION['date'] . "'>";
+    }
+    echo "<input type='hidden' name='limit' value='" . ($limit + 40) . "'>";
+    echo "<button type='submit' class='loadmore'>Load 40 more...</button>";
+    echo "</form>";
+    echo "</div>";
+  }
 
   if(isset($_GET['filename'])){
     $name = $_GET['filename'];
@@ -711,7 +726,6 @@ echo "<table>
           $disk_check_exclude_arr = [];
         }
 
-        if($config["FULL_DISK"] == "purge") {
           if(!in_array($filename_formatted, $disk_check_exclude_arr)) {
             $imageicon = "images/unlock.svg";
             $title = "This file will be deleted when disk space needs to be freed (>95% usage).";
@@ -741,15 +755,8 @@ echo "<table>
 <img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
 <img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\">$date $time<br>$values<br>
 
-<video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster=\"$filename_png\" preload=\"none\" title=\"$filename\"><source src=\"$filename\"></video></td>
-            </tr>";
-        } else {
-          echo "<tr>
-      <td class=\"relative\">$date $time<br>$values
-<img style='cursor:pointer' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'><br>
-            <video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster=\"$filename_png\" preload=\"none\" title=\"$filename\"><source src=\"$filename\"></video></td>
-            </tr>";
-        }
+<div class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'></div>
+</td></tr>";
 
       }echo "</table>";}
       echo "</div>";

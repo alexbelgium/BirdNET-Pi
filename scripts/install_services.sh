@@ -17,7 +17,7 @@ install_depends() {
   curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
   apt -qqq update && apt -qqy upgrade
   echo "icecast2 icecast2/icecast-setup boolean false" | debconf-set-selections
-  apt install -qqy caddy sqlite3 php-sqlite3 php-fpm php-curl php-xml php-zip php icecast2 \
+  apt install --no-install-recommends -qqy caddy sqlite3 php-sqlite3 php-fpm php-curl php-xml php-zip php icecast2 \
     pulseaudio avahi-utils sox libsox-fmt-mp3 alsa-utils ffmpeg \
     wget curl unzip bc \
     python3-pip python3-venv lsof net-tools inotify-tools
@@ -82,6 +82,7 @@ create_necessary_dirs() {
   sudo -u ${USER} ln -fs $my_dir/templates/phpsysinfo.ini ${HOME}/phpsysinfo/
   sudo -u ${USER} ln -fs $my_dir/templates/green_bootstrap.css ${HOME}/phpsysinfo/templates/
   sudo -u ${USER} ln -fs $my_dir/templates/index_bootstrap.html ${HOME}/phpsysinfo/templates/html
+  sudo -u ${USER} ln -sf $my_dir/model/labels_nm/labels_en.txt $my_dir/model/labels_flickr.txt
   chmod -R g+rw $my_dir
   chmod -R g+rw ${RECS_DIR}
 }
