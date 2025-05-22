@@ -290,6 +290,17 @@ AUTH=$(grep basicauth /etc/caddy/Caddyfile)
 [ -n "${CADDY_PWD}" ] && [ -z "${AUTH}" ] && sudo /usr/local/bin/update_caddyfile.sh > /dev/null 2>&1
 set -x
 
+if ! [ -L $HOME/BirdNET-Pi/model/labels_flickr.txt ]; then
+  sudo_with_user ln -sf labels_nm/labels_en.txt $HOME/BirdNET-Pi/model/labels_flickr.txt
+fi
+if ! [ -L $HOME/BirdNET-Pi/model/labels.txt ]; then
+  sudo_with_user install_language_label.sh
+fi
+
+sqlite3 $HOME/BirdNET-Pi/scripts/birds.db << EOF
+CREATE INDEX IF NOT EXISTS "detections_Sci_Name" ON "detections" ("Sci_Name");
+EOF
+
 # update snippets above
 
 systemctl daemon-reload
