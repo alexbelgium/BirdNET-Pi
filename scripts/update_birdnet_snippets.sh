@@ -229,6 +229,10 @@ if ! [ -L $HOME/BirdNET-Pi/model/labels.txt ]; then
   sudo_with_user install_language_label.sh
 fi
 
+sqlite3 $HOME/BirdNET-Pi/scripts/birds.db << EOF
+CREATE INDEX IF NOT EXISTS "detections_Sci_Name" ON "detections" ("Sci_Name");
+EOF
+
 # update snippets above
 
 systemctl daemon-reload
