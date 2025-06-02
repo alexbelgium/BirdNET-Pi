@@ -439,6 +439,7 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
             )
             resp.raise_for_status()
             data = resp.json()
+            # log.info("Checking for %s ", data)
     except Exception as e:
         log.error("Remote analysis failed for %s: %s", file.file_name, e)
         return []
@@ -454,15 +455,27 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
             continue
         if stop < start:
             start, stop = stop, start
+            
+        max_species = ""
+        max_score = 0.0
 
         for species, score_str in entries:
             score = float(score_str)
+            # log.info('Checking for %s with confidence %s, start %s and stop %s', species, score, start, stop)
             if score < min_conf or \
                (include and species not in include) or \
                (exclude and species in exclude) or \
                (PREDICTED_SPECIES_LIST and species not in PREDICTED_SPECIES_LIST):
                 continue
-            detections.append(Detection(file.file_date, start, stop, species, score))
+            if score > max_score:
+                max_score = score
+                max_species = species
+        
+        if max_species not in ["", "noise","electrical","mechanical"]:        
+            detections.append(Detection(file.file_date, start, stop, max_species, max_score))
+            log.info('Detected %s with confidence %s at start %s and stop %s ', max_species, max_score, start, stop)
+        else:
+            log.info('No species detected with required confidence %s between %s and %s', min_conf, start, stop)
 
     # ── 5. make every Detection safe for extract_safe()  ───────────────
     ex_len = 288000 / conf.getint('BATS_SAMPLING_RATE', fallback=256000)
