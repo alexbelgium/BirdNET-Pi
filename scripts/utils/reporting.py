@@ -49,19 +49,15 @@ def extract_safe(in_file, out_file, start, stop):
 
 
 def spectrogram(in_file, title, comment, raw=False):
-    fd, tmp_file = tempfile.mkstemp(suffix='.png')
-    os.close(fd)
-    args = ['sox', '-V1', f'{in_file}', '-n', 'remix', '1', 'rate', '24k', 'spectrogram',
-            '-t', '', '-c', '', '-o', tmp_file]
     conf = get_settings()
     if conf.getint('BATS_ANALYSIS', fallback=0) == 1:
         rate = conf.getint('BATS_SAMPLING_RATE', fallback=256000)
     else:
         rate = 24000
-    fd, tmp_file = tempfile.mkstemp(suffix='.png')
+	fd, tmp_file = tempfile.mkstemp(suffix='.png')
     os.close(fd)
     args = ['sox', '-V1', f'{in_file}', '-n', 'remix', '1', 'rate', f'{rate}', 'spectrogram',
-            '-t', f'{get_safe_title(title)}', '-c', f'{comment}', '-o', tmp_file]
+            '-t', '', '-c', '', '-o', tmp_file]
     args += ['-r'] if raw else []
     result = subprocess.run(args, check=True, capture_output=True)
     ret = result.stdout.decode('utf-8')
