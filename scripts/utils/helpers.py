@@ -16,11 +16,11 @@ ANALYZING_NOW = os.path.expanduser('~/BirdSongs/StreamData/analyzing_now.txt')
 FONT_DIR = os.path.expanduser('~/BirdNET-Pi/homepage/static')
 
 
-BIRDNET_SAMPLE_BUDGET = 6 * 48000        # 2 channels of 3 seconds expected by Birdnet
+BIRDNET_SAMPLE_BUDGET = 3 * 48000        # 2 channels of 3 seconds expected by Birdnet
 def bats_extraction_params(conf) -> tuple[float, float, int]:
     """
     Return (ex_len, spacer, rec_len) so that BirdNET always receives the
-    *same number of samples* (288 k), independent of the recorder SR.
+    *same number of samples* (144 k), independent of the recorder SR.
     """
     sr = conf.getint("BATS_SAMPLING_RATE", fallback=256000)
     ex_len = BIRDNET_SAMPLE_BUDGET / sr           # seconds
