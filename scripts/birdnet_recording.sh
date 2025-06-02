@@ -18,6 +18,7 @@ fi
 SAMPLING_RATE=48000
 if [ "$BATS_ANALYSIS" = "1" ]; then
     SAMPLING_RATE="${BATS_SAMPLING_RATE:-256000}"
+    CHANNELS=1
 fi
 
 if [ ! -z $RTSP_STREAM ];then
