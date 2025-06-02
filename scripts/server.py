@@ -12,7 +12,7 @@ import json
 import subprocess
 import requests
 
-from utils.helpers import get_settings, Detection
+from utils.helpers import get_settings, Detection, bats_extraction_params
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 os.environ['CUDA_VISIBLE_DEVICES'] = ''
@@ -478,9 +478,7 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
             log.info('No species detected with required confidence %s between %s and %s', min_conf, start, stop)
 
     # ── 5. make every Detection safe for extract_safe()  ───────────────
-    ex_len = 288000 / conf.getint('BATS_SAMPLING_RATE', fallback=256000)
-    spacer = max(0.0, (ex_len - 3) / 2)
-    rec_len = conf.getint('RECORDING_LENGTH', fallback=int(spacer + 3))
+    ex_len, spacer, rec_len = bats_extraction_params(conf)
 
     for d in detections:
         d.start = max(0.0, min(d.start, rec_len))
@@ -491,7 +489,15 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
             d.start -= overflow
             d.stop  -= overflow
 
+        #Ensure positive time
         if d.stop < d.start:
             d.start, d.stop = d.stop, d.start
+
+        # Ensure minimum size for analysis
+        MIN_LEN = 0.05
+        if d.stop - d.start < MIN_LEN:
+            middle = (d.start + d.stop) / 2.0
+            d.start = max(0.0, middle - MIN_LEN/2)
+            d.stop  = min(rec_len, middle + MIN_LEN/2)
 
     return detections

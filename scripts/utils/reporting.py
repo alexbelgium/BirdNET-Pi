@@ -11,7 +11,7 @@ from time import sleep
 import requests
 from PIL import Image, ImageDraw, ImageFont
 
-from .helpers import get_settings, ParseFileName, Detection, get_font, DB_PATH
+from .helpers import get_settings, ParseFileName, Detection, get_font, DB_PATH, bats_extraction_params
 from .notifications import sendAppriseNotifications
 
 log = logging.getLogger(__name__)
@@ -34,8 +34,7 @@ def extract_safe(in_file, out_file, start, stop):
     # from that value and divided by 2, so that the 3 seconds of the call are
     # within 3.5 seconds of audio context before and after.
     if conf.getint('BATS_ANALYSIS', fallback=0) == 1:
-        ex_len = 288000 / conf.getint('BATS_SAMPLING_RATE', fallback=256000)
-        spacer = (ex_len / 3)
+        ex_len, spacer, rec_len = bats_extraction_params(conf)
     else:
         try:
             ex_len = conf.getint('EXTRACTION_LENGTH')
