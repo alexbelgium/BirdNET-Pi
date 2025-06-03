@@ -18,9 +18,15 @@ fi
 SAMPLING_RATE=48000
 if [ "$BATS_ANALYSIS" = "1" ]; then
     SAMPLING_RATE="${BATS_SAMPLING_RATE:-256000}"
-    RECORDING_RATIO=$(echo "scale=4; $RECORDING_LENGTH / 3" | bc -l)
-    RECORDING_LENGTH=$(echo "scale=4; 144000 / $SAMPLING_RATE * $RECORDING_RATIO" | bc -l)
     CHANNELS=1
+    ANALYSIS_LENGTH=$(echo "scale=6; 144000 / $SAMPLING_RATE" | bc -l)
+    n=1
+    while :; do
+        RL=$(echo "$ANALYSIS_LENGTH * $n" | bc -l)
+        [ "$(echo "$RL > $EXTRACTION_LENGTH" | bc)" -eq 1 ] && [ "$(echo "$RL > $RECORDING_LENGTH" | bc)" -eq 1 ] && break
+        n=$((n+1))
+    done
+    RECORDING_LENGTH="$RL"
 fi
 
 if [ ! -z $RTSP_STREAM ];then
