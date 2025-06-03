@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 
 
 def extract(in_file, out_file, start, stop):
-    result = subprocess.run(['sox', '-V1', f'{in_file}', f'{out_file}', 'trim', f'={start}', f'={stop}'],
+    result = subprocess.run(['sox', '-V1', f'{in_file}', f'{out_file}', 'trim', f'={start:.3f}', f'={stop:.3f}'],
                             check=True, capture_output=True)
     ret = result.stdout.decode('utf-8')
     err = result.stderr.decode('utf-8')
@@ -42,8 +42,9 @@ def extract_safe(in_file, out_file, start, stop):
             ex_len = 6
         spacer = 3
         spacer = (ex_len - spacer) / 2
+        rec_len = conf.getint('RECORDING_LENGTH')
     safe_start = max(0, start - spacer)
-    safe_stop = min(conf.getint('RECORDING_LENGTH'), stop + spacer)
+    safe_stop = min(rec_len, stop + spacer)
 
     extract(in_file, out_file, safe_start, safe_stop)
 
