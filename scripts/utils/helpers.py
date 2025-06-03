@@ -25,8 +25,8 @@ def bats_extraction_params(conf) -> tuple[float, float, int]:
     sr = conf.getint("BATS_SAMPLING_RATE", fallback=256000)
     ex_len = BIRDNET_SAMPLE_BUDGET / sr           # seconds
     spacer = max(0.0, (ex_len - 3.0) / 2.0)       # keep 3-s window centred
-    # recording must be at least call+context
-    rec_len = conf.getint("RECORDING_LENGTH", fallback=math.ceil(ex_len))
+    # Considering overlap is 0
+    rec_len = math.ceil(ex_len * 6)
     return ex_len, spacer, rec_len
 
 
