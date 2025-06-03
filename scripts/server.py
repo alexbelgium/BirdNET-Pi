@@ -412,7 +412,8 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
         lat=conf.getfloat("LATITUDE"),
         lon=conf.getfloat("LONGITUDE"),
         week=file.week,
-        overlap=conf.getfloat("OVERLAP"),
+        # Disable overlap ; overlap=conf.getfloat("OVERLAP"),
+        overlap=0,
         sensitivity=conf.getfloat("SENSITIVITY"),
         pmode="max",
     )
