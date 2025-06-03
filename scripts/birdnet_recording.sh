@@ -12,12 +12,14 @@ if [ "$LOGGING_LEVEL" == "info" ] || [ "$LOGGING_LEVEL" == "debug" ];then
   set -x
 fi
 
-[ -z $RECORDING_LENGTH ] && RECORDING_LENGTH=15
-[ -d $RECS_DIR/StreamData ] || mkdir -p $RECS_DIR/StreamData
+[ -z "$RECORDING_LENGTH" ] && RECORDING_LENGTH=15
+[ -d "$RECS_DIR/StreamData" ] || mkdir -p "$RECS_DIR/StreamData"
 
 SAMPLING_RATE=48000
 if [ "$BATS_ANALYSIS" = "1" ]; then
     SAMPLING_RATE="${BATS_SAMPLING_RATE:-256000}"
+    RECORDING_RATIO=$(echo "scale=4; $RECORDING_LENGTH / 3" | bc -l)
+    RECORDING_LENGTH=$(echo "scale=4; 144000 / $SAMPLING_RATE * $RECORDING_RATIO" | bc -l)
     CHANNELS=1
 fi
 
