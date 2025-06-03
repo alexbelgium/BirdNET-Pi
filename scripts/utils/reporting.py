@@ -54,7 +54,7 @@ def spectrogram(in_file, title, comment, raw=False):
         rate = conf.getint('BATS_SAMPLING_RATE', fallback=256000)
     else:
         rate = 24000
-        fd, tmp_file = tempfile.mkstemp(suffix='.png')
+    fd, tmp_file = tempfile.mkstemp(suffix='.png')
     os.close(fd)
     args = ['sox', '-V1', f'{in_file}', '-n', 'remix', '1', 'rate', f'{rate}', 'spectrogram',
             '-t', '', '-c', '', '-o', tmp_file]
