@@ -27,7 +27,7 @@ def bats_extraction_params(conf) -> tuple[float, float, float]:
     BIRDNET_SAMPLE_BUDGET = 3 * 48000
     ex_len = BIRDNET_SAMPLE_BUDGET / sr
     spacer = max(0.0, (ex_len - 3.0) / 2.0)
-    base_len = conf.getfloat("RECORDING_LENGTH", fallback=math.ceil(ex_len))
+    base_len = conf.getfloat("RECORDING_LENGTH")
     n = 1
     while True:
         rec_len = ex_len * n
