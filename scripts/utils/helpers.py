@@ -16,17 +16,24 @@ ANALYZING_NOW = os.path.expanduser('~/BirdSongs/StreamData/analyzing_now.txt')
 FONT_DIR = os.path.expanduser('~/BirdNET-Pi/homepage/static')
 
 
-BIRDNET_SAMPLE_BUDGET = 3 * 48000        # 2 channels of 3 seconds expected by Birdnet
-def bats_extraction_params(conf) -> tuple[float, float, int]:
+def bats_extraction_params(conf) -> tuple[float, float, float]:
     """
-    Return (ex_len, spacer, rec_len) so that BirdNET always receives the
-    *same number of samples* (144 k), independent of the recorder SR.
+    Return (ex_len, spacer, rec_len) so that BirdNET always receives the same number of samples* (144 k), independent of the recorder SR.
+    - ex_len: analysis chunk length in seconds
+    - spacer: seconds before/after 3s to center the window
+    - rec_len: total recording length in seconds, as multiple of ex_len
     """
     sr = conf.getint("BATS_SAMPLING_RATE", fallback=256000)
-    ex_len = BIRDNET_SAMPLE_BUDGET / sr           # seconds
-    spacer = max(0.0, (ex_len - 3.0) / 2.0)       # keep 3-s window centred
-    # Considering overlap is 0
-    rec_len = math.ceil(ex_len * 6)
+    BIRDNET_SAMPLE_BUDGET = 3 * 48000
+    ex_len = BIRDNET_SAMPLE_BUDGET / sr
+    spacer = max(0.0, (ex_len - 3.0) / 2.0)
+    base_len = conf.getfloat("RECORDING_LENGTH", fallback=math.ceil(ex_len))
+    n = 1
+    while True:
+        rec_len = ex_len * n
+        if rec_len > base_len and rec_len > ex_len:
+            break
+        n += 1
     return ex_len, spacer, rec_len
 
 
