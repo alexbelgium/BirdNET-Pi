@@ -37,9 +37,14 @@ def extract_safe(in_file, out_file, start, stop):
         ex_len = conf.getint('EXTRACTION_LENGTH')
     except ValueError:
         ex_len = 6
-    spacer = (ex_len - 3) / 2
+    if conf.getint('BATS_ANALYSIS', fallback=0) == 1:
+        chunk_len, rec_len = bats_extraction_params(conf)
+    else:
+        chunk_len = 3
+        rec_len = conf.getint('RECORDING_LENGTH')
+    spacer = (ex_len - chunk_len) / 2
     safe_start = max(0, start - spacer)
-    safe_stop = min(conf.getint('RECORDING_LENGTH'), stop + spacer)
+    safe_stop = min(rec_len, stop + spacer)
     extract(in_file, out_file, safe_start, safe_stop)
 
 

@@ -479,8 +479,8 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
             log.info('No species detected with required confidence %s between %s and %s', min_conf, start, stop)
 
     # ── 5. make every Detection safe for extract_safe()  ───────────────
-    ex_len, spacer, rec_len = bats_extraction_params(conf)
-
+    chunk_len, rec_len = bats_extraction_params(conf)
+    spacer = (ex_len - chunk_len) / 2 
     for d in detections:
         d.start = max(0.0, min(d.start, rec_len))
         d.stop  = max(0.0, min(d.stop,  rec_len))
