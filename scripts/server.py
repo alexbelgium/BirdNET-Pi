@@ -14,8 +14,8 @@ import requests
 
 from utils.helpers import get_settings, Detection, bats_extraction_params
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-os.environ['CUDA_VISIBLE_DEVICES'] = ''
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 try:
     import tflite_runtime.interpreter as tflite
@@ -25,7 +25,7 @@ except BaseException:
 log = logging.getLogger(__name__)
 
 
-userDir = os.path.expanduser('~')
+userDir = os.path.expanduser("~")
 INTERPRETER, M_INTERPRETER, INCLUDE_LIST, EXCLUDE_LIST = (None, None, None, None)
 PREDICTED_SPECIES_LIST = []
 model, priv_thresh, sf_thresh = (None, None, None)
@@ -40,11 +40,11 @@ def loadModel():
     global MDATA_INPUT_INDEX
     global CLASSES
 
-    log.info('LOADING TF LITE MODEL...')
+    log.info("LOADING TF LITE MODEL...")
 
     # Load TFLite model and allocate tensors.
     # model will either be BirdNET_GLOBAL_6K_V2.4_Model_FP16 (new) or BirdNET_6K_GLOBAL_MODEL (old)
-    modelpath = userDir + '/BirdNET-Pi/model/'+model+'.tflite'
+    modelpath = userDir + "/BirdNET-Pi/model/" + model + ".tflite"
     myinterpreter = tflite.Interpreter(model_path=modelpath, num_threads=2)
     myinterpreter.allocate_tensors()
 
@@ -53,19 +53,19 @@ def loadModel():
     output_details = myinterpreter.get_output_details()
 
     # Get input tensor index
-    INPUT_LAYER_INDEX = input_details[0]['index']
+    INPUT_LAYER_INDEX = input_details[0]["index"]
     if model == "BirdNET_6K_GLOBAL_MODEL":
-        MDATA_INPUT_INDEX = input_details[1]['index']
-    OUTPUT_LAYER_INDEX = output_details[0]['index']
+        MDATA_INPUT_INDEX = input_details[1]["index"]
+    OUTPUT_LAYER_INDEX = output_details[0]["index"]
 
     # Load labels
     CLASSES = []
-    labelspath = userDir + '/BirdNET-Pi/model/labels.txt'
-    with open(labelspath, 'r') as lfile:
+    labelspath = userDir + "/BirdNET-Pi/model/labels.txt"
+    with open(labelspath, "r") as lfile:
         for line in lfile.readlines():
-            CLASSES.append(line.replace('\n', ''))
+            CLASSES.append(line.replace("\n", ""))
 
-    log.info('LOADING DONE!')
+    log.info("LOADING DONE!")
 
     return myinterpreter
 
@@ -76,13 +76,15 @@ def loadMetaModel():
     global M_INPUT_LAYER_INDEX
     global M_OUTPUT_LAYER_INDEX
 
-    if get_settings().getint('DATA_MODEL_VERSION') == 2:
-        data_model = 'BirdNET_GLOBAL_6K_V2.4_MData_Model_V2_FP16.tflite'
+    if get_settings().getint("DATA_MODEL_VERSION") == 2:
+        data_model = "BirdNET_GLOBAL_6K_V2.4_MData_Model_V2_FP16.tflite"
     else:
-        data_model = 'BirdNET_GLOBAL_6K_V2.4_MData_Model_FP16.tflite'
+        data_model = "BirdNET_GLOBAL_6K_V2.4_MData_Model_FP16.tflite"
 
     # Load TFLite model and allocate tensors.
-    M_INTERPRETER = tflite.Interpreter(model_path=os.path.join(userDir, 'BirdNET-Pi/model', data_model))
+    M_INTERPRETER = tflite.Interpreter(
+        model_path=os.path.join(userDir, "BirdNET-Pi/model", data_model)
+    )
     M_INTERPRETER.allocate_tensors()
 
     # Get input and output tensors.
@@ -90,8 +92,8 @@ def loadMetaModel():
     output_details = M_INTERPRETER.get_output_details()
 
     # Get input tensor index
-    M_INPUT_LAYER_INDEX = input_details[0]['index']
-    M_OUTPUT_LAYER_INDEX = output_details[0]['index']
+    M_INPUT_LAYER_INDEX = input_details[0]["index"]
+    M_OUTPUT_LAYER_INDEX = output_details[0]["index"]
 
     log.info("loaded META model")
 
@@ -105,7 +107,7 @@ def predictFilter(lat, lon, week):
         loadMetaModel()
 
     # Prepare mdata as sample
-    sample = np.expand_dims(np.array([lat, lon, week], dtype='float32'), 0)
+    sample = np.expand_dims(np.array([lat, lon, week], dtype="float32"), 0)
 
     # Run inference
     M_INTERPRETER.set_tensor(M_INPUT_LAYER_INDEX, sample)
@@ -137,9 +139,11 @@ def predictSpeciesList(lat, lon, week):
     for s in l_filter:
         if s[0] >= float(sf_thresh):
             # if there's a custom user-made include list, we only want to use the species in that
-            if (len(INCLUDE_LIST) == 0):
+            if len(INCLUDE_LIST) == 0:
                 PREDICTED_SPECIES_LIST.append(s[1])
-    WHITELIST_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/whitelist_species_list.txt"))
+    WHITELIST_LIST = loadCustomSpeciesList(
+        os.path.expanduser("~/BirdNET-Pi/whitelist_species_list.txt")
+    )
     for species in WHITELIST_LIST:
         PREDICTED_SPECIES_LIST.append(species)
 
@@ -148,9 +152,9 @@ def loadCustomSpeciesList(path):
 
     slist = []
     if os.path.isfile(path):
-        with open(path, 'r') as csfile:
+        with open(path, "r") as csfile:
             for line in csfile.readlines():
-                slist.append(line.replace('\r', '').replace('\n', ''))
+                slist.append(line.replace("\r", "").replace("\n", ""))
 
     return slist
 
@@ -160,7 +164,7 @@ def splitSignal(sig, rate, overlap, seconds=3.0, minlen=1.5):
     # Split signal with overlap
     sig_splits = []
     for i in range(0, len(sig), int((seconds - overlap) * rate)):
-        split = sig[i:i + int(seconds * rate)]
+        split = sig[i : i + int(seconds * rate)]
 
         # End of signal?
         if len(split) < int(minlen * rate):
@@ -169,7 +173,7 @@ def splitSignal(sig, rate, overlap, seconds=3.0, minlen=1.5):
         # Signal chunk too short? Fill with zeros.
         if len(split) < int(rate * seconds):
             temp = np.zeros((int(rate * seconds)))
-            temp[:len(split)] = split
+            temp[: len(split)] = split
             split = temp
 
         sig_splits.append(split)
@@ -179,15 +183,15 @@ def splitSignal(sig, rate, overlap, seconds=3.0, minlen=1.5):
 
 def readAudioData(path, overlap, sample_rate=48000):
 
-    log.info('READING AUDIO DATA...')
+    log.info("READING AUDIO DATA...")
 
     # Open file with librosa (uses ffmpeg or libav)
-    sig, rate = librosa.load(path, sr=sample_rate, mono=True, res_type='kaiser_fast')
+    sig, rate = librosa.load(path, sr=sample_rate, mono=True, res_type="kaiser_fast")
 
     # Split audio into 3-second chunks
     chunks = splitSignal(sig, rate, overlap)
 
-    log.info('READING DONE! READ %d CHUNKS.', len(chunks))
+    log.info("READING DONE! READ %d CHUNKS.", len(chunks))
 
     return chunks
 
@@ -217,9 +221,9 @@ def custom_sigmoid(x, sensitivity=1.0):
 def predict(sample, sensitivity):
     global INTERPRETER
     # Make a prediction
-    INTERPRETER.set_tensor(INPUT_LAYER_INDEX, np.array(sample[0], dtype='float32'))
+    INTERPRETER.set_tensor(INPUT_LAYER_INDEX, np.array(sample[0], dtype="float32"))
     if model == "BirdNET_6K_GLOBAL_MODEL":
-        INTERPRETER.set_tensor(MDATA_INPUT_INDEX, np.array(sample[1], dtype='float32'))
+        INTERPRETER.set_tensor(MDATA_INPUT_INDEX, np.array(sample[1], dtype="float32"))
     INTERPRETER.invoke()
     prediction = INTERPRETER.get_tensor(OUTPUT_LAYER_INDEX)[0]
 
@@ -238,21 +242,34 @@ def predict(sample, sensitivity):
     log.debug("HUMAN-CUTOFF AT: %d", human_cutoff)
 
     for i in range(min(10, len(p_sorted))):
-        if p_sorted[i][0] == 'Human_Human':
-            with open(userDir + '/BirdNET-Pi/HUMAN.txt', 'a') as rfile:
-                rfile.write(str(datetime.datetime.now()) + str(p_sorted[i]) + ' ' + str(human_cutoff) + '\n')
+        if p_sorted[i][0] == "Human_Human":
+            with open(userDir + "/BirdNET-Pi/HUMAN.txt", "a") as rfile:
+                rfile.write(
+                    str(datetime.datetime.now())
+                    + str(p_sorted[i])
+                    + " "
+                    + str(human_cutoff)
+                    + "\n"
+                )
 
     return p_sorted[:human_cutoff]
 
 
-def analyzeAudioData(chunks, lat, lon, week, sens, overlap,):
+def analyzeAudioData(
+    chunks,
+    lat,
+    lon,
+    week,
+    sens,
+    overlap,
+):
     global INTERPRETER
 
     sensitivity = max(0.5, min(1.0 - (sens - 1.0), 1.5))
 
     detections = {}
     start = time.time()
-    log.info('ANALYZING AUDIO...')
+    log.info("ANALYZING AUDIO...")
 
     if model == "BirdNET_GLOBAL_6K_V2.4_Model_FP16":
         if len(PREDICTED_SPECIES_LIST) == 0 or len(INCLUDE_LIST) != 0:
@@ -269,7 +286,7 @@ def analyzeAudioData(chunks, lat, lon, week, sens, overlap,):
 
         # Make prediction
         p = predict([sig, mdata], sensitivity)
-#        print("PPPPP",p)
+        #        print("PPPPP",p)
         HUMAN_DETECTED = False
 
         # Catch if Human is recognized
@@ -282,13 +299,13 @@ def analyzeAudioData(chunks, lat, lon, week, sens, overlap,):
 
         # If human detected set all detections to human to make sure voices are not saved
         if HUMAN_DETECTED is True:
-            p = [('Human_Human', 0.0)] * 10
+            p = [("Human_Human", 0.0)] * 10
 
-        detections[str(pred_start) + ';' + str(pred_end)] = p
+        detections[str(pred_start) + ";" + str(pred_end)] = p
 
         pred_start = pred_end - overlap
 
-    log.info('DONE! Time %.2f SECONDS', time.time() - start)
+    log.info("DONE! Time %.2f SECONDS", time.time() - start)
     return detections
 
 
@@ -307,45 +324,64 @@ def load_global_model():
     global INTERPRETER
     global model, priv_thresh, sf_thresh
     conf = get_settings()
-    model = conf['MODEL']
-    priv_thresh = conf.getfloat('PRIVACY_THRESHOLD')
-    sf_thresh = conf.getfloat('SF_THRESH')
+    model = conf["MODEL"]
+    priv_thresh = conf.getfloat("PRIVACY_THRESHOLD")
+    sf_thresh = conf.getfloat("SF_THRESH")
     INTERPRETER = loadModel()
 
 
 def run_analysis(file):
     global INCLUDE_LIST, EXCLUDE_LIST
-    INCLUDE_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/include_species_list.txt"))
-    EXCLUDE_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/exclude_species_list.txt"))
+    INCLUDE_LIST = loadCustomSpeciesList(
+        os.path.expanduser("~/BirdNET-Pi/include_species_list.txt")
+    )
+    EXCLUDE_LIST = loadCustomSpeciesList(
+        os.path.expanduser("~/BirdNET-Pi/exclude_species_list.txt")
+    )
 
     conf = get_settings()
 
     # Read audio data & handle errors
     try:
-        audio_data = readAudioData(file.file_name, conf.getfloat('OVERLAP'))
+        audio_data = readAudioData(file.file_name, conf.getfloat("OVERLAP"))
     except (NameError, TypeError) as e:
         log.error("Error with the following info: %s", e)
         return []
 
     # Process audio data and get detections
-    raw_detections = analyzeAudioData(audio_data, conf.getfloat('LATITUDE'), conf.getfloat('LONGITUDE'), file.week,
-                                      conf.getfloat('SENSITIVITY'), conf.getfloat('OVERLAP'))
+    raw_detections = analyzeAudioData(
+        audio_data,
+        conf.getfloat("LATITUDE"),
+        conf.getfloat("LONGITUDE"),
+        file.week,
+        conf.getfloat("SENSITIVITY"),
+        conf.getfloat("OVERLAP"),
+    )
     confident_detections = []
     for time_slot, entries in raw_detections.items():
-        log.info('%s-%s', time_slot, entries[0])
+        log.info("%s-%s", time_slot, entries[0])
         for entry in entries:
-            if entry[1] >= conf.getfloat('CONFIDENCE'):
+            if entry[1] >= conf.getfloat("CONFIDENCE"):
                 if entry[0] not in INCLUDE_LIST and len(INCLUDE_LIST) != 0:
-                    log.warning("Excluded as INCLUDE_LIST is active but this species is not in it: %s", entry[0])
+                    log.warning(
+                        "Excluded as INCLUDE_LIST is active but this species is not in it: %s",
+                        entry[0],
+                    )
                 elif entry[0] in EXCLUDE_LIST and len(EXCLUDE_LIST) != 0:
                     log.warning("Excluded as species in EXCLUDE_LIST: %s", entry[0])
-                elif entry[0] not in PREDICTED_SPECIES_LIST and len(PREDICTED_SPECIES_LIST) != 0:
-                    log.warning("Excluded as below Species Occurrence Frequency Threshold: %s", entry[0])
+                elif (
+                    entry[0] not in PREDICTED_SPECIES_LIST
+                    and len(PREDICTED_SPECIES_LIST) != 0
+                ):
+                    log.warning(
+                        "Excluded as below Species Occurrence Frequency Threshold: %s",
+                        entry[0],
+                    )
                 else:
                     d = Detection(
                         file.file_date,
-                        time_slot.split(';')[0],
-                        time_slot.split(';')[1],
+                        time_slot.split(";")[0],
+                        time_slot.split(";")[1],
                         entry[0],
                         entry[1],
                     )
@@ -363,15 +399,17 @@ def manage_batsanalyzer_server(host="127.0.0.1", port=7667, classifier=None):
     except Exception as e:
         log.warning("Analyzer down (%s); restarting…", e)
         try:
-            pids = subprocess.check_output(["lsof", "-ti", f":{port}"], text=True).split()
+            pids = subprocess.check_output(
+                ["lsof", "-ti", f":{port}"], text=True
+            ).split()
             for pid in pids:
                 subprocess.run(["kill", "-9", pid], check=False)
                 log.info("Killed PID %s on port %s", pid, port)
         except subprocess.CalledProcessError:
             pass
         pybin = os.path.expanduser("~/BirdNET-Pi/birdnet/bin/python3")
-        svr   = os.path.expanduser("~/BirdNET-Pi/BattyBirdNET-Analyzer/server.py")
-        cmd   = [pybin, svr] + (["--area", classifier] if classifier else [])
+        svr = os.path.expanduser("~/BirdNET-Pi/BattyBirdNET-Analyzer/server.py")
+        cmd = [pybin, svr] + (["--area", classifier] if classifier else [])
         subprocess.Popen(cmd, cwd=os.path.dirname(svr))
         time.sleep(5)
 
@@ -383,10 +421,17 @@ def denoise_file(file_path, noise_profile_path, noise_reduction_factor):
     """
     out_file = file_path + ".out.wav"
 
-    subprocess.run([
-        "sox", file_path, out_file,
-        "noisered", noise_profile_path, str(noise_reduction_factor)
-    ], check=True)
+    subprocess.run(
+        [
+            "sox",
+            file_path,
+            out_file,
+            "noisered",
+            noise_profile_path,
+            str(noise_reduction_factor),
+        ],
+        check=True,
+    )
 
     if not os.path.exists(out_file):
         raise RuntimeError(f"Denoised file {out_file} was not created.")
@@ -401,7 +446,7 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
     3. Convert & filter to Detection objects
     4. NEW: clamp & shift detections so extract_safe() never gets inverted trim
     """
-    log  = logging.getLogger(__name__)
+    log = logging.getLogger(__name__)
     conf = get_settings()
     manage_batsanalyzer_server(host, port, conf.get("BATS_CLASSIFIER"))
 
@@ -419,14 +464,14 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
     )
     # Apply noise reduction if enabled
     try:
-        if conf.getboolean('DENOISING', fallback=False):
-            noise_profile = os.path.expanduser(conf['DENOISING_PROFILE'])
-            noise_factor = conf.getfloat('DENOISING_FACTOR', fallback=0.1)
+        if conf.getboolean("DENOISING", fallback=False):
+            noise_profile = os.path.expanduser(conf["DENOISING_PROFILE"])
+            noise_factor = conf.getfloat("DENOISING_FACTOR", fallback=0.1)
             denoise_file(file.file_name, noise_profile, noise_factor)
     except Exception as e:
         log.error("Denoising failed for %s: %s", file.file_name, e)
         return []
-    
+
     # Perform analysis
     try:
         with open(file.file_name, "rb") as wav:
@@ -434,7 +479,7 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
                 f"http://{host}:{port}/analyze",
                 files={
                     "audio": (os.path.basename(file.file_name), wav),
-                    "meta":  (None, json.dumps(meta)),
+                    "meta": (None, json.dumps(meta)),
                 },
                 timeout=120,
             )
@@ -445,7 +490,7 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
         log.error("Remote analysis failed for %s: %s", file.file_name, e)
         return []
 
-    min_conf   = conf.getfloat("CONFIDENCE")
+    min_conf = conf.getfloat("CONFIDENCE")
     detections = []
 
     for segment, entries in data.get("results", {}).items():
@@ -456,41 +501,60 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
             continue
         if stop < start:
             start, stop = stop, start
-            
+
         max_species = ""
         max_score = 0.0
 
         for species, score_str in entries:
             score = float(score_str)
             # log.info('Checking for %s with confidence %s, start %s and stop %s', species, score, start, stop)
-            if score < min_conf or \
-               (include and species not in include) or \
-               (exclude and species in exclude) or \
-               (PREDICTED_SPECIES_LIST and species not in PREDICTED_SPECIES_LIST):
+            if (
+                score < min_conf
+                or (include and species not in include)
+                or (exclude and species in exclude)
+                or (PREDICTED_SPECIES_LIST and species not in PREDICTED_SPECIES_LIST)
+            ):
                 continue
             if score > max_score:
                 max_score = score
                 max_species = species
-        
-        if max_species not in ["", "noise","electrical","mechanical"]:        
-            detections.append(Detection(file.file_date, start, stop, max_species, max_score))
-            log.info('Detected %s with confidence %s at start %s and stop %s ', max_species, max_score, start, stop)
+
+        if max_species not in ["", "noise", "electrical", "mechanical"]:
+            detections.append(
+                Detection(file.file_date, start, stop, max_species, max_score)
+            )
+            log.info(
+                "Detected %s with confidence %s at start %s and stop %s ",
+                max_species,
+                max_score,
+                start,
+                stop,
+            )
         else:
-            log.info('No species detected with required confidence %s between %s and %s', min_conf, start, stop)
+            log.info(
+                "No species detected with required confidence %s between %s and %s",
+                min_conf,
+                start,
+                stop,
+            )
 
     # ── 5. make every Detection safe for extract_safe()  ───────────────
     chunk_len, rec_len = bats_extraction_params(conf)
-    spacer = (ex_len - chunk_len) / 2 
+    try:
+        ex_len = conf.getint("EXTRACTION_LENGTH")
+    except ValueError:
+        ex_len = 6
+    spacer = (ex_len - chunk_len) / 2
     for d in detections:
         d.start = max(0.0, min(d.start, rec_len))
-        d.stop  = max(0.0, min(d.stop,  rec_len))
+        d.stop = max(0.0, min(d.stop, rec_len))
 
         overflow = (d.stop + spacer) - rec_len
         if overflow > 0:
             d.start -= overflow
-            d.stop  -= overflow
+            d.stop -= overflow
 
-        #Ensure positive time
+        # Ensure positive time
         if d.stop < d.start:
             d.start, d.stop = d.stop, d.start
 
@@ -498,7 +562,7 @@ def run_bats_analysis(file, host="127.0.0.1", port=7667):
         MIN_LEN = 0.05
         if d.stop - d.start < MIN_LEN:
             middle = (d.start + d.stop) / 2.0
-            d.start = max(0.0, middle - MIN_LEN/2)
-            d.stop  = min(rec_len, middle + MIN_LEN/2)
+            d.start = max(0.0, middle - MIN_LEN / 2)
+            d.stop = min(rec_len, middle + MIN_LEN / 2)
 
     return detections
