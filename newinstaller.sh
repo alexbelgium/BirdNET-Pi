@@ -12,17 +12,18 @@ but would need to be aarch64."
   exit 1
 fi
 
-PY_VERSION=$(python3 -c "import sys; print(f'{sys.version_info[0]}{sys.version_info[1]}')")
-if [ "${PY_VERSION}" == "39" ] ;then
-  echo "### BirdNET-Pi requires a newer OS. Bullseye is deprecated, please use Bookworm. ###"
-  [ -z "${FORCE_BULLSEYE}" ] && exit
-fi
-
 # we require passwordless sudo
 sudo -K
 if ! sudo -n true; then
     echo "Passwordless sudo is not working. Aborting"
     exit
+fi
+
+# the php code expects the user with uid 1000 on this system
+PRIMARY=$(awk -F: '/1000/{print $1}' /etc/passwd)
+if [ $USER != $PRIMARY ]; then
+  echo "Current user \"$USER\" does not match the user with uid 1000 on this system \"$PRIMARY\". Aborting"
+  exit
 fi
 
 # Simple new installer
@@ -44,7 +45,7 @@ if [[ ! -z $PACKAGES_MISSING ]] ; then
 fi
 
 branch=main
-git clone -b $branch --depth=1 https://github.com/Nachtzuster/BirdNET-Pi.git ${HOME}/BirdNET-Pi &&
+git clone -b $branch --depth=1 https://github.com/alexbelgium/BirdNET-Pi.git ${HOME}/BirdNET-Pi &&
 
 $HOME/BirdNET-Pi/scripts/install_birdnet.sh
 if [ ${PIPESTATUS[0]} -eq 0 ];then

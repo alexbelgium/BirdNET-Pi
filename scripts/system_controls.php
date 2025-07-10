@@ -7,6 +7,7 @@ require_once "scripts/common.php";
 $user = get_user();
 $home = get_home();
 
+$restore = "sudo -u $user $home/BirdNET-Pi/scripts/backup_data.sh -a restore -f $backup_file";
 $fetch = shell_exec("sudo -u".$user." git -C ".$home."/BirdNET-Pi fetch 2>&1");
 $str = trim(shell_exec("sudo -u".$user." git -C ".$home."/BirdNET-Pi status"));
 if (preg_match("/behind '.*?' by (\d+) commit(s?)\b/", $str, $matches)) {

@@ -10,12 +10,21 @@ $user = get_user();
 ensure_authenticated();
 
 if (isset($_GET['run_species_count'])) {
-   echo "<script>";
-   $output = shell_exec("sudo -u $user ".$home."/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
-   $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
-   echo "alert(`$escaped_output`);";
-   echo "</script>";
- }
+    echo "<script>";
+    $output = shell_exec("sudo -u $user ".$home."/BirdNET-Pi/scripts/disk_species_count.sh 2>&1");
+    $escaped_output = htmlspecialchars($output, ENT_QUOTES | ENT_SUBSTITUTE);
+    // Split the output into lines
+    $lines = explode("\n", $escaped_output);    
+    // Display alerts with up to 30 lines each
+    $chunk_size = 30;
+    for ($i = 0; $i < count($lines); $i += $chunk_size) {
+        $chunk = array_slice($lines, $i, $chunk_size);
+        $chunk_output = implode("\n", $chunk);
+        $alert_title = "Disk summary : " . (intdiv($i, $chunk_size) + 1);
+        echo "alert(`$alert_title\n\n$chunk_output`);";
+    }
+    echo "</script>";
+}
 
 if(isset($_GET['submit'])) {
   $contents = file_get_contents('/etc/birdnet/birdnet.conf');
@@ -221,6 +230,15 @@ if (isset($_GET["max_files_species"])) {
       $contents = preg_replace("/RARE_SPECIES_THRESHOLD=.*/", "RARE_SPECIES_THRESHOLD=30", $contents);
   }
 
+  if(isset($_GET["confirm_species"])) {
+    $confirm_species = 1;
+    if(strcmp($CONFIRM_SPECIES,$config['CONFIRM_SPECIES']) !== 0) {
+      $contents = preg_replace("/CONFIRM_SPECIES=.*/", "CONFIRM_SPECIES=$confirm_species", $contents);
+    }
+  } else {
+    $contents = preg_replace("/CONFIRM_SPECIES=.*/", "CONFIRM_SPECIES=0", $contents);
+  }
+
   if(isset($_GET["custom_image"])) {
     $custom_image = $_GET["custom_image"];
     if(strcmp($custom_image,$config['CUSTOM_IMAGE']) !== 0) {
@@ -316,15 +334,16 @@ $newconfig = get_config();
       <label for="purge_threshold">Purge Threshold (Disk Used %):</label>
       <input name="purge_threshold" type="number" style="width:6em;" min="20" max="99" step="1" value="<?php print($newconfig['PURGE_THRESHOLD']);?>"/>
       <p>Defines how full the disk should be before the purge operations occur.<br>Note: This variable is still active if Keep is set. This means that the servies will be stopped at the purge threshold.</p><br>
-      <label for="max_files_species">Number of files to keep for each species :</label>
+      <label for="max_files_species">Amount of files to keep for each species :</label>
       <input name="max_files_species" type="number" style="width:6em;" min="0" step="1" value="<?php print($newconfig['MAX_FILES_SPECIES']);?>"/>
       </td></tr><tr><td>
-      If different than 0 (keep all), defines the number of files to keep for each species, with priority given to files with higher confidence. This value does not include files from the last 7 days, these new files are protected against auto-deletion.
+      If different than 0 (keep all), defines the maximum number of files to be kept for each species, with priority give to files with highest confidence. 
+      This value does not take into account the last 7 days (protected by default).
       </td></tr><tr><td>
       Note only the spectrogram and audio files are deleted, the obsevation data remains in the database.
       The files protected through the "lock" icon are also not affected.
       <br>
-      <button type="submit" name="run_species_count" value="1" onclick="{this.innerHTML = 'Loading ... please wait.';this.classList.add('disabled')}"><i>[Click here for disk usage summary]</i></button>
+      <button type="submit" name="run_species_count" value="1" onclick="this.innerHTML='Loading please wait...';><i>[Click here for disk usage summary]</i></button>
       </td></tr></table><br>
       <table class="settingstable"><tr><td>
 
@@ -457,16 +476,24 @@ foreach($formats as $format){
       <table class="settingstable"><tr><td>
       <h2>Options</h2>
       <label for="silence_update_indicator">Silence Update Indicator: </label>
-      <input type="checkbox" name="silence_update_indicator" <?php if($newconfig['SILENCE_UPDATE_INDICATOR'] == 1) { echo "checked"; };?> ><br>
-      <p>This allows you to quiet the display of how many commits your installation is behind by relative to the Github repo. This number appears next to "Tools" when you're 50 or more commits behind.</p>
+      <input type="checkbox" name="silence_update_indicator" <?php if($newconfig['SILENCE_UPDATE_INDICATOR'] == 1) { echo "checked"; };?> >
+      <p>This allows you to quiet the display of how many commits your installation is behind by relative to the Github repo. This number appears next to "Tools" when you're 50 or more commits behind.</p><br>
 
       <label for="raw_spectrogram">Minimalist Spectrograms: </label>
-      <input type="checkbox" name="raw_spectrogram" <?php if($newconfig['RAW_SPECTROGRAM'] == 1) { echo "checked"; };?> ><br>
-      <p>This allows you to remove the axes and labels of the spectrograms that are generated by Sox for each detection for a cleaner appearance.</p>
+
+      <input type="checkbox" name="raw_spectrogram" <?php if($newconfig['RAW_SPECTROGRAM'] == 1) { echo "checked"; };?> >
+      <p>This allows you to remove the axes and labels of the spectrograms that are generated by Sox for each detection for a cleaner appearance.</p><br>
 
       <label for="rare_species_threshold">Rare Species Threshold (days): </label>
       <input type="number" name="rare_species_threshold" min="1" value="<?php echo isset($newconfig['RARE_SPECIES_THRESHOLD']) ? $newconfig['RARE_SPECIES_THRESHOLD'] : 30; ?>"><br>
       <p>This setting defines after how many days since last detection a species is considered rare. Default is 30 days.</p>
+      </td></tr></table><br>
+
+      <table class="settingstable"><tr><td>
+      <h2>Option : Confirmed Species</h2>
+      <label for="confirm_species">Confirmation of species: </label>
+      <input type="checkbox" name="confirm_species" <?php if($newconfig['CONFIRM_SPECIES'] == 1) { echo "checked"; };?> >
+      <p>This allows to visually mark species that were manually confirmed as existing in the area. A new question mark appears next to species names in the Recordings page. Clicking it changes the icon to a checkmark, and add the species to the file confirmed_species_list.txt</p>
       </td></tr></table><br>
 
       <table class="settingstable"><tr><td>
