@@ -167,29 +167,12 @@ if(isset($_GET['bydate'])){
   $date = $_GET['date'];
   session_start();
   $_SESSION['date'] = $date;
-  if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
-    $statement = $db->prepare("SELECT DISTINCT(Com_Name), Sci_Name, COUNT(Com_Name) AS Count FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY COUNT(Com_Name) DESC");
-  } elseif(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement = $db->prepare("SELECT Com_Name, Sci_Name, MAX(Confidence) as MaxConfidence FROM detections WHERE Date == \"$date\" GROUP BY Com_Name ORDER BY MaxConfidence DESC");
-  } else {
-    $statement = $db->prepare("SELECT DISTINCT(Com_Name), Sci_Name FROM detections WHERE Date == \"$date\" ORDER BY Com_Name");
-  }
-  ensure_db_ok($statement);
-  $result = $statement->execute();
+  $result = fetch_species_array($_GET['sort'], $date);
   $view = "date";
 
   #By Species
 } elseif(isset($_GET['byspecies'])) {
-  if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
-    $statement = $db->prepare('SELECT DISTINCT(Com_Name), Sci_Name, COUNT(Com_Name) AS Count FROM detections GROUP BY Com_Name ORDER BY COUNT(Com_Name) DESC');
-  } elseif(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement = $db->prepare('SELECT Com_Name, Sci_Name, MAX(Confidence) as MaxConfidence FROM detections GROUP BY Com_Name ORDER BY MaxConfidence DESC');
-  } else {
-    $statement = $db->prepare('SELECT DISTINCT(Com_Name), Sci_Name FROM detections ORDER BY Com_Name ASC');
-  } 
-  session_start();
-  ensure_db_ok($statement);
-  $result = $statement->execute();
+  $result = fetch_species_array($_GET['sort']);
   $view = "byspecies";
 
   #Specific Species
@@ -197,12 +180,7 @@ if(isset($_GET['bydate'])){
   $species = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
   session_start();
   $_SESSION['species'] = $species;
-  $statement = $db->prepare("SELECT * FROM detections WHERE Com_Name == \"$species\" ORDER BY Com_Name");
-  ensure_db_ok($statement);
-  $statement3 = $db->prepare("SELECT Date, Time, Sci_Name, MAX(Confidence), File_Name FROM detections WHERE Com_Name == \"$species\" ORDER BY Com_Name");
-  ensure_db_ok($statement3);
-  $result = $statement->execute();
-  $result3 = $statement3->execute();
+  $result2 = fetch_all_detections($species, $_GET['sort'], $_SESSION['date']);
   $view = "species";
 } else {
   unset($_SESSION['species']);
@@ -557,18 +535,8 @@ while($results=$result->fetchArray(SQLITE3_ASSOC))
     continue; 
   }
   if(realpath($home."/BirdSongs/Extracted/By_Date/".$date."/".str_replace(" ", "_", $dir_name)) !== false){
-    $birds[] = $name;
-    $birds_sciname_name[] = $results['Sci_Name'] . "_" . $name;
-    if ($_GET['sort'] == "confidence") {
-        $values[] = ' (' . round($results['MaxConfidence'] * 100) . '%)';
-    } elseif ($_GET['sort'] == "occurrences") {
-	$valuescount = $results['Count'];
-        if ($valuescount >= 1000) {
-            $values[] = ' (' . round($valuescount / 1000, 1) . 'k)';
-        } else {
-            $values[] = ' (' . $valuescount . ')';
-        }
-    }
+    $birds[] = $results['Sci_Name'];
+    $values[] = get_label($results, $_GET['sort'], $_GET['date']);
   }
 }
 
@@ -648,26 +616,9 @@ if ($fp) {
 
 $name = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 40;
-if(isset($_SESSION['date'])) {
-  $date = $_SESSION['date'];
-  if(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Confidence DESC");
-  } else {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" AND Date == \"$date\" ORDER BY Time DESC");
-  }
-} else {
-  if(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Confidence DESC");
-  } else {
-    $statement2 = $db->prepare("SELECT * FROM detections where Com_Name == \"$name\" ORDER BY Date DESC, Time DESC");
-  }
-}
-ensure_db_ok($statement2);
-$result2 = $statement2->execute();
-$num_rows = 0;
-while ($result2->fetchArray(SQLITE3_ASSOC)) {
-    $num_rows++;
-}
+
+$results=$result2->fetchArray(SQLITE3_ASSOC);
+$com_name = $results['Com_Name'];
 $result2->reset(); // reset the pointer to the beginning of the result set
 $sciname = get_sci_name($name);
 $sciname_name = $sciname . '_' . $name;
@@ -686,7 +637,6 @@ echo "><br><i>$sciname</i></span><br>
     <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
   </th></tr>";
   $iter=0;
-  $iter_additional=false;
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
   {
     $comname = preg_replace('/ /', '_', $results['Com_Name']);
@@ -776,26 +726,6 @@ echo "><br><i>$sciname</i></span><br>
     echo "</div>";
   }
 
-  if ($iter_additional) {
-    echo "<div style='text-align:center'>";
-    echo "<form action='views.php' method='GET' style='display:inline'>";
-    echo "<input type='hidden' name='view' value='Recordings'>";
-    echo "<input type='hidden' name='species' value=\"" . htmlspecialchars($_GET['species'], ENT_QUOTES) . "\">";
-    if(isset($_GET['sort'])) {
-      echo "<input type='hidden' name='sort' value=\"" . htmlspecialchars($_GET['sort'], ENT_QUOTES) . "\">";
-    }
-    if(isset($_GET['only_excluded'])) {
-      echo "<input type='hidden' name='only_excluded' value='" . $_GET['only_excluded'] . "'>";
-    }
-    if(isset($_SESSION['date'])) {
-      echo "<input type='hidden' name='date' value='" . $_SESSION['date'] . "'>";
-    }
-    echo "<input type='hidden' name='limit' value='" . ($limit + 40) . "'>";
-    echo "<button type='submit' class='loadmore'>Load 40 more...</button>";
-    echo "</form>";
-    echo "</div>";
-  }
-
   if(isset($_GET['filename'])){
     $name = $_GET['filename'];
     $statement2 = $db->prepare("SELECT * FROM detections where File_name == \"$name\" ORDER BY Date DESC, Time DESC");
@@ -807,18 +737,11 @@ echo "><br><i>$sciname</i></span><br>
     $info_url = get_info_url($sciname);
     $url = $info_url['URL'];
     echo "<table>
-    <tr><th>".$name."
-    <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=";
-    if ($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $sciname_name), $confirmed_species)) {
-      echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"del\")'";
-      } else {
-      echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"add\")'";
-      };};
-    echo "><br>
-    <i>".$sciname."</i><br>
-        <a href=\"".$url."\" target=\"_blank\"><img title=\"".$url_title."\" src=\"images/info.png\" width=\"20\"></a>
-        <a href=\"https://wikipedia.org/wiki/".$sciname."\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
-    </th></tr>";
+      <tr><th>$name<br>
+      <i>$sciname</i><br>
+          <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
+          <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
+      </th></tr>";
       while($results=$result2->fetchArray(SQLITE3_ASSOC))
       {
         $comname = preg_replace('/ /', '_', $results['Com_Name']);
