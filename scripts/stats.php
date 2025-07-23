@@ -5,7 +5,7 @@ $_GET   = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING);
 $_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
 ini_set('user_agent', 'PHP_Flickr/1.0');
-error_reporting(0);
+error_reporting(E_ERROR);
 ini_set('display_errors', 0);
 require_once 'scripts/common.php';
 $home = get_home();
@@ -83,6 +83,9 @@ if (get_included_files()[0] === __FILE__) {
       <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "confidence"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="confidence">
          <img src="images/sort_conf.svg" title="Sort by confidence" alt="Sort by confidence">
       </button>
+      <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "date"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="date">
+         <img src="images/sort_date.svg" title="Sort by date" alt="Sort by date">
+      </button>
    </form>
 </div>
 <br>
@@ -109,6 +112,8 @@ if (get_included_files()[0] === __FILE__) {
         } else {
             $values[] = ' (' . $valuescount . ')';
         }
+    } elseif ($_GET['sort'] == "date") {
+        $values[] = ' (' . $results['Date'] . ')';
     }
   }
 
