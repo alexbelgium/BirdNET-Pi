@@ -185,9 +185,6 @@ def bird_weather(file: ParseFileName, detections: [Detection]):
         soundscape_url = (f'https://app.birdweather.com/api/v1/stations/'
                           f'{conf["BIRDWEATHER_ID"]}/soundscapes?timestamp={file.iso8601}')
 
-        with open(file.file_name, 'rb') as f:
-            wav_data = f.read()
-        gzip_wav_data = gzip.compress(wav_data)
         try:
             response = requests.post(url=soundscape_url, data=gzip_flac_data, timeout=30,
                                      headers={'Content-Type': 'application/octet-stream', 'Content-Encoding': 'gzip'})
