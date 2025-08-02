@@ -117,6 +117,12 @@ APPRISE_ONLY_NOTIFY_SPECIES_NAMES_2=""
 FLICKR_API_KEY=
 FLICKR_FILTER_EMAIL=
 
+#----------------------  Image Provider Configuration ------------------------#
+## WIKIPEDIA or FLICKR (Flickr requires API key)
+## default WIKIPEDIA
+
+IMAGE_PROVIDER="WIKIPEDIA"
+
 #----------------------  Site to pull info from Images  ------------------------#
 ## ALLABOUTBIRDS or EBIRD
 ## default ALLABOUTBIRDS, EBIRD better for eurasian locations
@@ -274,6 +280,11 @@ RAW_SPECTROGRAM=0
 CUSTOM_IMAGE=
 CUSTOM_IMAGE_TITLE=""
 
+## CONFIRM_SPECIES adds an icon next to species in the Recordings tab to keep track which species are manually confirmed
+## It generates a confirmed_species_list.txt file, and allows to better visualize species that could be false positives
+CONFIRM_SPECIES=0
+
+# RARE_SPECIES_THRESHOLD defines after how many days a species is considered as rare and highlighted on overview page
 ## RARE_SPECIES_THRESHOLD defines after how many days a species is considered as rare and highlighted on overview page
 RARE_SPECIES_THRESHOLD=30
 

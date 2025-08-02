@@ -108,8 +108,14 @@ if ! grep -E '^MAX_FILES_SPECIES=' /etc/birdnet/birdnet.conf &>/dev/null;then
   echo "MAX_FILES_SPECIES=\"0\"" >> /etc/birdnet/birdnet.conf
 fi
 
+if ! grep -E '^CONFIRM_SPECIES=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo "## CONFIRM_SPECIES adds an icon next to species in the Recordings tab to keep track which species are manually confirmed" >> /etc/birdnet/birdnet.conf 
+  echo "## It generates a confirmed_species_list.txt file, and allows to better visualize species that could be false positives" >> /etc/birdnet/birdnet.conf
+  echo "CONFIRM_SPECIES=0" >> /etc/birdnet/birdnet.conf
+fi
+
 if ! grep -E '^RARE_SPECIES_THRESHOLD=' /etc/birdnet/birdnet.conf &>/dev/null;then
-  echo '## RARE_SPECIES_THRESHOLD defines after how many days a species is considered as rare and highlighted on overview page' >> /etc/birdnet/birdnet.conf
+  echo '# RARE_SPECIES_THRESHOLD defines after how many days a species is considered as rare and highlighted on overview page' >> /etc/birdnet/birdnet.conf
   echo "RARE_SPECIES_THRESHOLD=\"30\"" >> /etc/birdnet/birdnet.conf
 fi
 
@@ -119,6 +125,10 @@ fi
 if ! which inotifywait &>/dev/null;then
   ensure_apt_updated
   apt-get -y install inotify-tools
+fi
+if ! which gcc &>/dev/null;then
+  ensure_apt_updated
+  apt-get -y install gcc python3-dev
 fi
 
 apprise_version=$($HOME/BirdNET-Pi/birdnet/bin/python3 -c "import apprise; print(apprise.__version__)")
@@ -136,8 +146,7 @@ PY_VERSION=$($HOME/BirdNET-Pi/birdnet/bin/python3 -c "import sys; print(f'{sys.v
 tf_version=$($HOME/BirdNET-Pi/birdnet/bin/python3 -c "import tflite_runtime; print(tflite_runtime.__version__)")
 if [ "$PY_VERSION" == 39 ] && [ "$tf_version" != "2.11.0" ] || [ "$PY_VERSION" != 39 ] && [ "$tf_version" != "2.17.1" ]; then
   get_tf_whl
-  # include our numpy dependants so pip can figure out which numpy version to install
-  sudo_with_user $HOME/BirdNET-Pi/birdnet/bin/pip3 install $HOME/BirdNET-Pi/$WHL pandas librosa matplotlib
+  sudo_with_user $HOME/BirdNET-Pi/birdnet/bin/pip3 install $HOME/BirdNET-Pi/$WHL numpy==1.23.5
 fi
 
 ensure_python_package inotify soundfile
@@ -170,12 +179,12 @@ if ! [ -f "$HOME/BirdNET-Pi/templates/$TMP_MOUNT" ]; then
    chown $USER:$USER "$HOME/BirdNET-Pi/templates/$TMP_MOUNT"
 fi
 
-if grep -q -e '-P log' $HOME/BirdNET-Pi/templates/birdnet_log.service ;then
+if ! grep '-P log' $HOME/BirdNET-Pi/templates/birdnet_log.service &>/dev/null;then
   sed -i "s/-P log/--path log/" ~/BirdNET-Pi/templates/birdnet_log.service
   systemctl daemon-reload && restart_services.sh
 fi
 
-if grep -q -e '-P terminal' $HOME/BirdNET-Pi/templates/web_terminal.service ;then
+if ! grep '-P terminal' $HOME/BirdNET-Pi/templates/web_terminal.service &>/dev/null;then
   sed -i "s/-P terminal/--path terminal/" ~/BirdNET-Pi/templates/web_terminal.service
   systemctl daemon-reload && restart_services.sh
 fi
@@ -205,6 +214,13 @@ if [ "$(grep -o "#birdnet" /etc/crontab | wc -l)" -lt 5 ]; then
   sed "s/\$USER/$USER/g" "$HOME"/BirdNET-Pi/templates/weekly_report.cron >> /etc/crontab
 fi
 
+# Create info table
+sqlite3 $HOME/BirdNET-Pi/scripts/birds.db << EOF
+CREATE TABLE IF NOT EXISTS info (
+  File_Name VARCHAR(100) NOT NULL,
+  SNR FLOAT
+);
+EOF
 set +x
 AUTH=$(grep basicauth /etc/caddy/Caddyfile)
 [ -n "${CADDY_PWD}" ] && [ -z "${AUTH}" ] && sudo /usr/local/bin/update_caddyfile.sh > /dev/null 2>&1
