@@ -48,7 +48,7 @@ def sendAppriseNotifications(species, confidence, confidencepct, path,
         ret = template.replace("$sciname", sciName) \
             .replace("$comname", comName) \
             .replace("$confidencepct", confidencepct) \
-            .replace("$confidence", confidence) \
+            .replace("$confidence", confidencepct) \
             .replace("$listenurl", listenurl) \
             .replace("$friendlyurl", friendlyurl) \
             .replace("$date", date) \
