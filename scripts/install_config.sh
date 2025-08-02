@@ -117,6 +117,12 @@ APPRISE_ONLY_NOTIFY_SPECIES_NAMES_2=""
 FLICKR_API_KEY=
 FLICKR_FILTER_EMAIL=
 
+#----------------------  Image Provider Configuration ------------------------#
+## WIKIPEDIA or FLICKR (Flickr requires API key)
+## default WIKIPEDIA
+
+IMAGE_PROVIDER="WIKIPEDIA"
+
 #----------------------  Site to pull info from Images  ------------------------#
 ## ALLABOUTBIRDS or EBIRD
 ## default ALLABOUTBIRDS, EBIRD better for eurasian locations
