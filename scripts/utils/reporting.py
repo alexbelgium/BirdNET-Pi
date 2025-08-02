@@ -5,21 +5,18 @@ import logging
 import os
 import sqlite3
 import subprocess
+import tempfile
+import io
+import soundfile
 from time import sleep
 
 import requests
+from PIL import Image, ImageDraw, ImageFont
 
-from .helpers import get_settings, ParseFileName, Detection, DB_PATH
+from .helpers import get_settings, ParseFileName, Detection, get_font, DB_PATH
 from .notifications import sendAppriseNotifications
 
 log = logging.getLogger(__name__)
-
-
-def get_safe_title(title):
-    result = subprocess.run(['iconv', '-f', 'utf8', '-t', 'ascii//TRANSLIT'],
-                            check=True, input=title.encode('utf-8'), capture_output=True)
-    ret = result.stdout.decode('utf-8')
-    return ret
 
 
 def extract(in_file, out_file, start, stop):
@@ -50,15 +47,29 @@ def extract_safe(in_file, out_file, start, stop):
 
 
 def spectrogram(in_file, title, comment, raw=False):
+    fd, tmp_file = tempfile.mkstemp(suffix='.png')
+    os.close(fd)
     args = ['sox', '-V1', f'{in_file}', '-n', 'remix', '1', 'rate', '24k', 'spectrogram',
-            '-t', f'{get_safe_title(title)}', '-c', f'{comment}', '-o', f'{in_file}.png']
+            '-t', '', '-c', '', '-o', tmp_file]
     args += ['-r'] if raw else []
     result = subprocess.run(args, check=True, capture_output=True)
     ret = result.stdout.decode('utf-8')
     err = result.stderr.decode('utf-8')
     if err:
         raise RuntimeError(f'{ret}:\n {err}')
-    return ret
+    img = Image.open(tmp_file)
+    height = img.size[1]
+    width = img.size[0]
+    draw = ImageDraw.Draw(img)
+    title_font = ImageFont.truetype(get_font()['path'], 13)
+    _, _, w, _ = draw.textbbox((0, 0), title, font=title_font)
+    draw.text(((width-w)/2, 6), title, fill="white", font=title_font)
+
+    comment_font = ImageFont.truetype(get_font()['path'], 11)
+    _, _, _, h = draw.textbbox((0, 0), comment, font=comment_font)
+    draw.text((1, height - (h + 1)), comment, fill="white", font=comment_font)
+    img.save(f'{in_file}.png')
+    os.remove(tmp_file)
 
 
 def extract_detection(file: ParseFileName, detection: Detection):
@@ -160,15 +171,22 @@ def bird_weather(file: ParseFileName, detections: [Detection]):
     if conf['BIRDWEATHER_ID'] == "":
         return
     if detections:
+        try:
+            data, samplerate = soundfile.read(file.file_name)
+            buf = io.BytesIO()
+            soundfile.write(buf, data, samplerate, format='FLAC')
+            flac_data = buf.getvalue()
+        except Exception as e:
+            log.error("Error during FLAC conversion: %s", e)
+            return
+        gzip_flac_data = gzip.compress(flac_data)
+
         # POST soundscape to server
         soundscape_url = (f'https://app.birdweather.com/api/v1/stations/'
                           f'{conf["BIRDWEATHER_ID"]}/soundscapes?timestamp={file.iso8601}')
 
-        with open(file.file_name, 'rb') as f:
-            wav_data = f.read()
-        gzip_wav_data = gzip.compress(wav_data)
         try:
-            response = requests.post(url=soundscape_url, data=gzip_wav_data, timeout=30,
+            response = requests.post(url=soundscape_url, data=gzip_flac_data, timeout=30,
                                      headers={'Content-Type': 'application/octet-stream', 'Content-Encoding': 'gzip'})
             log.info("Soundscape POST Response Status - %d", response.status_code)
             sdata = response.json()

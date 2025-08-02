@@ -24,6 +24,7 @@ log = logging.getLogger(__name__)
 userDir = os.path.expanduser('~')
 INTERPRETER, M_INTERPRETER, INCLUDE_LIST, EXCLUDE_LIST = (None, None, None, None)
 PREDICTED_SPECIES_LIST = []
+WEEK = None
 model, priv_thresh, sf_thresh = (None, None, None)
 
 mdata, mdata_params = (None, None)
@@ -135,9 +136,6 @@ def predictSpeciesList(lat, lon, week):
             # if there's a custom user-made include list, we only want to use the species in that
             if (len(INCLUDE_LIST) == 0):
                 PREDICTED_SPECIES_LIST.append(s[1])
-    WHITELIST_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/whitelist_species_list.txt"))
-    for species in WHITELIST_LIST:
-        PREDICTED_SPECIES_LIST.append(species)
 
 
 def loadCustomSpeciesList(path):
@@ -242,7 +240,7 @@ def predict(sample, sensitivity):
 
 
 def analyzeAudioData(chunks, lat, lon, week, sens, overlap,):
-    global INTERPRETER
+    global INTERPRETER, WEEK
 
     sensitivity = max(0.5, min(1.0 - (sens - 1.0), 1.5))
 
@@ -251,7 +249,8 @@ def analyzeAudioData(chunks, lat, lon, week, sens, overlap,):
     log.info('ANALYZING AUDIO...')
 
     if model == "BirdNET_GLOBAL_6K_V2.4_Model_FP16":
-        if len(PREDICTED_SPECIES_LIST) == 0 or len(INCLUDE_LIST) != 0:
+        if week != WEEK or len(INCLUDE_LIST) != 0:
+            WEEK = week
             predictSpeciesList(lat, lon, week)
 
     mdata = get_metadata(lat, lon, week)
@@ -310,9 +309,10 @@ def load_global_model():
 
 
 def run_analysis(file):
-    global INCLUDE_LIST, EXCLUDE_LIST
+    global INCLUDE_LIST, EXCLUDE_LIST, WHITELIST_LIST
     INCLUDE_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/include_species_list.txt"))
     EXCLUDE_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/exclude_species_list.txt"))
+    WHITELIST_LIST = loadCustomSpeciesList(os.path.expanduser("~/BirdNET-Pi/whitelist_species_list.txt"))
 
     conf = get_settings()
 
@@ -335,7 +335,7 @@ def run_analysis(file):
                     log.warning("Excluded as INCLUDE_LIST is active but this species is not in it: %s", entry[0])
                 elif entry[0] in EXCLUDE_LIST and len(EXCLUDE_LIST) != 0:
                     log.warning("Excluded as species in EXCLUDE_LIST: %s", entry[0])
-                elif entry[0] not in PREDICTED_SPECIES_LIST and len(PREDICTED_SPECIES_LIST) != 0:
+                elif entry[0] not in PREDICTED_SPECIES_LIST and len(PREDICTED_SPECIES_LIST) != 0 and entry[0] not in WHITELIST_LIST:
                     log.warning("Excluded as below Species Occurrence Frequency Threshold: %s", entry[0])
                 else:
                     d = Detection(

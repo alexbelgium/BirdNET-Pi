@@ -5,51 +5,12 @@ $_GET   = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING);
 $_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
 ini_set('user_agent', 'PHP_Flickr/1.0');
-error_reporting(0);
+error_reporting(E_ERROR);
 ini_set('display_errors', 0);
 require_once 'scripts/common.php';
 $home = get_home();
 
-$db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
-$db->busyTimeout(1000);
-
-if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
-  
-  $statement = $db->prepare('SELECT Date, Time, File_Name, Com_Name, COUNT(*), MAX(Confidence) FROM detections GROUP BY Com_Name ORDER BY COUNT(*) DESC');
-  ensure_db_ok($statement);
-  $result = $statement->execute();
-
-  $statement2 = $db->prepare('SELECT Date, Time, File_Name, Com_Name, COUNT(*), MAX(Confidence) FROM detections GROUP BY Com_Name ORDER BY COUNT(*) DESC');
-  ensure_db_ok($statement2);
-  $result2 = $statement2->execute();
-
-} else if(isset($_GET['sort']) && $_GET['sort'] == "confidence") {
-  $statement = $db->prepare('SELECT Date, Time, File_Name, Com_Name, COUNT(*), MAX(Confidence) FROM detections GROUP BY Com_Name ORDER BY MAX(Confidence) DESC');
-  ensure_db_ok($statement);
-  $result = $statement->execute();
-
-  $statement2 = $db->prepare('SELECT Date, Time, File_Name, Com_Name, COUNT(*), MAX(Confidence) FROM detections GROUP BY Com_Name ORDER BY MAX(Confidence) DESC');
-  ensure_db_ok($statement2);
-  $result2 = $statement2->execute();
-
-} else {
-
-  $statement = $db->prepare('SELECT Date, Time, File_Name, Com_Name, COUNT(*), MAX(Confidence) FROM detections GROUP BY Com_Name ORDER BY Com_Name ASC');
-  ensure_db_ok($statement);
-  $result = $statement->execute();
-
-  $statement2 = $db->prepare('SELECT Date, Time, File_Name, Com_Name, COUNT(*), MAX(Confidence) FROM detections GROUP BY Com_Name ORDER BY Com_Name ASC');
-  ensure_db_ok($statement2);
-  $result2 = $statement2->execute();
-}
-
-
-if(isset($_GET['species'])){
-  $selection = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
-  $statement3 = $db->prepare("SELECT Com_Name, Sci_Name, COUNT(*), MAX(Confidence), File_Name, Date, Time from detections WHERE Com_Name = \"$selection\"");
-  ensure_db_ok($statement3);
-  $result3 = $statement3->execute();
-}
+$result = fetch_species_array($_GET['sort']);
 
 if(!file_exists($home."/BirdNET-Pi/scripts/disk_check_exclude.txt") || strpos(file_get_contents($home."/BirdNET-Pi/scripts/disk_check_exclude.txt"),"##start") === false) {
   file_put_contents($home."/BirdNET-Pi/scripts/disk_check_exclude.txt", "");
@@ -83,6 +44,9 @@ if (get_included_files()[0] === __FILE__) {
       <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "confidence"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="confidence">
          <img src="images/sort_conf.svg" title="Sort by confidence" alt="Sort by confidence">
       </button>
+      <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "date"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="date">
+         <img src="images/sort_date.svg" title="Sort by date" alt="Sort by date">
+      </button>
    </form>
 </div>
 <br>
@@ -94,22 +58,13 @@ if (get_included_files()[0] === __FILE__) {
   $birds = array();
   $values = array();
 
-  while($results=$result2->fetchArray(SQLITE3_ASSOC))
+  while($results=$result->fetchArray(SQLITE3_ASSOC))
   {
     $comname = preg_replace('/ /', '_', $results['Com_Name']);
     $comname = preg_replace('/\'/', '', $comname);
     $filename = "/By_Date/".$results['Date']."/".$comname."/".$results['File_Name'];
     $birds[] = $results['Com_Name'];
-    if ($_GET['sort'] == "confidence") {
-        $values[] = ' (' . round($results['MAX(Confidence)'] * 100) . '%)';
-    } elseif ($_GET['sort'] == "occurrences") {
-        $valuescount = $results['COUNT(*)'];
-        if ($valuescount >= 1000) {
-            $values[] = ' (' . round($valuescount / 1000, 1) . 'k)';
-        } else {
-            $values[] = ' (' . $valuescount . ')';
-        }
-    }
+    $values[] = get_label($results, $_GET['sort']);
   }
 
   if(count($birds) > 45) {
@@ -128,7 +83,7 @@ if (get_included_files()[0] === __FILE__) {
       if ($index < count($birds)) {
         ?>
         <td>
-            <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index].$values[$index];?></button>
+            <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $values[$index];?></button>
         </td>
         <?php
       } else {
@@ -176,6 +131,7 @@ function setModalText(iter, title, text, authorlink) {
   $species = $_GET['species'];
   $iter=0;
   $config = get_config();
+  $result3 = fetch_best_detection(htmlspecialchars_decode($_GET['species'], ENT_QUOTES));
 while($results=$result3->fetchArray(SQLITE3_ASSOC)){
   $count = $results['COUNT(*)'];
   $maxconf = round((float)round($results['MAX(Confidence)'],2) * 100 ) . '%';
@@ -249,8 +205,8 @@ array_push($excludelines, $results['Date']."/".$comname."/".$results['File_Name'
 ?>
       <tr>
       <td class="relative"><a target="_blank" href="index.php?filename=<?php echo $results['File_Name']; ?>"><img title="Open in new tab" class="copyimage" width=25 src="images/copy.png"></a>
-        <button type="submit" name="species" value="<?php echo $results['Com_Name'];?>"><?php echo $results['Com_Name'];?></button><br><b>Occurrences:</b> <?php echo $results['COUNT(*)'];?><br>
-      <b>Max Confidence:</b> <?php echo $percent = round((float)round($results['MAX(Confidence)'],2) * 100 ) . '%';?><br>
+        <button type="submit" name="species" value="<?php echo $results['Com_Name'];?>"><?php echo $results['Com_Name'];?></button><br><b>Occurrences:</b> <?php echo $results['Count'];?><br>
+      <b>Max Confidence:</b> <?php echo $percent = round((float)round($results['MaxConfidence'],2) * 100 ) . '%';?><br>
       <b>Best Recording:</b> <?php echo $results['Date']." ".$results['Time'];?><br><video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster="<?php echo $filename.".png";?>" preload="none" title="<?php echo $filename;?>"><source src="<?php echo $filename;?>" type="audio/mp3"></video></td>
       </tr>
 <?php

@@ -117,6 +117,77 @@ function get_sci_name($com_name) {
   return $sciname;
 }
 
+function get_label($record, $sort_by, $date=null) {
+  $name = $record["Com_Name"];
+  if ($sort_by == "confidence") {
+    $ret = $name . ' (' . round($record['MaxConfidence'] * 100) . '%)';
+  } elseif ($sort_by == "occurrences") {
+    $valuescount = $record['Count'];
+    if ($valuescount >= 1000) {
+      $ret = $name . ' (' . round($valuescount / 1000, 1) . 'k)';
+    } else {
+      $ret = $name . ' (' . $valuescount . ')';
+    }
+  } elseif (($sort_by == "date") && !isset($date)) {
+    $ret = $name . ' (' . $record['Date'] . ')';
+  } elseif (($sort_by == "date") && isset($date)) {
+    $ret = $name . ' (' . $record['Time'] . ')';
+  } else {
+    $ret = $name;
+  }
+  return $ret;
+}
+
+function fetch_species_array($sort_by, $date=null) {
+  if (!isset($_db)) {
+    $_db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
+    $_db->busyTimeout(1000);
+  }
+  $where = (isset($date)) ? "WHERE Date == \"$date\"" : "";
+  if ($sort_by === "occurrences") {
+    $statement = $_db->prepare("SELECT Date, Time, File_Name, Com_Name, Sci_Name, COUNT(*) as Count, MAX(Confidence) as MaxConfidence FROM detections $where GROUP BY Sci_Name ORDER BY COUNT(*) DESC");
+  } elseif ($sort_by === "confidence") {
+    $statement = $_db->prepare("SELECT Date, Time, File_Name, Com_Name, Sci_Name, COUNT(*) as Count, MAX(Confidence) as MaxConfidence FROM detections $where GROUP BY Sci_Name ORDER BY MAX(Confidence) DESC");
+  } elseif ($sort_by === "date") {
+    $statement = $_db->prepare("SELECT Date, Time, File_Name, Com_Name, Sci_Name, COUNT(*) as Count, MAX(Confidence) as MaxConfidence FROM detections $where GROUP BY Sci_Name ORDER BY MIN(Date) DESC, Time DESC");
+  } else {
+    $statement = $_db->prepare("SELECT Date, Time, File_Name, Com_Name, Sci_Name, COUNT(*) as Count, MAX(Confidence) as MaxConfidence FROM detections $where GROUP BY Sci_Name ORDER BY Com_Name ASC");
+  }
+  ensure_db_ok($statement);
+  $result = $statement->execute();
+  return $result;
+}
+
+function fetch_best_detection($com_name) {
+  if (!isset($_db)) {
+    $_db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
+    $_db->busyTimeout(1000);
+  }
+  $statement = $_db->prepare("SELECT Com_Name, Sci_Name, COUNT(*), MAX(Confidence), File_Name, Date, Time from detections WHERE Com_Name = \"$com_name\"");
+  ensure_db_ok($statement);
+  $result = $statement->execute();
+  return $result;
+}
+
+function fetch_all_detections($sci_name, $sort_by, $date=null) {
+  if (!isset($_db)) {
+    $_db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
+    $_db->busyTimeout(1000);
+  }
+  $filter = (isset($date)) ? "AND Date == \"$date\"" : "";
+  if ($sort_by === "occurrences") {
+    $statement = $_db->prepare("SELECT * FROM detections WHERE Sci_Name == \"$sci_name\" $filter ORDER BY COUNT(*) DESC");
+  } elseif ($sort_by === "confidence") {
+    $statement = $_db->prepare("SELECT * FROM detections WHERE Sci_Name == \"$sci_name\" $filter ORDER BY Confidence DESC");
+  } else {
+    $order = (isset($date)) ? "Time DESC" : "Date DESC, Time DESC";
+    $statement = $_db->prepare("SELECT * FROM detections where Sci_Name == \"$sci_name\" $filter ORDER BY $order");
+  }
+  ensure_db_ok($statement);
+  $result = $statement->execute();
+  return $result;
+}
+
 define('DB', './scripts/flickr.db');
 
 class Flickr {
