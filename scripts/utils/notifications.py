@@ -1,11 +1,12 @@
-import apprise
+import html
 import os
 import socket
 import sqlite3
-from datetime import datetime
-import requests
-import html
 import time as timeim
+from datetime import datetime
+
+import apprise
+import requests
 
 userDir = os.path.expanduser('~')
 APPRISE_CONFIG = userDir + '/BirdNET-Pi/apprise.txt'
@@ -101,22 +102,35 @@ def sendAppriseNotifications(species, confidence, confidencepct, path,
         friendlyurl = "[Listen here]("+listenurl+")"
         image_url = ""
 
-        if len(settings_dict.get('FLICKR_API_KEY')) > 0 and "$flickrimage" in body:
+        if "$flickrimage" in body:
             if comName not in flickr_images:
                 try:
-                    # TODO: Make this work with non-english comnames. Implement the "// convert sci name to English name" logic from overview.php here
-                    headers = {'User-Agent': 'Python_Flickr/1.0'}
-                    url = ('https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=' + str(settings_dict.get('FLICKR_API_KEY')) +
-                           '&text=' + str(comName) + ' bird&sort=relevance&per_page=5&media=photos&format=json&license=2%2C3%2C4%2C5%2C6%2C9&nojsoncallback=1')
+                    # Use Wikipedia API instead of Flickr
+                    headers = {'User-Agent': 'Python_BirdNET-Pi/1.0'}
+                    
+                    # Try scientific name first
+                    sci_name_url = sciName.replace(' ', '_')
+                    url = f'https://en.wikipedia.org/api/rest_v1/page/summary/{sci_name_url}'
                     resp = requests.get(url=url, headers=headers, timeout=10)
-
+                    
+                    # If scientific name fails, try common name
+                    if resp.status_code != 200:
+                        com_name_url = comName.replace(' ', '_')
+                        url = f'https://en.wikipedia.org/api/rest_v1/page/summary/{com_name_url}'
+                        resp = requests.get(url=url, headers=headers, timeout=10)
+                    
                     resp.encoding = "utf-8"
-                    data = resp.json()["photos"]["photo"][0]
-
-                    image_url = 'https://farm'+str(data["farm"])+'.static.flickr.com/'+str(data["server"])+'/'+str(data["id"])+'_'+str(data["secret"])+'_n.jpg'
+                    data = resp.json()
+                    
+                    # Check if we have an image
+                    if resp.status_code == 200 and 'originalimage' in data and 'source' in data['originalimage']:
+                        image_url = data['originalimage']['source']
+                    else:
+                        image_url = ""
+                        
                     flickr_images[comName] = image_url
                 except Exception as e:
-                    print("FLICKR API ERROR: "+str(e))
+                    print("WIKIPEDIA API ERROR: "+str(e))
                     image_url = ""
             else:
                 image_url = flickr_images[comName]

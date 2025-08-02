@@ -222,7 +222,7 @@ if(isset($_GET['sendtest']) && $_GET['sendtest'] == "true") {
   $friendlyfilename = "[Listen here](".$filename.")";
 
   $attach="";
-  $exampleimage = "https://live.staticflickr.com/7430/27545810581_8bfa8289a3_c.jpg";
+  $exampleimage = "https://upload.wikimedia.org/wikipedia/commons/4/45/Eopsaltria_australis_-_Mogo_Campground.jpg";
   if (strpos($body, '$flickrimage') !== false) {
       $attach = "--attach ".$exampleimage;
   }
@@ -521,7 +521,7 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       <dt>$overlap</dt>
       <dd>Overlap set in "Advanced Settings"</dd>
       <dt>$flickrimage</dt>
-      <dd>A preview image of the detected species from Flickr. Set your API key below.</dd>
+      <dd>A preview image of the detected species from Wikipedia.</dd>
       <dt>$reason</dt>
       <dd>The reason a notification was sent</dd>
       </dl>
@@ -553,12 +553,10 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       <span id="testsuccessmsg"></span>
       </td></tr></table><br>
       <table class="settingstable"><tr><td>
-      <h2>Bird Photos from Flickr</h2>
-      <label for="flickr_api_key">Flickr API Key: </label>
-      <input name="flickr_api_key" type="text" size="32" value="<?php print($config['FLICKR_API_KEY']);?>"/><br>
-      <label for="flickr_filter_email">Only search photos from this Flickr user: </label>
-      <input name="flickr_filter_email" type="email" size="24" placeholder="myflickraccount@gmail.com" value="<?php print($config['FLICKR_FILTER_EMAIL']);?>"/><br>
-      <p>Set your Flickr API key to enable the display of bird images next to detections. <a target="_blank" href="https://www.flickr.com/services/api/misc.api_keys.html">Get your free key here.</a></p>
+      <h2>Bird Photos from Wikipedia</h2>
+      <p>Bird images are automatically fetched from Wikipedia. No API key is required.</p>
+      <input type="hidden" name="flickr_api_key" value=""/>
+      <input type="hidden" name="flickr_filter_email" value=""/>
       </td></tr></table><br>
       <table class="settingstable"><tr><td>
       <h2>Localization</h2>

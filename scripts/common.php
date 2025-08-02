@@ -189,6 +189,8 @@ function fetch_all_detections($sci_name, $sort_by, $date=null) {
 }
 
 define('DB', './scripts/flickr.db');
+define('WIKI_DB', './scripts/wiki_images.db');
+
 
 class Flickr {
 
@@ -355,6 +357,147 @@ class Flickr {
     $this->set_uid_in_db($uid);
   }
 
+}
+
+class WikipediaImages {
+  private $db = null;
+  private $blacklisted_ids = [];
+
+  public function __construct() {
+    $tbl_def = "CREATE TABLE wiki_images (sci_name VARCHAR(63) NOT NULL PRIMARY KEY, image_url VARCHAR(255) NOT NULL, title VARCHAR(63) NOT NULL, id VARCHAR(31) NOT NULL UNIQUE, page_url VARCHAR(255) NOT NULL, date_created DATE)";
+    try {
+      $db = new SQLite3(WIKI_DB, SQLITE3_OPEN_READWRITE);
+    } catch (Exception $ex) {
+      $db = new SQLite3(WIKI_DB, SQLITE3_OPEN_CREATE | SQLITE3_OPEN_READWRITE);
+      $db->exec($tbl_def);
+    }
+    $db->busyTimeout(1000);
+    $this->db = $db;
+
+    $blacklisted = get_home() . "/BirdNET-Pi/scripts/blacklisted_images.txt";
+    if (file_exists($blacklisted)) {
+      $blacklisted_file = file($blacklisted);
+      if ($blacklisted_file) {
+        $this->blacklisted_ids = array_map('trim', $blacklisted_file);
+      }
+    }
+  }
+
+  public function get_image($sci_name) {
+    $image = $this->get_image_from_db($sci_name);
+    if ($image !== false && in_array($image['id'], $this->blacklisted_ids)) {
+      $image = false;
+      $this->delete_image_from_db($sci_name);
+    }
+    if ($image !== false) {
+      $now = new DateTime();
+      $datetime = DateTime::createFromFormat("Y-m-d", $image['date_created']);
+      $interval = $now->diff($datetime);
+      // Expire after 30 days to refresh images occasionally
+      if ($interval->days > 30) {
+        $image = false;
+      }
+    }
+    if ($image === false) {
+      $this->get_from_wikipedia($sci_name);
+      $image = $this->get_image_from_db($sci_name);
+    }
+    
+    // If we still don't have an image, return a default structure
+    if ($image === false) {
+      $engname = get_com_en_name($sci_name);
+      return [
+        'sci_name' => $sci_name,
+        'com_en_name' => $engname,
+        'image_url' => '',
+        'title' => $engname,
+        'id' => '',
+        'author_url' => '',
+        'license_url' => '',
+        'photos_url' => ''
+      ];
+    }
+    
+    // Add compatibility fields for existing code
+    $image['com_en_name'] = get_com_en_name($sci_name);
+    $image['author_url'] = $image['page_url'];
+    $image['license_url'] = $image['page_url'];
+    $image['photos_url'] = $image['page_url'];
+    
+    return $image;
+  }
+
+  private function delete_image_from_db($sci_name) {
+    $statement0 = $this->db->prepare('DELETE FROM wiki_images WHERE sci_name == :sci_name');
+    $statement0->bindValue(':sci_name', $sci_name);
+    $statement0->execute();
+  }
+
+  private function get_image_from_db($sci_name) {
+    $statement0 = $this->db->prepare('SELECT sci_name, image_url, title, id, page_url, date_created FROM wiki_images WHERE sci_name == :sci_name');
+    $statement0->bindValue(':sci_name', $sci_name);
+    $result = $statement0->execute();
+    $row = $result->fetchArray(SQLITE3_ASSOC);
+    return $row;
+  }
+
+  private function set_image_in_db($sci_name, $image_url, $title, $id, $page_url) {
+    $statement0 = $this->db->prepare("INSERT OR REPLACE INTO wiki_images VALUES (:sci_name, :image_url, :title, :id, :page_url, DATE(\"now\"))");
+    $statement0->bindValue(':sci_name', $sci_name);
+    $statement0->bindValue(':image_url', $image_url);
+    $statement0->bindValue(':title', $title);
+    $statement0->bindValue(':id', $id);
+    $statement0->bindValue(':page_url', $page_url);
+    $statement0->execute();
+  }
+
+  private function get_from_wikipedia($sci_name) {
+    $engname = get_com_en_name($sci_name);
+    
+    // Try scientific name first, then common name if needed
+    $search_terms = [
+      str_replace(' ', '_', $sci_name),
+      str_replace(' ', '_', $engname)
+    ];
+    
+    foreach ($search_terms as $term) {
+      $wiki_url = "https://en.wikipedia.org/api/rest_v1/page/summary/" . urlencode($term);
+      
+      $context = stream_context_create([
+        'http' => [
+          'method' => 'GET',
+          'header' => 'User-Agent: BirdNET-Pi/1.0 (https://github.com/mcguirepr89/BirdNET-Pi)'
+        ]
+      ]);
+      
+      $wiki_response = @file_get_contents($wiki_url, false, $context);
+      
+      if ($wiki_response) {
+        $wiki_data = json_decode($wiki_response, true);
+        
+        // Check if we have an image
+        if (isset($wiki_data['originalimage']['source'])) {
+          $image_url = $wiki_data['originalimage']['source'];
+          $page_url = "https://en.wikipedia.org/wiki/" . urlencode($term);
+          
+          // Generate a unique ID for the image
+          $image_id = md5($image_url);
+          
+          $this->set_image_in_db(
+            $sci_name,
+            $image_url,
+            $wiki_data['title'],
+            $image_id,
+            $page_url
+          );
+          
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
 }
 
 function get_info_url($sciname){
