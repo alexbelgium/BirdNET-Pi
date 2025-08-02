@@ -16,3 +16,4 @@ requests
 matplotlib
 pillow
 pyarrow==20.0.0
+soundfile
