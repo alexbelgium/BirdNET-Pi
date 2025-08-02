@@ -149,7 +149,7 @@ if [ "$PY_VERSION" == 39 ] && [ "$tf_version" != "2.11.0" ] || [ "$PY_VERSION" !
   sudo_with_user $HOME/BirdNET-Pi/birdnet/bin/pip3 install $HOME/BirdNET-Pi/$WHL numpy==1.23.5
 fi
 
-ensure_python_package inotify inotify
+ensure_python_package inotify soundfile
 
 if ! which inotifywait &>/dev/null;then
   ensure_apt_updated

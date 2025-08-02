@@ -146,11 +146,7 @@ restore() {
   source /etc/birdnet/birdnet.conf
   sed -i "s/BIRDNET_USER=.*/BIRDNET_USER=$CURRENT_BIRDNET_USER/" "/home/$CURRENT_BIRDNET_USER/BirdNET-Pi/birdnet.conf"
   sed -i "s|/home/$BIRDNET_USER/|/home/$CURRENT_BIRDNET_USER/|g" "/home/$CURRENT_BIRDNET_USER/BirdNET-Pi/birdnet.conf"
-  if [ "$MODEL" == "BirdNET_GLOBAL_6K_V2.4_Model_FP16" ]; then
-    /home/$CURRENT_BIRDNET_USER/BirdNET-Pi/scripts/install_language_label_nm.sh -l $DATABASE_LANG
-  else
-    /home/$CURRENT_BIRDNET_USER/BirdNET-Pi/scripts/install_language_label.sh -l $DATABASE_LANG
-  fi
+  /home/$CURRENT_BIRDNET_USER/BirdNET-Pi/scripts/install_language_label.sh
   rm -fr ${UNPACK}
   [ -n "${CADDY_PWD}" ] && sudo /usr/local/bin/update_caddyfile.sh > /dev/null 2>&1
   log "Restore done"
