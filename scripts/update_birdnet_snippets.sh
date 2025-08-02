@@ -140,7 +140,8 @@ if [ "$PY_VERSION" == 39 ] && [ "$tf_version" != "2.11.0" ] || [ "$PY_VERSION" !
   sudo_with_user $HOME/BirdNET-Pi/birdnet/bin/pip3 install $HOME/BirdNET-Pi/$WHL pandas librosa matplotlib
 fi
 
-ensure_python_package inotify soundfile
+ensure_python_package inotify inotify
+ensure_python_package soundfile soundfile
 
 if ! which inotifywait &>/dev/null;then
   ensure_apt_updated
