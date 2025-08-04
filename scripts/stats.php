@@ -34,6 +34,15 @@ if(isset($_GET['sort']) && $_GET['sort'] == "occurrences") {
   ensure_db_ok($statement2);
   $result2 = $statement2->execute();
 
+} else if(isset($_GET['sort']) && $_GET['sort'] == "date") {
+  $statement = $db->prepare('SELECT d.Date, d.Time, d.File_Name, d.Com_Name, (SELECT COUNT(*) FROM detections WHERE Com_Name = d.Com_Name) AS "COUNT(*)", (SELECT MAX(Confidence) FROM detections WHERE Com_Name = d.Com_Name) AS "MAX(Confidence)" FROM detections d WHERE d.rowid = (SELECT rowid FROM detections WHERE Com_Name = d.Com_Name ORDER BY Date ASC, Time ASC LIMIT 1) ORDER BY d.Date ASC');
+  ensure_db_ok($statement);
+  $result = $statement->execute();
+
+  $statement2 = $db->prepare('SELECT d.Date, d.Time, d.File_Name, d.Com_Name, (SELECT COUNT(*) FROM detections WHERE Com_Name = d.Com_Name) AS "COUNT(*)", (SELECT MAX(Confidence) FROM detections WHERE Com_Name = d.Com_Name) AS "MAX(Confidence)" FROM detections d WHERE d.rowid = (SELECT rowid FROM detections WHERE Com_Name = d.Com_Name ORDER BY Date ASC, Time ASC LIMIT 1) ORDER BY d.Date ASC');
+  ensure_db_ok($statement2);
+  $result2 = $statement2->execute();
+
 } else {
 
   $statement = $db->prepare('SELECT Date, Time, File_Name, Com_Name, COUNT(*), MAX(Confidence) FROM detections GROUP BY Com_Name ORDER BY Com_Name ASC');
