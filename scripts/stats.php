@@ -169,9 +169,14 @@ function hideDialog() {
   document.getElementById('attribution-dialog').close();
 }
 
-function setModalText(iter, title, text, authorlink) {
-  document.getElementById('modalHeading').innerHTML = "Photo "+iter+": \""+title+"\" Attribution";
-  document.getElementById('modalText').innerHTML = "<div style='white-space:nowrap'>Image link: <a target='_blank' href="+text+">"+text+"</a><br>Author link: <a target='_blank' href="+authorlink+">"+authorlink+"</a></div>";
+function setModalText(iter, title, text, authorlink, photolink, licenseurl) {
+  document.getElementById('modalHeading').innerHTML = "Photo: \""+decodeURIComponent(title.replaceAll("+"," "))+"\" Attribution";
+  var inner = "<div><img style='border-radius:5px;max-height: calc(100vh - 15rem);display: block;margin: 0 auto;' src='"+photolink+"'></div><br><div style='white-space:nowrap'>Image link: <a target='_blank' href="+text+">"+text+"</a><br>Author link: <a target='_blank' href="+authorlink+">"+authorlink+"</a>";
+  if (licenseurl) {
+    inner += "<br>License URL: <a href="+licenseurl+" target='_blank'>"+licenseurl+"</a>";
+  }
+  inner += "</div>";
+  document.getElementById('modalText').innerHTML = inner;
   showDialog();
 }
 </script>  
@@ -200,7 +205,38 @@ while($results=$result3->fetchArray(SQLITE3_ASSOC)){
   $info_url = get_info_url($results['Sci_Name']);
   $url = $info_url['URL'];
   $url_title = $info_url['TITLE'];
-  echo str_pad("<h3>$species</h3>
+  $image_url = '';
+  $image_link = '';
+  $image_author = '';
+  $license_url = '';
+  $image_title = '';
+  if ($image_provider_name === 'flickr' && !empty($config['FLICKR_API_KEY'])) {
+    $provider = new Flickr();
+    $cache = $provider->get_image($sciname);
+    $image_url = $cache['image_url'];
+    $image_link = $cache['photos_url'];
+    $image_author = $cache['author_url'];
+    $license_url = $cache['license_url'];
+    $image_title = $cache['title'];
+  } else {
+    $provider = new Wikipedia();
+    $cache = $provider->get_image($sciname);
+    $image_url = $cache['image_url'];
+    $image_link = $cache['photos_url'];
+    $image_author = $cache['author_url'];
+    $license_url = $cache['license_url'];
+    $image_title = $cache['title'];
+  }
+  $image_html = '';
+  if (!empty($image_url)) {
+    $img = htmlspecialchars($image_url, ENT_QUOTES);
+    $link = htmlspecialchars($image_link, ENT_QUOTES);
+    $author = htmlspecialchars($image_author, ENT_QUOTES);
+    $license = htmlspecialchars($license_url, ENT_QUOTES);
+    $title = urlencode($image_title);
+    $image_html = "<span style='cursor:pointer;' onclick=\"setModalText(0,'$title','$link','$author','$img','$license')\"><img src=\"$img\" style=\"height:50px;width:50px;border-radius:5px;margin-right:5px;\" class=\"img1\"></span>";
+  }
+  echo str_pad("<h3>$image_html$species</h3>
     <table><tr>
   <td class=\"relative\"><a target=\"_blank\" href=\"index.php?filename=".$results['File_Name']."\"><img title=\"Open in new tab\" class=\"copyimage\" width=25 src=\"images/copy.png\"></a><i>$sciname</i>
   <a href=\"$url\" target=\"_blank\"><img style=\"width: unset !important; display: inline; height: 1em; cursor: pointer;\" title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
@@ -226,14 +262,23 @@ while($results=$result3->fetchArray(SQLITE3_ASSOC)){
       $iter++;
       $modaltext = "https://flickr.com/photos/".$val["owner"]."/".$val["id"];
       $authorlink = "https://flickr.com/people/".$val["owner"];
-      $imageurl = 'https://farm' .$val["farm"]. '.static.flickr.com/' .$val["server"]. '/' .$val["id"]. '_'  .$val["secret"].  '.jpg';
-      echo "<span style='cursor:pointer;' onclick='setModalText(".$iter.",\"".$val["title"]."\",\"".$modaltext."\", \"".$authorlink."\")'><img style='vertical-align:top' src=\"$imageurl\"></span>"; 
-    }
+      $imageurl = 'https://farm' .$val["farm"]. '.static.flickr.com/' .$val["server"]. '/' .$val["id"]. '_'  .$val["secret"]. '.jpg';
+      $title = urlencode($val["title"]);
+      $modal = htmlspecialchars($modaltext, ENT_QUOTES);
+      $author = htmlspecialchars($authorlink, ENT_QUOTES);
+      $img = htmlspecialchars($imageurl, ENT_QUOTES);
+      echo "<span style='cursor:pointer;' onclick=\"setModalText(".$iter.",'$title','$modal','$author','$img','')\"><img style='vertical-align:top' src=\"$img\"></span>";
+      }
   } elseif ($image_provider_name === 'wikipedia') {
     $wiki = new Wikipedia();
     $cache = $wiki->get_image($sciname);
     if (!empty($cache['image_url'])) {
-      echo "<span><img style='vertical-align:top' src=\"".$cache['image_url']."\"></span>";
+      $img = htmlspecialchars($cache['image_url'], ENT_QUOTES);
+      $link = htmlspecialchars($cache['photos_url'], ENT_QUOTES);
+      $author = htmlspecialchars($cache['author_url'], ENT_QUOTES);
+      $license = htmlspecialchars($cache['license_url'], ENT_QUOTES);
+      $title = urlencode($cache['title']);
+      echo "<span style='cursor:pointer;' onclick=\"setModalText(0,'$title','$link','$author','$img','$license')\"><img style='vertical-align:top' src=\"$img\"></span>";
     }
   }
 }
