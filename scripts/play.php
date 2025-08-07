@@ -220,30 +220,8 @@ if (get_included_files()[0] === __FILE__) {
 }
 
 ?>
-<dialog style="margin-top: 5px;max-height: 95vh;overflow-y: auto;overscroll-behavior:contain" id="attribution-dialog">
-  <h1 id="modalHeading"></h1>
-  <p id="modalText"></p>
-  <button onclick="hideDialog()">Close</button>
-</dialog>
 <script src="static/custom-audio-player.js"></script>
-<script src="static/dialog-polyfill.js"></script>
 <script>
-var dialog = document.querySelector('dialog');
-dialogPolyfill.registerDialog(dialog);
-
-function showDialog() {
-  document.getElementById('attribution-dialog').showModal();
-}
-
-function hideDialog() {
-  document.getElementById('attribution-dialog').close();
-}
-
-function setModalText(iter, title, text, authorlink, photolink, licenseurl) {
-  document.getElementById('modalHeading').innerHTML = "Photo: \"" + decodeURIComponent(title.replaceAll("+"," ")) + "\" Attribution";
-  document.getElementById('modalText').innerHTML = "<div><img style='border-radius:5px;max-height: calc(100vh - 15rem);display: block;margin: 0 auto;' src='" + photolink + "'></div><br><div style='white-space:nowrap'>Image link: <a target='_blank' href=" + text + ">" + text + "</a><br>Author link: <a target='_blank' href=" + authorlink + ">" + authorlink + "</a><br>License URL: <a href=" + licenseurl + " target='_blank'>" + licenseurl + "</a></div>";
-  showDialog();
-}
 
 function deleteDetection(filename,copylink=false) {
   if (confirm("Are you sure you want to delete this detection from the database?") == true) {
@@ -552,16 +530,12 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
           ?>
           <td class="spec">
               <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index].$values[$index];?>
-                <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' <?php
-                if($confirmspecies_enabled == 1) {
-                  if (in_array(str_replace("'", "", $birds_sciname_name[$index]), $confirmed_species)) {
-                    echo "src=\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"del\")'";
-                  } else {
-                    echo "src=\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"add\")'";
-                  }
-                }
-                ?>>
-              </button>
+              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $birds_sciname_name[$index]), $confirmed_species)) {
+                echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"del\")'";
+              } else {
+                echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"add\")'";
+              }}
+              ?>></button>           
           </td>
           <?php
         } else {
@@ -699,53 +673,18 @@ $sciname = get_sci_name($name);
 $sciname_name = $sciname . '_' . $name;
 $info_url = get_info_url($sciname);
 $url = $info_url['URL'];
-$url_title = $info_url['TITLE'];
-$image_provider_name = strtolower($config['IMAGE_PROVIDER'] ?? 'wikipedia');
-$image_url = '';
-$image_link = '';
-$image_author = '';
-$license_url = '';
-$image_title = '';
-if ($image_provider_name === 'flickr' && !empty($config['FLICKR_API_KEY'])) {
-  $provider = new Flickr();
-  $cache = $provider->get_image($sciname);
-  $image_url = $cache['image_url'];
-  $image_link = $cache['photos_url'];
-  $image_author = $cache['author_url'];
-  $license_url = $cache['license_url'];
-  $image_title = $cache['title'];
-} else {
-  $provider = new Wikipedia();
-  $cache = $provider->get_image($sciname);
-  $image_url = $cache['image_url'];
-  $image_link = $cache['photos_url'];
-  $image_author = $cache['author_url'];
-  $license_url = $cache['license_url'];
-  $image_title = $cache['title'];
-}
-echo "<table><tr><th>";
-if (!empty($image_url)) {
-  $img = htmlspecialchars($image_url, ENT_QUOTES);
-  $link = htmlspecialchars($image_link, ENT_QUOTES);
-  $author = htmlspecialchars($image_author, ENT_QUOTES);
-  $license = htmlspecialchars($license_url, ENT_QUOTES);
-  $title = urlencode($image_title);
-  echo "<span style='cursor:pointer;' onclick=\"setModalText(0,'$title','$link','$author','$img','$license')\"><img src='$img' style='height:50px;width:50px;border-radius:5px;margin-right:5px;' class='img1'></span>";
-}
-echo "$name<span style='font-weight:normal;'>";
-echo "<img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=\"";
-if ($confirmspecies_enabled == 1) {
-  if (in_array(str_replace("'", "", $sciname_name), $confirmed_species)) {
-    echo "images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"del\")'";
-  } else {
-    echo "images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"add\")'";
-  }
-}
-echo "\"><br><i>$sciname</i></span><br>";
-echo "<a href='$url' target='_blank'><img title='$url_title' src='images/info.png' width='20'></a>";
-echo "<a href='https://wikipedia.org/wiki/$sciname' target='_blank'><img title='Wikipedia' src='images/wiki.png' width='20'></a>";
-echo "</th></tr>";
-
+echo "<table>
+  <tr><th>$name<span style=\"font-weight:normal;\">
+  <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=";
+  if ($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $sciname_name), $confirmed_species)) {
+    echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"del\")'";
+    } else {
+    echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"add\")'";
+    };};
+echo "><br><i>$sciname</i></span><br>
+    <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
+    <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
+  </th></tr>";
   $iter=0;
   $iter_additional=false;
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
