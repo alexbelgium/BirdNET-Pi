@@ -220,106 +220,8 @@ if (get_included_files()[0] === __FILE__) {
 }
 
 ?>
-<dialog style="margin-top: 5px;max-height: 95vh;overflow-y: auto;overscroll-behavior:contain" id="attribution-dialog">
-  <h1 id="modalHeading"></h1>
-  <p id="modalText"></p>
-  <button onclick="hideDialog()">Close</button>
-</dialog>
 <script src="static/custom-audio-player.js"></script>
-<script src="static/dialog-polyfill.js"></script>
-<script src="static/Chart.bundle.js"></script>
-<script src="static/chartjs-plugin-trendline.min.js"></script>
 <script>
-var dialog = document.querySelector('dialog');
-dialogPolyfill.registerDialog(dialog);
-
-function showDialog() {
-  document.getElementById('attribution-dialog').showModal();
-}
-
-function hideDialog() {
-  document.getElementById('attribution-dialog').close();
-}
-
-function setModalText(iter, title, text, authorlink, photolink, licenseurl) {
-  document.getElementById('modalHeading').innerHTML = "Photo: \"" + decodeURIComponent(title.replaceAll("+"," ")) + "\" Attribution";
-  document.getElementById('modalText').innerHTML = "<div><img style='border-radius:5px;max-height: calc(100vh - 15rem);display: block;margin: 0 auto;' src='" + photolink + "'></div><br><div style='white-space:nowrap'>Image link: <a target='_blank' href=" + text + ">" + text + "</a><br>Author link: <a target='_blank' href=" + authorlink + ">" + authorlink + "</a><br>License URL: <a href=" + licenseurl + " target='_blank'>" + licenseurl + "</a></div>";
-  showDialog();
-}
-
-function generateMiniGraph(elem, comname, days = 30) {
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/todays_detections.php?comname=' + comname + '&days=' + days);
-  xhr.onload = function() {
-    if (xhr.status === 200) {
-      var detections = JSON.parse(xhr.responseText);
-
-      if (typeof(window.chartWindow) != 'undefined') {
-        document.body.removeChild(window.chartWindow);
-        window.chartWindow = undefined;
-      }
-      var chartWindow = document.createElement('div');
-      chartWindow.className = "chartdiv";
-      document.body.appendChild(chartWindow);
-
-      var canvas = document.createElement('canvas');
-      canvas.width = chartWindow.offsetWidth;
-      canvas.height = chartWindow.offsetHeight;
-      chartWindow.appendChild(canvas);
-
-      var ctx = canvas.getContext('2d');
-      var chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: detections.map(item => item.date),
-          datasets: [{
-            label: 'Detections',
-            data: detections.map(item => item.count),
-            backgroundColor: '#9fe29b',
-            borderColor: '#77c487',
-            borderWidth: 1,
-            lineTension: 0.3,
-            pointRadius: 1,
-            pointHitRadius: 10,
-            trendlineLinear: {
-              style: "rgba(55, 99, 64, 0.5)",
-              lineStyle: "solid",
-              width: 1.5
-            }
-          }]
-        },
-        options: {
-          layout: { padding: { right: 10 } },
-          title: { display: true, text: 'Detections Over ' + days + 'd' },
-          legend: { display: false },
-          scales: {
-            yAxes: [{ ticks: { beginAtZero: true } }],
-            xAxes: [{ type: 'time', time: { unit: 'day', tooltipFormat: 'YYYY-MM-DD', displayFormats: { day: 'YYYY-MM-DD' } } }]
-          }
-        }
-      });
-
-      var buttonRect = elem.getBoundingClientRect();
-      var chartRect = chartWindow.getBoundingClientRect();
-      chartWindow.style.left = (buttonRect.left + window.scrollX + 35) + 'px';
-      var buttonCenter = buttonRect.top + buttonRect.height / 2 + window.scrollY;
-      var chartHeight = chartWindow.offsetHeight;
-      var chartTop = buttonCenter - (chartHeight / 2);
-      chartWindow.style.top = chartTop + 'px';
-
-      var closeButton = document.createElement('button');
-      closeButton.id = "chartcb";
-      closeButton.textContent = 'Close';
-      closeButton.onclick = function() {
-        document.body.removeChild(chartWindow);
-        window.chartWindow = undefined;
-      };
-      chartWindow.appendChild(closeButton);
-      window.chartWindow = chartWindow;
-    }
-  };
-  xhr.send();
-}
 
 function deleteDetection(filename,copylink=false) {
   if (confirm("Are you sure you want to delete this detection from the database?") == true) {
@@ -628,16 +530,12 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
           ?>
           <td class="spec">
               <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index].$values[$index];?>
-                <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' <?php
-                if($confirmspecies_enabled == 1) {
-                  if (in_array(str_replace("'", "", $birds_sciname_name[$index]), $confirmed_species)) {
-                    echo "src=\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"del\")'";
-                  } else {
-                    echo "src=\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"add\")'";
-                  }
-                }
-                ?>>
-              </button>
+              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $birds_sciname_name[$index]), $confirmed_species)) {
+                echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"del\")'";
+              } else {
+                echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"add\")'";
+              }}
+              ?>></button>           
           </td>
           <?php
         } else {
@@ -775,55 +673,18 @@ $sciname = get_sci_name($name);
 $sciname_name = $sciname . '_' . $name;
 $info_url = get_info_url($sciname);
 $url = $info_url['URL'];
-$url_title = $info_url['TITLE'];
-$image_provider_name = strtolower($config['IMAGE_PROVIDER'] ?? 'wikipedia');
-$image_url = '';
-$image_link = '';
-$image_author = '';
-$license_url = '';
-$image_title = '';
-if ($image_provider_name === 'flickr' && !empty($config['FLICKR_API_KEY'])) {
-  $provider = new Flickr();
-  $cache = $provider->get_image($sciname);
-  $image_url = $cache['image_url'];
-  $image_link = $cache['photos_url'];
-  $image_author = $cache['author_url'];
-  $license_url = $cache['license_url'];
-  $image_title = $cache['title'];
-} else {
-  $provider = new Wikipedia();
-  $cache = $provider->get_image($sciname);
-  $image_url = $cache['image_url'];
-  $image_link = $cache['photos_url'];
-  $image_author = $cache['author_url'];
-  $license_url = $cache['license_url'];
-  $image_title = $cache['title'];
-}
-$comnamegraph = str_replace("'", "\'", $name);
-echo "<table><tr><th><div style='display:flex;align-items:center;'>";
-if (!empty($image_url)) {
-  $img = htmlspecialchars($image_url, ENT_QUOTES);
-  $link = htmlspecialchars($image_link, ENT_QUOTES);
-  $author = htmlspecialchars($image_author, ENT_QUOTES);
-  $license = htmlspecialchars($license_url, ENT_QUOTES);
-  $title = urlencode($image_title);
-  echo "<span style='cursor:pointer;margin-right:5px;' onclick=\"setModalText(0,'$title','$link','$author','$img','$license')\"><img src='$img' style='height:50px;width:50px;border-radius:5px;' class='img1'></span>";
-}
-echo "<div>$name";
-if ($confirmspecies_enabled == 1) {
-  $sciname_clean = str_replace("'", "", $sciname_name);
-  if (in_array($sciname_clean, $confirmed_species)) {
-    echo "<img style='display:inline;cursor:pointer;max-width:12px;max-height:12px;' src='images/check.svg' onclick=\"confirmspecies('$sciname_clean','del')\">";
-  } else {
-    echo "<img style='display:inline;cursor:pointer;max-width:12px;max-height:12px;' src='images/question.svg' onclick=\"confirmspecies('$sciname_clean','add')\">";
-  }
-}
-echo "<br><i>$sciname</i><br>";
-echo "<a href='$url' target='_blank'><img title='$url_title' src='images/info.png' width='20'></a>";
-echo "<a href='https://wikipedia.org/wiki/$sciname' target='_blank'><img title='Wikipedia' src='images/wiki.png' width='20'></a>";
-echo "<img style='height: 1em;cursor:pointer;float:unset;display:inline' title='View species stats' onclick=\"generateMiniGraph(this, '$comnamegraph', 180)\" width='25' src='images/chart.svg'>";
-echo "</div></div></th></tr>";
-
+echo "<table>
+  <tr><th>$name<span style=\"font-weight:normal;\">
+  <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=";
+  if ($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $sciname_name), $confirmed_species)) {
+    echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"del\")'";
+    } else {
+    echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"add\")'";
+    };};
+echo "><br><i>$sciname</i></span><br>
+    <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
+    <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
+  </th></tr>";
   $iter=0;
   $iter_additional=false;
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
