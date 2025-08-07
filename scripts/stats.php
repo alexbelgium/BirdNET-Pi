@@ -200,7 +200,24 @@ while($results=$result3->fetchArray(SQLITE3_ASSOC)){
   $info_url = get_info_url($results['Sci_Name']);
   $url = $info_url['URL'];
   $url_title = $info_url['TITLE'];
-  echo str_pad("<h3>$species</h3>
+  $image_url = '';
+  $image_link = '';
+  if ($image_provider_name === 'flickr' && !empty($config['FLICKR_API_KEY'])) {
+    $provider = new Flickr();
+    $cache = $provider->get_image($sciname);
+    $image_url = $cache['image_url'];
+    $image_link = $cache['photos_url'];
+  } else {
+    $provider = new Wikipedia();
+    $cache = $provider->get_image($sciname);
+    $image_url = $cache['image_url'];
+    $image_link = $cache['photos_url'];
+  }
+  $image_html = '';
+  if (!empty($image_url)) {
+    $image_html = "<a href=\"$image_link\" target=\"_blank\"><img src=\"$image_url\" style=\"height:50px;width:50px;border-radius:5px;margin-right:5px;\" class=\"img1\"></a>";
+  }
+  echo str_pad("<h3>$image_html$species</h3>
     <table><tr>
   <td class=\"relative\"><a target=\"_blank\" href=\"index.php?filename=".$results['File_Name']."\"><img title=\"Open in new tab\" class=\"copyimage\" width=25 src=\"images/copy.png\"></a><i>$sciname</i>
   <a href=\"$url\" target=\"_blank\"><img style=\"width: unset !important; display: inline; height: 1em; cursor: pointer;\" title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>

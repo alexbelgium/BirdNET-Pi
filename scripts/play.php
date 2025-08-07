@@ -530,12 +530,16 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
           ?>
           <td class="spec">
               <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $birds[$index].$values[$index];?>
-              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $birds_sciname_name[$index]), $confirmed_species)) {
-                echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"del\")'";
-              } else {
-                echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"add\")'";
-              }}
-              ?>></button>           
+                <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' <?php
+                if($confirmspecies_enabled == 1) {
+                  if (in_array(str_replace("'", "", $birds_sciname_name[$index]), $confirmed_species)) {
+                    echo "src=\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"del\")'";
+                  } else {
+                    echo "src=\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"add\")'";
+                  }
+                }
+                ?>>
+              </button>
           </td>
           <?php
         } else {
@@ -673,18 +677,39 @@ $sciname = get_sci_name($name);
 $sciname_name = $sciname . '_' . $name;
 $info_url = get_info_url($sciname);
 $url = $info_url['URL'];
-echo "<table>
-  <tr><th>$name<span style=\"font-weight:normal;\">
-  <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=";
-  if ($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $sciname_name), $confirmed_species)) {
-    echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"del\")'";
-    } else {
-    echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"add\")'";
-    };};
-echo "><br><i>$sciname</i></span><br>
-    <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
-    <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
-  </th></tr>";
+$url_title = $info_url['TITLE'];
+$image_provider_name = strtolower($config['IMAGE_PROVIDER'] ?? 'wikipedia');
+$image_url = '';
+$image_link = '';
+if ($image_provider_name === 'flickr' && !empty($config['FLICKR_API_KEY'])) {
+  $provider = new Flickr();
+  $cache = $provider->get_image($sciname);
+  $image_url = $cache['image_url'];
+  $image_link = $cache['photos_url'];
+} else {
+  $provider = new Wikipedia();
+  $cache = $provider->get_image($sciname);
+  $image_url = $cache['image_url'];
+  $image_link = $cache['photos_url'];
+}
+echo "<table><tr><th>";
+if (!empty($image_url)) {
+  echo "<a href='$image_link' target='_blank'><img src='$image_url' style='height:50px;width:50px;border-radius:5px;margin-right:5px;' class='img1'></a>";
+}
+echo "$name<span style='font-weight:normal;'>";
+echo "<img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=\"";
+if ($confirmspecies_enabled == 1) {
+  if (in_array(str_replace("'", "", $sciname_name), $confirmed_species)) {
+    echo "images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"del\")'";
+  } else {
+    echo "images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"add\")'";
+  }
+}
+echo "\"><br><i>$sciname</i></span><br>";
+echo "<a href='$url' target='_blank'><img title='$url_title' src='images/info.png' width='20'></a>";
+echo "<a href='https://wikipedia.org/wiki/$sciname' target='_blank'><img title='Wikipedia' src='images/wiki.png' width='20'></a>";
+echo "</th></tr>";
+
   $iter=0;
   $iter_additional=false;
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
