@@ -138,7 +138,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
             <td class="relative"><a target="_blank" href="index.php?filename=<?php echo $mostrecent['File_Name']; ?>"><img class="copyimage" title="Open in new tab" width="25" height="25 max" src="images/copy.png"></a>
             <div class="centered_image_container" style="margin-bottom: 0px !important;">
               <?php if($image_provider !== null && strlen($image[2]) > 0) { ?>
-                <img onclick='setModalText(<?php echo $iterations; ?>,"<?php echo urlencode($image[2]); ?>", "<?php echo $image[3]; ?>", "<?php echo $image[4]; ?>", "<?php echo $image[1]; ?>", "<?php echo $image[5]; ?>")' src="<?php echo $image[1]; ?>" class="img1">
+                <img onclick='setModalText(<?php echo $iterations; ?>,"<?php echo urlencode($image[2]); ?>", "<?php echo $image[3]; ?>", "<?php echo $image[4]; ?>", "<?php echo $image[1]; ?>", "<?php echo $image[5]; ?>")' src="<?php echo $image[1]; ?>" class="img1 species-thumb">
               <?php } ?>
               <form action="" method="GET">
                   <input type="hidden" name="view" value="Species Stats">
@@ -445,7 +445,7 @@ function display_species($species_list, $title, $show_last_seen=false) {
                     ?>
                     <tr class="relative" id="<?php echo $iterations; ?>">
                         <td><?php if (!empty($image_url)): ?>
-                          <img onclick='setModalText(<?php echo $iterations; ?>,"<?php echo urlencode($image[2]); ?>", "<?php echo $image[3]; ?>", "<?php echo $image[4]; ?>", "<?php echo $image[1]; ?>", "<?php echo $image[5]; ?>")' src="<?php echo $image_url; ?>" style="max-width: none; height: 50px; width: 50px; border-radius: 5px; cursor: pointer;" class="img1" title="Bird image" />
+                          <img onclick='setModalText(<?php echo $iterations; ?>,"<?php echo urlencode($image[2]); ?>", "<?php echo $image[3]; ?>", "<?php echo $image[4]; ?>", "<?php echo $image[1]; ?>", "<?php echo $image[5]; ?>")' src="<?php echo $image_url; ?>" class="img1 species-thumb" title="Bird image" />
                         <?php endif; ?></td>
                         <td id="recent_detection_middle_td">
                             <div><form action="" method="GET">
@@ -686,11 +686,23 @@ function generateMiniGraph(elem, comname, days = 30) {
       document.body.appendChild(chartWindow);
 
 
-            // Create a canvas element for the chart
+      // Create a canvas element for the chart
       var canvas = document.createElement('canvas');
-      canvas.width = chartWindow.offsetWidth;
-      canvas.height = chartWindow.offsetHeight;
       chartWindow.appendChild(canvas);
+
+      // Add range selector
+      var range = document.createElement('div');
+      range.className = 'graph-range';
+      range.innerHTML = "<span data-days='30'>1m</span> | <span data-days='180'>3m</span> | <span data-days='360'>1y</span>";
+      range.addEventListener('click', function(ev) {
+        if (ev.target.dataset.days) {
+          generateMiniGraph(elem, comname, ev.target.dataset.days);
+        }
+      });
+      chartWindow.appendChild(range);
+
+      canvas.width = chartWindow.offsetWidth;
+      canvas.height = chartWindow.offsetHeight - range.offsetHeight;
 
       // Create a new Chart.js chart
       var ctx = canvas.getContext('2d');
