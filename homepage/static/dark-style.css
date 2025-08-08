@@ -150,18 +150,6 @@ button:hover {
   box-shadow: 0 4px 8px #f5f5f5;
 }
 
-.graph-range {
-  text-align: center;
-  font-size: small;
-  margin-top: 4px;
-}
-
-.graph-range span {
-  cursor: pointer;
-  text-decoration: underline;
-  margin: 0 4px;
-}
-
 .logo img {
   position: absolute;
   top: 0;

@@ -577,10 +577,10 @@ window.addEventListener("load", function(){
 
 <script src="static/custom-audio-player.js"></script>
 <script>
-function generateMiniGraph(elem, comname, days = 30) {
+function generateMiniGraph(elem, comname) {
   // Make an AJAX call to fetch the number of detections for the bird species
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/todays_detections.php?comname=' + comname + '&days=' + days);
+  xhr.open('GET', '/todays_detections.php?comname=' + comname);
   xhr.onload = function() {
     if (xhr.status === 200) {
       var detections = JSON.parse(xhr.responseText);
@@ -600,17 +600,6 @@ function generateMiniGraph(elem, comname, days = 30) {
       canvas.width = chartWindow.offsetWidth;
       canvas.height = chartWindow.offsetHeight;
       chartWindow.appendChild(canvas);
-
-      // Add range selector
-      var range = document.createElement('div');
-      range.className = 'graph-range';
-      range.innerHTML = "<span data-days='30'>1m</span> | <span data-days='180'>3m</span> | <span data-days='360'>1y</span>";
-      range.addEventListener('click', function(ev) {
-        if (ev.target.dataset.days) {
-          generateMiniGraph(elem, comname, ev.target.dataset.days);
-        }
-      });
-      chartWindow.appendChild(range);
 
       // Create a new Chart.js chart
       var ctx = canvas.getContext('2d');

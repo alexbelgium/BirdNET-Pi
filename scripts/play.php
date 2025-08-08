@@ -220,9 +220,6 @@ if (get_included_files()[0] === __FILE__) {
 }
 
 ?>
-<script src="static/dialog-polyfill.js"></script>
-<script src="static/Chart.bundle.js"></script>
-<script src="static/chartjs-plugin-trendline.min.js"></script>
 <script src="static/custom-audio-player.js"></script>
 <script>
 
@@ -444,129 +441,6 @@ function changeDetection(filename,copylink=false) {
   xhttp.open("GET", "play.php?getlabels=true", true);
   xhttp.send();
 }
-
-</script>
-
-<dialog style="margin-top:5px;max-height:95vh;overflow-y:auto;overscroll-behavior:contain" id="attribution-dialog">
-  <h1 id="modalHeading"></h1>
-  <p id="modalText"></p>
-  <button onclick="hideDialog()">Close</button>
-</dialog>
-
-<script>
-var dialog = document.getElementById('attribution-dialog');
-dialogPolyfill.registerDialog(dialog);
-function showDialog() {
-  document.getElementById('attribution-dialog').showModal();
-}
-
-function hideDialog() {
-  document.getElementById('attribution-dialog').close();
-}
-
-function showSpeciesModal(title, text, authorlink, photolink, licenseurl) {
-  document.getElementById('modalHeading').innerHTML = "Photo: \""+decodeURIComponent(title.replaceAll("+"," "))+"\" Attribution";
-  document.getElementById('modalText').innerHTML = "<div><img style='border-radius:5px;max-height: calc(100vh - 15rem);display:block;margin:0 auto;' src='"+photolink+"'></div><br><div style='white-space:nowrap'>Image link: <a target='_blank' href="+text+">"+text+"</a><br>Author link: <a target='_blank' href="+authorlink+">"+authorlink+"</a><br>License URL: <a target='_blank' href="+licenseurl+">"+licenseurl+"</a></div>";
-  showDialog();
-}
-
-function generateMiniGraph(elem, comname, days = 30) {
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/todays_detections.php?comname=' + comname + '&days=' + days);
-  xhr.onload = function() {
-    if (xhr.status === 200) {
-      var detections = JSON.parse(xhr.responseText);
-      if (typeof(window.chartWindow) != 'undefined') {
-        document.body.removeChild(window.chartWindow);
-        window.chartWindow = undefined;
-      }
-      var chartWindow = document.createElement('div');
-      chartWindow.className = "chartdiv";
-      document.body.appendChild(chartWindow);
-
-      var canvas = document.createElement('canvas');
-      canvas.width = chartWindow.offsetWidth;
-      canvas.height = chartWindow.offsetHeight;
-      chartWindow.appendChild(canvas);
-
-      var range = document.createElement('div');
-      range.className = 'graph-range';
-      range.innerHTML = "<span data-days='30'>1m</span> | <span data-days='180'>3m</span> | <span data-days='360'>1y</span>";
-      range.addEventListener('click', function(ev){
-        if (ev.target.dataset.days) {
-          generateMiniGraph(elem, comname, ev.target.dataset.days);
-        }
-      });
-      chartWindow.appendChild(range);
-
-      var ctx = canvas.getContext('2d');
-      var chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: detections.map(item => item.date),
-          datasets: [{
-            label: 'Detections',
-            data: detections.map(item => item.count),
-            backgroundColor: '#9fe29b',
-            borderColor: '#77c487',
-            borderWidth: 1,
-            lineTension: 0.3,
-            pointRadius: 1,
-            pointHitRadius: 10,
-            trendlineLinear: {
-              style: "rgba(55, 99, 64, 0.5)",
-              lineStyle: "solid",
-              width: 1.5
-            }
-          }]
-        },
-        options: {
-          layout: { padding: { right: 10 } },
-          title: { display: true, text: 'Detections Over ' + days + 'd' },
-          legend: { display: false },
-          scales: {
-            xAxes: [{ display: false, gridLines: { display: false }, ticks: { autoSkip: true, maxTicksLimit: 2 } }],
-            yAxes: [{ gridLines: { display: false }, ticks: { beginAtZero: true, precision: 0, stepSize: 1 } }]
-          }
-        }
-      });
-
-      var buttonRect = elem.getBoundingClientRect();
-      var chartRect = chartWindow.getBoundingClientRect();
-      if (window.innerWidth < 700) {
-        chartWindow.style.left = 'calc(75% - ' + (chartRect.width / 2) + 'px)';
-      } else {
-        chartWindow.style.left = (buttonRect.right + 10) + 'px';
-      }
-      var buttonCenter = buttonRect.top + (buttonRect.height / 2);
-      var chartHeight = chartWindow.offsetHeight;
-      var chartTop = buttonCenter - (chartHeight / 2);
-      chartWindow.style.top = chartTop + 'px';
-
-      var closeButton = document.createElement('button');
-      closeButton.id = "chartcb";
-      closeButton.innerText = 'X';
-      closeButton.style.position = 'absolute';
-      closeButton.style.top = '5px';
-      closeButton.style.right = '5px';
-      closeButton.addEventListener('click', function() {
-        document.body.removeChild(chartWindow);
-        window.chartWindow = undefined;
-      });
-      chartWindow.appendChild(closeButton);
-      window.chartWindow = chartWindow;
-    }
-  };
-  xhr.send();
-}
-
-window.addEventListener('scroll', function() {
-  var charts = document.querySelectorAll('.chartdiv');
-  charts.forEach(function(chart) {
-    chart.parentNode.removeChild(chart);
-    window.chartWindow = undefined;
-  });
-});
 
 </script>
 
@@ -799,25 +673,8 @@ $sciname = get_sci_name($name);
 $sciname_name = $sciname . '_' . $name;
 $info_url = get_info_url($sciname);
 $url = $info_url['URL'];
-$url_title = $info_url['TITLE'];
-$image_html = '';
-$image_provider_name = strtolower($config["IMAGE_PROVIDER"] ?? 'wikipedia');
-if ($image_provider_name === 'flickr' && ! empty($config["FLICKR_API_KEY"])) {
-  $image_provider = new Flickr();
-  if (isset($_SESSION["FLICKR_FILTER_EMAIL"]) && $_SESSION["FLICKR_FILTER_EMAIL"] !== $image_provider->get_uid_from_db()['uid']) {
-    $_SESSION["FLICKR_FILTER_EMAIL"] = $image_provider->get_uid_from_db()['uid'];
-  }
-  $cache = $image_provider->get_image($sciname);
-} else {
-  $image_provider = new Wikipedia();
-  $cache = $image_provider->get_image($sciname);
-}
-if (!empty($cache['image_url'])) {
-  $image_html = "<img style='float:left;height:75px;margin-right:5px;cursor:pointer' onclick=\"showSpeciesModal('".urlencode($cache['title'])."','".$cache['photos_url']."','".$cache['author_url']."','".$cache['image_url']."','".$cache['license_url']."')\" src='".$cache['image_url']."'>";
-}
-$comnamegraph = str_replace("'", "\\'", $name);
 echo "<table>
-  <tr><th>".$image_html."$name<span style=\"font-weight:normal;\">
+  <tr><th>$name<span style=\"font-weight:normal;\">
   <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=";
   if ($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $sciname_name), $confirmed_species)) {
     echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"del\")'";
@@ -827,7 +684,7 @@ echo "<table>
 echo "><br><i>$sciname</i></span><br>
     <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
     <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
-    <img style=\"cursor:pointer;float:unset;display:inline\" title=\"View species stats\" onclick=\"generateMiniGraph(this, '$comnamegraph')\" width=20 src=\"images/chart.svg\"></th></tr>";
+  </th></tr>";
   $iter=0;
   $iter_additional=false;
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
