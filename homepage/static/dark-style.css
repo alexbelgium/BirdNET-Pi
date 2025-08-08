@@ -141,34 +141,13 @@ button:hover {
   position: fixed;
   top: 0%;
   left: 50%;
-  width: calc(45% - 2px);
-  height: calc(30% - 2px);
+  width: calc(40% - 2px);
+  height: calc(25% - 2px);
   background-color: #2b2b2b;
   z-index: 9999;
   overflow: auto;
   border-radius: 5px;
   box-shadow: 0 4px 8px #f5f5f5;
-}
-
-.graph-range {
-  text-align: center;
-  font-size: small;
-  margin-top: 4px;
-}
-
-.graph-range span {
-  cursor: pointer;
-  text-decoration: underline;
-  margin: 0 4px;
-}
-
-.species-thumb {
-  float: left;
-  width: 75px;
-  height: 75px;
-  object-fit: cover;
-  margin-right: 5px;
-  cursor: pointer;
 }
 
 .logo img {
