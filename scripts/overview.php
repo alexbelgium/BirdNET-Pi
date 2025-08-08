@@ -692,6 +692,17 @@ function generateMiniGraph(elem, comname, days = 30) {
       canvas.height = chartWindow.offsetHeight;
       chartWindow.appendChild(canvas);
 
+      // Add range selector
+      var range = document.createElement('div');
+      range.className = 'graph-range';
+      range.innerHTML = "<span data-days='30'>1m</span> | <span data-days='180'>3m</span> | <span data-days='360'>1y</span>";
+      range.addEventListener('click', function(ev) {
+        if (ev.target.dataset.days) {
+          generateMiniGraph(elem, comname, ev.target.dataset.days);
+        }
+      });
+      chartWindow.appendChild(range);
+
       // Create a new Chart.js chart
       var ctx = canvas.getContext('2d');
       var chart = new Chart(ctx, {
