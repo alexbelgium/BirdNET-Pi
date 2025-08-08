@@ -156,8 +156,6 @@ if (get_included_files()[0] === __FILE__) {
   <button onclick="hideDialog()">Close</button>
 </dialog>
 <script src="static/dialog-polyfill.js"></script>
-<script src="static/Chart.bundle.js"></script>
-<script src="static/chartjs-plugin-trendline.min.js"></script>
 <script src="static/custom-audio-player.js" defer></script>
 <script>
 var dialog = document.querySelector('dialog');
@@ -176,111 +174,6 @@ function setModalText(iter, title, text, authorlink) {
   document.getElementById('modalText').innerHTML = "<div style='white-space:nowrap'>Image link: <a target='_blank' href="+text+">"+text+"</a><br>Author link: <a target='_blank' href="+authorlink+">"+authorlink+"</a></div>";
   showDialog();
 }
-
-function showSpeciesModal(title, text, authorlink, photolink, licenseurl) {
-  document.getElementById('modalHeading').innerHTML = "Photo: \""+decodeURIComponent(title.replaceAll("+"," "))+"\" Attribution";
-  document.getElementById('modalText').innerHTML = "<div><img style='border-radius:5px;max-height: calc(100vh - 15rem);display:block;margin:0 auto;' src='"+photolink+"'></div><br><div style='white-space:nowrap'>Image link: <a target='_blank' href="+text+">"+text+"</a><br>Author link: <a target='_blank' href="+authorlink+">"+authorlink+"</a><br>License URL: <a target='_blank' href="+licenseurl+">"+licenseurl+"</a></div>";
-  showDialog();
-}
-
-function generateMiniGraph(elem, comname, days = 30) {
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/todays_detections.php?comname=' + comname + '&days=' + days);
-  xhr.onload = function() {
-    if (xhr.status === 200) {
-      var detections = JSON.parse(xhr.responseText);
-      if (typeof(window.chartWindow) != 'undefined') {
-        document.body.removeChild(window.chartWindow);
-        window.chartWindow = undefined;
-      }
-      var chartWindow = document.createElement('div');
-      chartWindow.className = "chartdiv";
-      document.body.appendChild(chartWindow);
-
-      var canvas = document.createElement('canvas');
-      chartWindow.appendChild(canvas);
-
-      var range = document.createElement('div');
-      range.className = 'graph-range';
-      range.innerHTML = "<span data-days='30'>1m</span> | <span data-days='180'>3m</span> | <span data-days='360'>1y</span>";
-      range.addEventListener('click', function(ev){
-        if (ev.target.dataset.days) {
-          generateMiniGraph(elem, comname, ev.target.dataset.days);
-        }
-      });
-      chartWindow.appendChild(range);
-
-      canvas.width = chartWindow.offsetWidth;
-      canvas.height = chartWindow.offsetHeight - range.offsetHeight;
-
-      var ctx = canvas.getContext('2d');
-      var chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: detections.map(item => item.date),
-          datasets: [{
-            label: 'Detections',
-            data: detections.map(item => item.count),
-            backgroundColor: '#9fe29b',
-            borderColor: '#77c487',
-            borderWidth: 1,
-            lineTension: 0.3,
-            pointRadius: 1,
-            pointHitRadius: 10,
-            trendlineLinear: {
-              style: "rgba(55, 99, 64, 0.5)",
-              lineStyle: "solid",
-              width: 1.5
-            }
-          }]
-        },
-        options: {
-          layout: { padding: { right: 10 } },
-          title: { display: true, text: 'Detections Over ' + days + 'd' },
-          legend: { display: false },
-          scales: {
-            xAxes: [{ display: false, gridLines: { display: false }, ticks: { autoSkip: true, maxTicksLimit: 2 } }],
-            yAxes: [{ gridLines: { display: false }, ticks: { beginAtZero: true, precision: 0, stepSize: 1 } }]
-          }
-        }
-      });
-
-      var buttonRect = elem.getBoundingClientRect();
-      var chartRect = chartWindow.getBoundingClientRect();
-      if (window.innerWidth < 700) {
-        chartWindow.style.left = 'calc(75% - ' + (chartRect.width / 2) + 'px)';
-      } else {
-        chartWindow.style.left = (buttonRect.right + 10) + 'px';
-      }
-      var buttonCenter = buttonRect.top + (buttonRect.height / 2);
-      var chartHeight = chartWindow.offsetHeight;
-      var chartTop = buttonCenter - (chartHeight / 2);
-      chartWindow.style.top = chartTop + 'px';
-
-      var closeButton = document.createElement('button');
-      closeButton.id = "chartcb";
-      closeButton.innerText = 'X';
-      closeButton.style.position = 'absolute';
-      closeButton.style.top = '5px';
-      closeButton.style.right = '5px';
-      closeButton.addEventListener('click', function() {
-        document.body.removeChild(chartWindow);
-        window.chartWindow = undefined;
-      });
-      chartWindow.appendChild(closeButton);
-      window.chartWindow = chartWindow;
-    }
-  };
-  xhr.send();
-}
-
-window.addEventListener('scroll', function() {
-  var charts = document.querySelectorAll('.chartdiv');
-  charts.forEach(function(chart) {
-    chart.parentNode.removeChild(chart);
-    window.chartWindow = undefined;
-  });
-});
 </script>  
 <div class="column center">
 <?php if(!isset($_GET['species'])){
@@ -290,15 +183,6 @@ window.addEventListener('scroll', function() {
 <?php if(isset($_GET['species'])){
   $species = $_GET['species'];
   $iter=0;
-  $image_provider = null;
-  if ($image_provider_name === 'flickr' && ! empty($config["FLICKR_API_KEY"])) {
-    $image_provider = new Flickr();
-    if (isset($_SESSION["FLICKR_FILTER_EMAIL"]) && $_SESSION["FLICKR_FILTER_EMAIL"] !== $image_provider->get_uid_from_db()['uid']) {
-      $_SESSION["FLICKR_FILTER_EMAIL"] = $image_provider->get_uid_from_db()['uid'];
-    }
-  } else {
-    $image_provider = new Wikipedia();
-  }
 while($results=$result3->fetchArray(SQLITE3_ASSOC)){
   $count = $results['COUNT(*)'];
   $maxconf = round((float)round($results['MAX(Confidence)'],2) * 100 ) . '%';
@@ -316,14 +200,19 @@ while($results=$result3->fetchArray(SQLITE3_ASSOC)){
   $info_url = get_info_url($results['Sci_Name']);
   $url = $info_url['URL'];
   $url_title = $info_url['TITLE'];
-  $cache = $image_provider->get_image($sciname);
-  $image_html = '';
-  if (!empty($cache['image_url'])) {
-  $image_html = "<img class='species-thumb' onclick=\"showSpeciesModal('".urlencode($cache['title'])."','{$cache['photos_url']}','{$cache['author_url']}','{$cache['image_url']}','{$cache['license_url']}')\" src='{$cache['image_url']}'>";
-  }
-  $comnamegraph = str_replace("'", "\\'", $species);
-  echo str_pad("<h3>$species</h3>".
-    "<table><tr>\n  <td class=\"relative\">".$image_html."<a target=\"_blank\" href=\"index.php?filename=".$results['File_Name']."\"><img title=\"Open in new tab\" class=\"copyimage\" width=25 src=\"images/copy.png\"></a><i>$sciname</i>\n  <a href=\"$url\" target=\"_blank\"><img style=\"width: unset !important; display: inline; height: 1em; cursor: pointer;\" title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>\n  <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img style=\"width: unset !important; display: inline; height: 1em; cursor: pointer;\" title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a><img style=\"width: unset !important; display: inline; height: 1em; cursor:pointer\" title=\"View species stats\" onclick=\"generateMiniGraph(this, '$comnamegraph')\" width=\"20\" src=\"images/chart.svg\"><br>\n  Occurrences: $count<br>\n  Max Confidence: $maxconf<br>\n  Best Recording: $date $time<br><br>\n  <div class='custom-audio-player' data-audio-src=\"$filename\" data-image-src=\"$filename.png\"></div>\n  </tr>\n    </table>\n  <p>Loading Images from ".ucfirst($image_provider_name)."</p>", '6096');
+  echo str_pad("<h3>$species</h3>
+    <table><tr>
+  <td class=\"relative\"><a target=\"_blank\" href=\"index.php?filename=".$results['File_Name']."\"><img title=\"Open in new tab\" class=\"copyimage\" width=25 src=\"images/copy.png\"></a><i>$sciname</i>
+  <a href=\"$url\" target=\"_blank\"><img style=\"width: unset !important; display: inline; height: 1em; cursor: pointer;\" title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
+  <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img style=\"width: unset !important; display: inline; height: 1em; cursor: pointer;\" title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a><br>
+  Occurrences: $count<br>
+  Max Confidence: $maxconf<br>
+  Best Recording: $date $time<br><br>
+  <div class='custom-audio-player' data-audio-src=\"$filename\" data-image-src=\"$filename.png\"></div>
+  </tr>
+    </table>
+  <p>Loading Images from ".ucfirst($image_provider_name)."</p>", '6096');
+  
   echo "<script>document.getElementsByTagName(\"h3\")[0].scrollIntoView();</script>";
   
   ob_flush();
