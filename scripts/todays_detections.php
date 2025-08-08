@@ -248,7 +248,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
             
           <div class="centered_image_container">
             <?php if($image_provider !== null && strlen($image[2]) > 0) { ?>
-              <img onclick='setModalText(<?php echo $iterations; ?>,"<?php echo urlencode($image[2]); ?>", "<?php echo $image[3]; ?>", "<?php echo $image[4]; ?>", "<?php echo $image[1]; ?>", "<?php echo $image[5]; ?>")' src="<?php echo $image[1]; ?>" class="img1">
+              <img onclick='setModalText(<?php echo $iterations; ?>,"<?php echo urlencode($image[2]); ?>", "<?php echo $image[3]; ?>", "<?php echo $image[4]; ?>", "<?php echo $image[1]; ?>", "<?php echo $image[5]; ?>")' src="<?php echo $image[1]; ?>" class="img1 species-thumb">
             <?php } ?>
 
             <?php echo $todaytable['Time'];?><br>   
@@ -267,7 +267,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
           <div>
             <div>
             <?php if($image_provider !== null && (isset($_GET['hard_limit']) || $_GET['kiosk'] == true) && strlen($image[2]) > 0) { ?>
-              <img style="float:left;height:75px;" onclick='setModalText(<?php echo $iterations; ?>,"<?php echo urlencode($image[2]); ?>", "<?php echo $image[3]; ?>", "<?php echo $image[4]; ?>", "<?php echo $image[1]; ?>", "<?php echo $image[5]; ?>")' src="<?php echo $image[1]; ?>" id="birdimage" class="img1">
+              <img class="img1 species-thumb" onclick='setModalText(<?php echo $iterations; ?>,"<?php echo urlencode($image[2]); ?>", "<?php echo $image[3]; ?>", "<?php echo $image[4]; ?>", "<?php echo $image[1]; ?>", "<?php echo $image[5]; ?>")' src="<?php echo $image[1]; ?>" id="birdimage">
             <?php } ?>
           </div>
             <div>
@@ -577,10 +577,10 @@ window.addEventListener("load", function(){
 
 <script src="static/custom-audio-player.js"></script>
 <script>
-function generateMiniGraph(elem, comname) {
+function generateMiniGraph(elem, comname, days = 30) {
   // Make an AJAX call to fetch the number of detections for the bird species
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/todays_detections.php?comname=' + comname);
+  xhr.open('GET', '/todays_detections.php?comname=' + comname + '&days=' + days);
   xhr.onload = function() {
     if (xhr.status === 200) {
       var detections = JSON.parse(xhr.responseText);
@@ -597,9 +597,21 @@ function generateMiniGraph(elem, comname) {
 
             // Create a canvas element for the chart
       var canvas = document.createElement('canvas');
-      canvas.width = chartWindow.offsetWidth;
-      canvas.height = chartWindow.offsetHeight;
       chartWindow.appendChild(canvas);
+
+      // Add range selector
+      var range = document.createElement('div');
+      range.className = 'graph-range';
+      range.innerHTML = "<span data-days='30'>1m</span> | <span data-days='180'>3m</span> | <span data-days='360'>1y</span>";
+      range.addEventListener('click', function(ev) {
+        if (ev.target.dataset.days) {
+          generateMiniGraph(elem, comname, ev.target.dataset.days);
+        }
+      });
+      chartWindow.appendChild(range);
+
+      canvas.width = chartWindow.offsetWidth;
+      canvas.height = chartWindow.offsetHeight - range.offsetHeight;
 
       // Create a new Chart.js chart
       var ctx = canvas.getContext('2d');
