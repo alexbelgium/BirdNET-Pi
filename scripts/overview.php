@@ -2,7 +2,6 @@
 error_reporting(E_ERROR);
 ini_set('display_errors',1);
 ini_set('session.gc_maxlifetime', 7200);
-ini_set('user_agent', 'PHP_Flickr/1.0');
 session_set_cookie_params(7200);
 session_start();
 require_once 'scripts/common.php';
@@ -61,7 +60,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
     $_SESSION['images'] = [];
   }
   $iterations = 0;
-  $flickr = null;
+  $image_provider = null;
 
   // hopefully one of the 5 most recent detections has an image that is valid, we'll use that one as the most recent detection until the newer ones get their images created
   while($mostrecent = $result4->fetchArray(SQLITE3_ASSOC)) {
@@ -78,24 +77,25 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
 
       $iterations++;
 
-      if (!empty($config["FLICKR_API_KEY"])) {
-        if ($flickr === null) {
-          $flickr = new Flickr();
-        }
-        if ($_SESSION["FLICKR_FILTER_EMAIL"] !== $flickr->get_uid_from_db()['uid']) {
-          if (isset($_SESSION["FLICKR_FILTER_EMAIL"])) {
+      if (!empty($config["IMAGE_PROVIDER"])) {
+        if ($image_provider === null) {
+          if ($config["IMAGE_PROVIDER"] === 'FLICKR') {
+            $image_provider = new Flickr();
+          } else {
+            $image_provider = new Wikipedia();
+          }
+          if ($image_provider->is_reset()) {
             $_SESSION['images'] = [];
           }
-          $_SESSION["FLICKR_FILTER_EMAIL"] = $flickr->get_uid_from_db()['uid'];
         }
 
-        // if we already searched flickr for this species before, use the previous image rather than doing an unneccesary api call
+        // if we already searched for this species before, use the previous image rather than doing an unneccesary api call
         $key = array_search($comname, array_column($_SESSION['images'], 0));
         if ($key !== false) {
           $image = $_SESSION['images'][$key];
         } else {
-          $flickr_cache = $flickr->get_image($mostrecent['Sci_Name']);
-          array_push($_SESSION["images"], array($comname, $flickr_cache["image_url"], $flickr_cache["title"], $flickr_cache["photos_url"], $flickr_cache["author_url"], $flickr_cache["license_url"]));
+          $cached_image = $image_provider->get_image($mostrecent['Sci_Name']);
+          array_push($_SESSION["images"], array($comname, $cached_image["image_url"], $cached_image["title"], $cached_image["photos_url"], $cached_image["author_url"], $cached_image["license_url"]));
           $image = $_SESSION['images'][count($_SESSION['images']) - 1];
         }
       }
@@ -123,7 +123,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isse
           <tr>
             <td class="relative"><a target="_blank" href="index.php?filename=<?php echo $mostrecent['File_Name']; ?>"><img class="copyimage" title="Open in new tab" width="25" height="25" src="images/copy.png"></a>
             <div class="centered_image_container" style="margin-bottom: 0px !important;">
-              <?php if(!empty($config["FLICKR_API_KEY"]) && strlen($image[2]) > 0) { ?>
+              <?php if(!empty($config["IMAGE_PROVIDER"]) && strlen($image[2]) > 0) { ?>
                 <img onclick='setModalText(<?php echo $iterations; ?>,"<?php echo urlencode($image[2]); ?>", "<?php echo $image[3]; ?>", "<?php echo $image[4]; ?>", "<?php echo $image[1]; ?>", "<?php echo $image[5]; ?>")' src="<?php echo $image[1]; ?>" class="img1">
               <?php } ?>
               <form action="" method="GET">
@@ -348,10 +348,9 @@ while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
 if (!isset($_SESSION['images'])) {
     $_SESSION['images'] = [];
 }
-$flickr = null;
 
 function display_species($species_list, $title, $show_last_seen=false) {
-    global $config, $_SESSION, $flickr;
+    global $config, $_SESSION, $image_provider;
     $species_count = count($species_list);
     if ($species_count > 0): ?>
         <div class="<?php echo strtolower(str_replace(' ', '_', $title)); ?>">
@@ -377,24 +376,27 @@ function display_species($species_list, $title, $show_last_seen=false) {
                         $url_title = $info_url['TITLE'];
 
                         $image_url = ""; // Default empty image URL
-
-                        if (!empty($config["FLICKR_API_KEY"])) {
-                            if ($flickr === null) {
-                                $flickr = new Flickr();
+                        
+                        if (!empty($config["IMAGE_PROVIDER"])) {
+                          if ($image_provider === null) {
+                            if ($config["IMAGE_PROVIDER"] === 'FLICKR') {
+                              $image_provider = new Flickr();
+                            } else {
+                              $image_provider = new Wikipedia();
                             }
-                            if (isset($_SESSION["FLICKR_FILTER_EMAIL"]) && $_SESSION["FLICKR_FILTER_EMAIL"] !== $flickr->get_uid_from_db()['uid']) {
-                                unset($_SESSION['images']);
-                                $_SESSION["FLICKR_FILTER_EMAIL"] = $flickr->get_uid_from_db()['uid'];
+                            if ($image_provider->is_reset()) {
+                              $_SESSION['images'] = [];
                             }
+                          }
 
-                            // Check if the Flickr image has been cached in the session
+                            // Check if the image has been cached in the session
                             $key = array_search($comname, array_column($_SESSION['images'], 0));
                             if ($key !== false) {
                                 $image = $_SESSION['images'][$key];
                             } else {
                                 // Retrieve the image from Flickr API and cache it
-                                $flickr_cache = $flickr->get_image($todaytable['Sci_Name']);
-                                array_push($_SESSION["images"], array($comname, $flickr_cache["image_url"], $flickr_cache["title"], $flickr_cache["photos_url"], $flickr_cache["author_url"], $flickr_cache["license_url"]));
+                                $cached_image = $image_provider->get_image($todaytable['Sci_Name']);
+                                array_push($_SESSION["images"], array($comname, $cached_image["image_url"], $cached_image["title"], $cached_image["photos_url"], $cached_image["author_url"], $cached_image["license_url"]));
                                 $image = $_SESSION['images'][count($_SESSION['images']) - 1];
                             }
                             $image_url = $image[1] ?? ""; // Get the image URL if available
