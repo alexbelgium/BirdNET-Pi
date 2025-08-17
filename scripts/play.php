@@ -11,6 +11,11 @@ $home = get_home();
 $config = get_config();
 $user = get_user();
 
+$confirmed_species = [];
+if ($config['CONFIRM_SPECIES'] == 1 && file_exists($home."/BirdNET-Pi/scripts/confirmed_species_list.txt")) {
+  $confirmed_species = array_map('trim', file($home."/BirdNET-Pi/scripts/confirmed_species_list.txt", FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+}
+
 $db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
 $db->busyTimeout(1000);
 
@@ -385,6 +390,7 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
    <form action="views.php" method="GET">
       <input type="hidden" name="view" value="Recordings">
       <input type="hidden" name="<?php echo $view; ?>" value="<?php echo $_GET['date']; ?>">
+      <?php if(isset($_GET['only_confirmed'])){ echo '<input type="hidden" name="only_confirmed" value="on">'; } ?>
       <button <?php if(!isset($_GET['sort']) || $_GET['sort'] == "alphabetical"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="alphabetical">
          <img src="images/sort_abc.svg" title="Sort by alphabetical" alt="Sort by alphabetical">
       </button>
@@ -397,12 +403,22 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
       <button <?php if(isset($_GET['sort']) && $_GET['sort'] == "date"){ echo "class='sortbutton active'";} else { echo "class='sortbutton'"; }?> type="submit" name="sort" value="date">
          <img src="images/sort_date.svg" title="Sort by date" alt="Sort by date">
       </button>
+      <?php if($config['CONFIRM_SPECIES'] == 1){ ?>
+      <br>
+      <label style="cursor: pointer; margin-top: 10px; margin-bottom: 10px;font-weight: normal; display: inline-flex; align-items: center; justify-content: center;">
+        <input type="checkbox" name="only_confirmed" <?= isset($_GET['only_confirmed']) ? 'checked' : '' ?> onchange="submit()" style="display:none;">
+        <span style="width: 40px; height: 20px; background: <?= isset($_GET['only_confirmed']) ? '#555555' : 'rgba(85, 85, 85, 0.3)' ?>; border: 1px solid #777777; border-radius: 20px; display: inline-block; position: relative; margin-right: 8px; transition: background 0.4s, border 0.4s; box-sizing: border-box;">
+        <span style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 1.5px; left: 2px; transition: 0.4s; display: flex; align-items: center; justify-content: center; font-size: 14px; color: black; <?= isset($_GET['only_confirmed']) ? 'transform: translateX(20px);' : '' ?>">
+        <?= isset($_GET['only_confirmed']) ? '✓' : '' ?>
+      </span></span>Show Unconfirmed Species</label>
+      <?php } ?>
    </form>
 </div>
 <br>
 <?php } ?>
 <form action="views.php" method="GET">
 <input type="hidden" name="view" value="Recordings">
+<?php if(isset($_GET['only_confirmed'])){ echo '<input type="hidden" name="only_confirmed" value="on">'; } ?>
 <table>
 <?php
   #By Date
@@ -419,6 +435,9 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
     $values = array();
     while($results=$result->fetchArray(SQLITE3_ASSOC))
     {
+      if(isset($_GET['only_confirmed']) && in_array($results['Sci_Name'], $confirmed_species)) {
+        continue;
+      }
       $birds[] = $results['Sci_Name'];
       $values[] = get_label($results, $_GET['sort']);
     }
@@ -439,7 +458,7 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
         if ($index < count($birds)) {
           ?>
           <td class="spec">
-              <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $values[$index];?></button>
+              <button type="submit" name="species" data-sci="<?php echo $birds[$index];?>" value="<?php echo $birds[$index];?>"><?php echo $values[$index];?></button>
           </td>
           <?php
         } else {
@@ -456,6 +475,9 @@ while($results=$result->fetchArray(SQLITE3_ASSOC))
 {
   $dir_name = str_replace("'", '', $results['Com_Name']);
   if(realpath($home."/BirdSongs/Extracted/By_Date/".$date."/".str_replace(" ", "_", $dir_name)) !== false){
+    if(isset($_GET['only_confirmed']) && in_array($results['Sci_Name'], $confirmed_species)) {
+      continue;
+    }
     $birds[] = $results['Sci_Name'];
     $values[] = get_label($results, $_GET['sort'], $_GET['date']);
   }
@@ -477,7 +499,7 @@ for ($row = 0; $row < $num_rows; $row++) {
     if ($index < count($birds)) {
       ?>
       <td class="spec">
-          <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $values[$index];?></button>
+          <button type="submit" name="species" data-sci="<?php echo $birds[$index];?>" value="<?php echo $birds[$index];?>"><?php echo $values[$index];?></button>
       </td>
       <?php
     } else {

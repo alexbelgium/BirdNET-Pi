@@ -267,6 +267,8 @@ SILENCE_UPDATE_INDICATOR=0
 
 RAW_SPECTROGRAM=0
 
+CONFIRM_SPECIES=0
+
 ## CUSTOM_IMAGE and CUSTOM_IMAGE_TITLE allow you to show a custom image on the
 ## Overview page of your BirdNET-Pi. This can be used to show a dynamically 
 ## updating picture of your garden, for example.
@@ -295,3 +297,4 @@ chmod g+w ${birdnet_conf}
 [ -d /etc/birdnet ] || sudo mkdir /etc/birdnet
 sudo ln -sf $birdnet_conf /etc/birdnet/birdnet.conf
 grep -ve '^#' -e '^$' /etc/birdnet/birdnet.conf > $my_dir/firstrun.ini
+ln -fs $my_dir/confirmed_species_list.txt $my_dir/scripts

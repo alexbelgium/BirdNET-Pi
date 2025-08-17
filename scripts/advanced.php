@@ -146,12 +146,21 @@ if(isset($_GET['submit'])) {
     }
 }
 
-if (isset($_GET["max_files_species"])) {
+  if (isset($_GET["max_files_species"])) {
     $max_files_species = $_GET["max_files_species"];
     if (strcmp($max_files_species, $config['MAX_FILES_SPECIES']) !== 0) {
         $contents = preg_replace("/MAX_FILES_SPECIES=.*/", "MAX_FILES_SPECIES=$max_files_species", $contents);
     }
 }
+
+  if(isset($_GET["confirm_species"])) {
+    $confirm_species = 1;
+    if(strcmp($confirm_species,$config['CONFIRM_SPECIES']) !== 0) {
+      $contents = preg_replace("/CONFIRM_SPECIES=.*/", "CONFIRM_SPECIES=$confirm_species", $contents);
+    }
+  } else {
+    $contents = preg_replace("/CONFIRM_SPECIES=.*/", "CONFIRM_SPECIES=0", $contents);
+  }
 	
   if(isset($_GET["privacy_threshold"])) {
     $privacy_threshold = $_GET["privacy_threshold"];
@@ -467,6 +476,13 @@ foreach($formats as $format){
       <label for="rare_species_threshold">Rare Species Threshold (days): </label>
       <input type="number" name="rare_species_threshold" min="1" value="<?php echo isset($newconfig['RARE_SPECIES_THRESHOLD']) ? $newconfig['RARE_SPECIES_THRESHOLD'] : 30; ?>"><br>
       <p>This setting defines after how many days since last detection a species is considered rare. Default is 30 days.</p>
+      </td></tr></table><br>
+
+      <table class="settingstable"><tr><td>
+      <h2>Option : Confirmed Species</h2>
+      <label for="confirm_species">Confirmation of species: </label>
+      <input type="checkbox" name="confirm_species" <?php if($newconfig['CONFIRM_SPECIES'] == 1) { echo "checked"; };?> >
+      <p>This allows to visually mark species that were manually confirmed as existing in the area. A new question mark appears next to species names in the Recordings page. Clicking it changes the icon to a checkmark, and add the species to the file confirmed_species_list.txt</p>
       </td></tr></table><br>
 
       <table class="settingstable"><tr><td>

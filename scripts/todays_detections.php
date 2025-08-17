@@ -238,7 +238,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
             <?php } ?>
 
             <?php echo $todaytable['Time'];?><br>   
-          <b><a class="a2" href="<?php echo $url;?>" target="top"><?php echo $todaytable['Com_Name'];?></a></b><br>
+          <b><a class="a2" data-sci="<?php echo $todaytable['Sci_Name']; ?>" href="<?php echo $url;?>" target="top"><?php echo $todaytable['Com_Name'];?></a></b><br>
           <i><?php echo $todaytable['Sci_Name'];?></i>
           <a href="<?php echo $url;?>" target="_blank"><img style="cursor:pointer;float:unset;display:inline" title=<?php echo $url_title;?> src="images/info.png" width="20"></a>
           <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style=";cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="20"></a>
@@ -259,7 +259,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
             <div>
             <form action="" method="GET">
                     <input type="hidden" name="view" value="Species Stats">
-		    <button class="a2" type="submit" name="species" value="<?php echo $todaytable['Com_Name'];?>"><?php echo $todaytable['Com_Name'];?></button>
+                    <button class="a2" type="submit" name="species" data-sci="<?php echo $todaytable['Sci_Name'];?>" value="<?php echo $todaytable['Com_Name'];?>"><?php echo $todaytable['Com_Name'];?></button>
 	            <br><i>
 		    <?php echo $todaytable['Sci_Name'];?>
 	                <br>
