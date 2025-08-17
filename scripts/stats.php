@@ -57,6 +57,7 @@ if (get_included_files()[0] === __FILE__) {
   <?php
   $birds = array();
   $values = array();
+  $sci = array();
 
   while($results=$result->fetchArray(SQLITE3_ASSOC))
   {
@@ -65,6 +66,7 @@ if (get_included_files()[0] === __FILE__) {
     $filename = "/By_Date/".$results['Date']."/".$comname."/".$results['File_Name'];
     $birds[] = $results['Com_Name'];
     $values[] = get_label($results, $_GET['sort']);
+    $sci[] = $results['Sci_Name'];
   }
 
   if(count($birds) > 45) {
@@ -83,7 +85,7 @@ if (get_included_files()[0] === __FILE__) {
       if ($index < count($birds)) {
         ?>
         <td>
-            <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $values[$index];?></button>
+            <button type="submit" name="species" data-sci="<?php echo $sci[$index];?>" value="<?php echo $birds[$index];?>"><?php echo $values[$index];?></button>
         </td>
         <?php
       } else {

@@ -431,6 +431,41 @@ function installKeyAndSwipeEventHandler() {
 }
 
 installKeyAndSwipeEventHandler();
+
+function toggleConfirmed(sci, el) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', 'scripts/confirm_species.php');
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      el.src = (xhr.responseText.trim() === 'confirmed') ? 'images/check.svg' : 'images/question.svg';
+    }
+  };
+  xhr.send('sci_name=' + encodeURIComponent(sci));
+}
+
+function setupConfirmedIcons() {
+  fetch('scripts/confirmed_species_list.txt?' + Date.now())
+    .then(r => r.text())
+    .then(text => {
+      var confirmed = text.split(/\r?\n/).filter(Boolean);
+      document.querySelectorAll('[data-sci]').forEach(function(el) {
+        var sci = el.getAttribute('data-sci');
+        var img = document.createElement('img');
+        img.className = 'confirm-icon';
+        img.style.height = '1em';
+        img.style.cursor = 'pointer';
+        img.src = confirmed.includes(sci) ? 'images/check.svg' : 'images/question.svg';
+        img.addEventListener('click', function(e) {
+          e.stopPropagation();
+          toggleConfirmed(sci, img);
+        });
+        el.insertAdjacentElement('afterend', img);
+      });
+    }).catch(function(){});
+}
+
+document.addEventListener('DOMContentLoaded', setupConfirmedIcons);
 </script>
 </div>
 </body>

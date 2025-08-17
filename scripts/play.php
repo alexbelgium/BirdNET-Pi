@@ -439,7 +439,7 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
         if ($index < count($birds)) {
           ?>
           <td class="spec">
-              <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $values[$index];?></button>
+              <button type="submit" name="species" data-sci="<?php echo $birds[$index];?>" value="<?php echo $birds[$index];?>"><?php echo $values[$index];?></button>
           </td>
           <?php
         } else {
@@ -477,7 +477,7 @@ for ($row = 0; $row < $num_rows; $row++) {
     if ($index < count($birds)) {
       ?>
       <td class="spec">
-          <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $values[$index];?></button>
+          <button type="submit" name="species" data-sci="<?php echo $birds[$index];?>" value="<?php echo $birds[$index];?>"><?php echo $values[$index];?></button>
       </td>
       <?php
     } else {
