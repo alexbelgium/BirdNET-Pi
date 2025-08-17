@@ -449,14 +449,16 @@ function setupConfirmedIcons() {
   fetch('scripts/confirmed_species_list.txt?' + Date.now())
     .then(r => r.text())
     .then(text => {
-      var confirmed = text.split(/\r?\n/).filter(Boolean);
+      var confirmed = new Set(text.split(/\r?\n/)
+        .map(l => l.split('_')[0].trim())
+        .filter(Boolean));
       document.querySelectorAll('[data-sci]').forEach(function(el) {
         var sci = el.getAttribute('data-sci');
         var img = document.createElement('img');
         img.className = 'confirm-icon';
         img.style.height = '1em';
         img.style.cursor = 'pointer';
-        img.src = confirmed.includes(sci) ? 'images/check.svg' : 'images/question.svg';
+        img.src = confirmed.has(sci) ? 'images/check.svg' : 'images/question.svg';
         img.addEventListener('click', function(e) {
           e.stopPropagation();
           toggleConfirmed(sci, img);

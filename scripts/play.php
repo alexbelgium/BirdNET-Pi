@@ -13,7 +13,11 @@ $user = get_user();
 
 $confirmed_species = [];
 if ($config['CONFIRM_SPECIES'] == 1 && file_exists($home."/BirdNET-Pi/scripts/confirmed_species_list.txt")) {
-  $confirmed_species = array_map('trim', file($home."/BirdNET-Pi/scripts/confirmed_species_list.txt", FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+  $lines = file($home."/BirdNET-Pi/scripts/confirmed_species_list.txt", FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+  $confirmed_species = array_map(function($line) {
+    return trim(explode('_', $line)[0]);
+  }, $lines);
+  $confirmed_species = array_values(array_unique(array_filter($confirmed_species)));
 }
 
 $db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
