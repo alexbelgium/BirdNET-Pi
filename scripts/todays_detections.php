@@ -46,23 +46,24 @@ ensure_db_ok($statement4);
 $result4 = $statement4->execute();
 $mostrecent = $result4->fetchArray(SQLITE3_ASSOC);
 
-$statement5 = $db->prepare('SELECT COUNT(DISTINCT(Com_Name)) FROM detections WHERE Date == Date(\'now\', \'localtime\')');
+$statement5 = $db->prepare('SELECT COUNT(DISTINCT(Sci_Name)) FROM detections WHERE Date == Date(\'now\', \'localtime\')');
 ensure_db_ok($statement5);
 $result5 = $statement5->execute();
 $todayspeciestally = $result5->fetchArray(SQLITE3_ASSOC);
 
-$statement6 = $db->prepare('SELECT COUNT(DISTINCT(Com_Name)) FROM detections');
+$statement6 = $db->prepare('SELECT COUNT(DISTINCT(Sci_Name)) FROM detections');
 ensure_db_ok($statement6);
 $result6 = $statement6->execute();
 $totalspeciestally = $result6->fetchArray(SQLITE3_ASSOC);
 
 if(isset($_GET['comname'])) {
- $birdName = $_GET['comname'];
- $birdName = str_replace("_", " ", $birdName);
+ $birdName = htmlspecialchars_decode($_GET['comname'], ENT_QUOTES);
 
+// Set default days to 30 if not provided
+$days = isset($_GET['days']) ? intval($_GET['days']) : 30;
 
 // Prepare a SQL statement to retrieve the detection data for the specified bird
-$stmt = $db->prepare('SELECT Date, COUNT(*) AS Detections FROM detections WHERE Com_Name = :com_name AND Date BETWEEN DATE("now", "-30 days") AND DATE("now") GROUP BY Date');
+$stmt = $db->prepare('SELECT Date, COUNT(*) AS Detections FROM detections WHERE Com_Name = :com_name AND Date BETWEEN DATE("now", "-' . $days . ' days") AND DATE("now") GROUP BY Date');
 
 // Bind the bird name parameter to the SQL statement
 $stmt->bindValue(':com_name', $birdName);
@@ -192,6 +193,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
     $iterations++;
 
     $comname = preg_replace('/ /', '_', $todaytable['Com_Name']);
+    $comnamegraph = str_replace("'", "\'", $todaytable['Com_Name']);
     $comname = preg_replace('/\'/', '', $comname);
     $filename = "/By_Date/".date('Y-m-d')."/".$comname."/".$todaytable['File_Name'];
     $filename_formatted = $todaytable['Date']."/".$comname."/".$todaytable['File_Name'];
@@ -240,9 +242,9 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
           <i><?php echo $todaytable['Sci_Name'];?></i>
           <a href="<?php echo $url;?>" target="_blank"><img style="cursor:pointer;float:unset;display:inline" title=<?php echo $url_title;?> src="images/info.png" width="20"></a>
           <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style=";cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="20"></a>
-          <img style=";cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comname; ?>')" width=20 src="images/chart.svg"><br>
+          <img style=";cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>')" width=20 src="images/chart.svg"><br>
           <b>Confidence:</b> <?php echo round((float)round($todaytable['Confidence'],2) * 100 ) . '%';?><br></div><br>
-          <video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster="<?php echo $filename.".png";?>" preload="none" title="<?php echo $filename;?>"><source preload="none" src="<?php echo $filename;?>"></video>
+          <div class='custom-audio-player' data-audio-src="<?php echo $filename; ?>" data-image-src="<?php echo $filename.".png";?>"></div>
           </td>
         <?php } else { //legacy mode ?>
           <tr class="relative" id="<?php echo $iterations; ?>">
@@ -264,7 +266,7 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
 	                    <a href="<?php echo $url;?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title=<?php echo $url_title;?> src="images/info.png" width="25"></a>
 			    <?php if($_GET['kiosk'] == false){?>
 	    		    <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="25"></a>
-	                    <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comname; ?>')" width=25 src="images/chart.svg">
+	                    <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>')" width=25 src="images/chart.svg">
 	                    <a target="_blank" href="index.php?filename=<?php echo $todaytable['File_Name']; ?>"><img style="height: 1em;cursor:pointer;float:unset;display:inline" class="copyimage-mobile" title="Open in new tab" width=16 src="images/copy.png"></a>
 		    	    <?php } ?></i>
 	                <br>
@@ -313,10 +315,10 @@ if(isset($_GET['today_stats'])) {
       </form>
       <td><?php echo $hourcount['COUNT(*)'];?></td>
       <form action="" method="GET">
-      <td><?php if($kiosk == false){?><button type="submit" name="view" value="Species Stats"><?php echo $totalspeciestally['COUNT(DISTINCT(Com_Name))'];?></button><?php }else { echo $totalspeciestally['COUNT(DISTINCT(Com_Name))']; }?></td>
+      <td><?php if($kiosk == false){?><button type="submit" name="view" value="Species Stats"><?php echo $totalspeciestally['COUNT(DISTINCT(Sci_Name))'];?></button><?php }else { echo $totalspeciestally['COUNT(DISTINCT(Sci_Name))']; }?></td>
       </form>
       <form action="" method="GET">
-      <td><input type="hidden" name="view" value="Recordings"><?php if($kiosk == false){?><button type="submit" name="date" value="<?php echo date('Y-m-d');?>"><?php echo $todayspeciestally['COUNT(DISTINCT(Com_Name))'];?></button><?php } else { echo $todayspeciestally['COUNT(DISTINCT(Com_Name))']; }?></td>
+      <td><input type="hidden" name="view" value="Recordings"><?php if($kiosk == false){?><button type="submit" name="date" value="<?php echo date('Y-m-d');?>"><?php echo $todayspeciestally['COUNT(DISTINCT(Sci_Name))'];?></button><?php } else { echo $todayspeciestally['COUNT(DISTINCT(Sci_Name))']; }?></td>
       </form>
       </tr>
     </table>
@@ -417,8 +419,8 @@ if (get_included_files()[0] === __FILE__) {
       <td><?php echo $totalcount['COUNT(*)'];?></td>
       <td><input type="hidden" name="view" value="Recordings"><?php if($kiosk == false){?><button type="submit" name="date" value="<?php echo date('Y-m-d');?>"><?php echo $todaycount['COUNT(*)'];?></button><?php } else { echo $todaycount['COUNT(*)']; }?></td>
       <td><?php echo $hourcount['COUNT(*)'];?></td>
-      <td><?php if($kiosk == false){?><button type="submit" name="view" value="Species Stats"><?php echo $totalspeciestally['COUNT(DISTINCT(Com_Name))'];?></button><?php }else { echo $totalspeciestally['COUNT(DISTINCT(Com_Name))']; }?></td>
-      <td><input type="hidden" name="view" value="Recordings"><?php if($kiosk == false){?><button type="submit" name="date" value="<?php echo date('Y-m-d');?>"><?php echo $todayspeciestally['COUNT(DISTINCT(Com_Name))'];?></button><?php } else { echo $todayspeciestally['COUNT(DISTINCT(Com_Name))']; }?></td>
+      <td><?php if($kiosk == false){?><button type="submit" name="view" value="Species Stats"><?php echo $totalspeciestally['COUNT(DISTINCT(Sci_Name))'];?></button><?php }else { echo $totalspeciestally['COUNT(DISTINCT(Sci_Name))']; }?></td>
+      <td><input type="hidden" name="view" value="Recordings"><?php if($kiosk == false){?><button type="submit" name="date" value="<?php echo date('Y-m-d');?>"><?php echo $todayspeciestally['COUNT(DISTINCT(Sci_Name))'];?></button><?php } else { echo $todayspeciestally['COUNT(DISTINCT(Sci_Name))']; }?></td>
       </tr>
     </table></form></div>
 
@@ -509,7 +511,8 @@ function loadDetections(detections_limit, element=undefined) {
     } else {
      document.getElementById("detections_table").innerHTML= this.responseText;
     }
-    
+    // Reinitialize custom audio players for newly loaded elements
+    initCustomAudioPlayers();    
   }
   if(searchterm != ""){
     xhttp.open("GET", "todays_detections.php?ajax_detections=true&display_limit="+detections_limit+"&searchterm="+searchterm, true);
@@ -558,6 +561,7 @@ window.addEventListener("load", function(){
 }
 </style>
 
+<script src="static/custom-audio-player.js"></script>
 <script>
 function generateMiniGraph(elem, comname) {
   // Make an AJAX call to fetch the number of detections for the bird species
