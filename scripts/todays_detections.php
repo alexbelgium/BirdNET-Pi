@@ -397,13 +397,22 @@ if (get_included_files()[0] === __FILE__) {
 
   }
 
+  function shorten(u) {
+    if (u.length < 48) {
+      return u;
+    }
+    uend = u.slice(u.length - 16);
+    ustart = u.substr(0, 32);
+    var shorter = ustart + '...' + uend;
+    return shorter;
+  }
+
   function setModalText(iter, title, text, authorlink, photolink, licenseurl) {
+    let text_display = shorten(text);
+    let authorlink_display = shorten(authorlink);
+    let licenseurl_display = shorten(licenseurl);
     document.getElementById('modalHeading').innerHTML = "Photo: \""+decodeURIComponent(title.replaceAll("+"," "))+"\" Attribution";
-    <?php if($kiosk == false) { ?>
-      document.getElementById('modalText').innerHTML = "<div><img style='border-radius:5px;max-height: calc(100vh - 15rem);display: block;margin: 0 auto;' src='"+photolink+"'></div><br><div style='white-space:nowrap'>Image link: <a target='_blank' href="+text+">"+text+"</a><br>Author link: <a target='_blank' href="+authorlink+">"+authorlink+"</a><br>License URL: <a href="+licenseurl+" target='_blank'>"+licenseurl+"</a></div>";
-    <?php } else { ?>
-      document.getElementById('modalText').innerHTML = "<div><img style='border-radius:5px;max-height: calc(100vh - 15rem);display: block;margin: 0 auto;' src='"+photolink+"'></div><br><div style='white-space:nowrap'>Image link: <a target='_blank'>"+text+"</a><br>Author link: <a target='_blank'>"+authorlink+"</a><br>License URL: <a target='_blank'>"+licenseurl+"</a></div>";
-    <?php } ?>
+    document.getElementById('modalText').innerHTML = "<div><img style='border-radius:5px;max-height: calc(100vh - 15rem);display: block;margin: 0 auto;' src='"+photolink+"'></div><br><div style='white-space:nowrap'>Image link: <a target='_blank' href="+text+">"+text_display+"</a><br>Author link: <a target='_blank' href="+authorlink+">"+authorlink_display+"</a><br>License URL: <a href="+licenseurl+" target='_blank'>"+licenseurl_display+"</a></div>";
     last_photo_link = text;
     showDialog();
   }
