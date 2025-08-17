@@ -141,6 +141,7 @@ if [ "$PY_VERSION" == 39 ] && [ "$tf_version" != "2.11.0" ] || [ "$PY_VERSION" !
 fi
 
 ensure_python_package inotify inotify
+ensure_python_package soundfile soundfile
 
 if ! which inotifywait &>/dev/null;then
   ensure_apt_updated

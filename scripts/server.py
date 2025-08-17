@@ -94,9 +94,6 @@ def loadMetaModel():
 
 
 def predictFilter(lat, lon, week):
-
-    global M_INTERPRETER
-
     # Does interpreter exist?
     if M_INTERPRETER is None:
         loadMetaModel()
@@ -209,7 +206,6 @@ def custom_sigmoid(x, sensitivity=1.0):
 
 
 def predict(sample, sensitivity):
-    global INTERPRETER
     # Make a prediction
     INTERPRETER.set_tensor(INPUT_LAYER_INDEX, np.array(sample[0], dtype='float32'))
     if model == "BirdNET_6K_GLOBAL_MODEL":
@@ -240,7 +236,7 @@ def predict(sample, sensitivity):
 
 
 def analyzeAudioData(chunks, lat, lon, week, sens, overlap,):
-    global INTERPRETER, WEEK
+    global WEEK
 
     sensitivity = max(0.5, min(1.0 - (sens - 1.0), 1.5))
 
