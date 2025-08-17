@@ -13,6 +13,8 @@ $config = get_config();
 $color_scheme = get_color_scheme();
 set_timezone();
 
+$restore = "cat $home/BirdSongs/restore.log";
+
 if(is_authenticated() && (!isset($_SESSION['behind']) || !isset($_SESSION['behind_time']) || time() > $_SESSION['behind_time'] + 86400)) {
   shell_exec("sudo -u".$user." git -C ".$home."/BirdNET-Pi fetch > /dev/null 2>/dev/null &");
   $str = trim(shell_exec("sudo -u".$user." git -C ".$home."/BirdNET-Pi status"));
@@ -71,7 +73,9 @@ elseif ($config["LONGITUDE"] == "0.000") {
   <button type="button" href="javascript:void(0);" class="icon" onclick="myFunction()"><img src="images/menu.png"></button>
 </div>
 </form>
-
+<script type="text/javascript" src="static/plupload.full.min.js"></script>
+<!--<script type="text/javascript" src="static/moxie.js"></script>
+<script type="text/javascript" src="static/plupload.dev.js"></script>-->
 <script>
 window.onload = function() {
   var elements = document.querySelectorAll("button[name=view]");
@@ -109,6 +113,32 @@ function copyOutput(elem) {
 
 <div class="views">
 <?php
+function update_species_list($filename, $species, $add) {
+    if($add){
+        $str = file_get_contents($filename);
+        $str = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $str);
+        file_put_contents("$filename", "$str");
+        foreach ($species as $selectedOption) {
+            if (strpos($str, $selectedOption) === false) {
+                file_put_contents($filename, htmlspecialchars_decode($selectedOption, ENT_QUOTES)."\n", FILE_APPEND);
+            }
+        }
+    } else {
+        $str = file_get_contents($filename);
+        $str = preg_replace('/^\h*\v+/m', '', $str);
+        file_put_contents($filename, "$str");
+        foreach($species as $selectedOption) {
+              $content = file_get_contents($filename);
+              $newcontent = str_replace($selectedOption, "", "$content");
+              $newcontent = str_replace(htmlspecialchars_decode($selectedOption, ENT_QUOTES), "", "$newcontent");
+              file_put_contents($filename, "$newcontent");
+        }
+        $str = file_get_contents($filename);
+        $str = preg_replace('/^\h*\v+/m', '', $str);
+        file_put_contents($filename, "$str");
+    }
+}
+
 if(isset($_GET['view'])){
   if($_GET['view'] == "System Info"){echo "<iframe src='phpsysinfo/index.php'></iframe>";}
   if($_GET['view'] == "System Controls"){
@@ -151,86 +181,27 @@ if(isset($_GET['view'])){
   if($_GET['view'] == "Advanced"){include('scripts/advanced.php');}
   if($_GET['view'] == "Included"){
     ensure_authenticated();
-    if(isset($_GET['species']) && isset($_GET['add'])){
-      $file = './scripts/include_species_list.txt';
-      $str = file_get_contents("$file");
-      $str = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $str);
-      file_put_contents("$file", "$str");
-      if(isset($_GET['species'])){
-        foreach ($_GET['species'] as $selectedOption)
-          file_put_contents("./scripts/include_species_list.txt", htmlspecialchars_decode($selectedOption, ENT_QUOTES)."\n", FILE_APPEND);
-      }
-    } elseif(isset($_GET['species']) && isset($_GET['del'])){
-      $file = './scripts/include_species_list.txt';
-      $str = file_get_contents("$file");
-      $str = preg_replace('/^\h*\v+/m', '', $str);
-      file_put_contents("$file", "$str");
-      foreach($_GET['species'] as $selectedOption) {
-        $content = file_get_contents("../BirdNET-Pi/include_species_list.txt");
-        $newcontent = str_replace($selectedOption, "", "$content");
-        $newcontent = str_replace(htmlspecialchars_decode($selectedOption, ENT_QUOTES), "", "$newcontent");
-        file_put_contents("./scripts/include_species_list.txt", "$newcontent");
-      }
-      $file = './scripts/include_species_list.txt';
-      $str = file_get_contents("$file");
-      $str = preg_replace('/^\h*\v+/m', '', $str);
-      file_put_contents("$file", "$str");
+    if(isset($_GET['species']) && (isset($_GET['add']) or isset($_GET['del']))){
+        update_species_list("./scripts/include_species_list.txt", $_GET['species'], isset($_GET['add']));
     }
-    include('./scripts/include_list.php');
+    $species_list="include";
+    include('./scripts/species_list.php');
   }
   if($_GET['view'] == "Excluded"){
     ensure_authenticated();
-    if(isset($_GET['species']) && isset($_GET['add'])){
-      $file = './scripts/exclude_species_list.txt';
-      $str = file_get_contents("$file");
-      $str = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $str);
-      file_put_contents("$file", "$str");
-      foreach ($_GET['species'] as $selectedOption)
-        file_put_contents("./scripts/exclude_species_list.txt", htmlspecialchars_decode($selectedOption, ENT_QUOTES)."\n", FILE_APPEND);
-    } elseif (isset($_GET['species']) && isset($_GET['del'])){
-      $file = './scripts/exclude_species_list.txt';
-      $str = file_get_contents("$file");
-      $str = preg_replace('/^\h*\v+/m', '', $str);
-      file_put_contents("$file", "$str");
-      foreach($_GET['species'] as $selectedOption) {
-        $content = file_get_contents("./scripts/exclude_species_list.txt");
-        $newcontent = str_replace($selectedOption, "", "$content");
-        $newcontent = str_replace(htmlspecialchars_decode($selectedOption, ENT_QUOTES), "", "$content");
-        file_put_contents("./scripts/exclude_species_list.txt", "$newcontent");
-      }
-      $file = './scripts/exclude_species_list.txt';
-      $str = file_get_contents("$file");
-      $str = preg_replace('/^\h*\v+/m', '', $str);
-      file_put_contents("$file", "$str");
+    if(isset($_GET['species']) && (isset($_GET['add']) or isset($_GET['del']))){
+        update_species_list("./scripts/exclude_species_list.txt", $_GET['species'], isset($_GET['add']));
     }
-    include('./scripts/exclude_list.php');
+    $species_list="exclude";
+    include('./scripts/species_list.php');
   }
   if($_GET['view'] == "Whitelisted"){
     ensure_authenticated();
-    if(isset($_GET['species']) && isset($_GET['add'])){
-      $file = './scripts/whitelist_species_list.txt';
-      $str = file_get_contents("$file");
-      $str = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $str);
-      file_put_contents("$file", "$str");
-      foreach ($_GET['species'] as $selectedOption)
-        file_put_contents("./scripts/whitelist_species_list.txt", htmlspecialchars_decode($selectedOption, ENT_QUOTES)."\n", FILE_APPEND);
-    } elseif (isset($_GET['species']) && isset($_GET['del'])){
-      $file = './scripts/whitelist_species_list.txt';
-      $str = file_get_contents("$file");
-      $str = preg_replace('/^\h*\v+/m', '', $str);
-      file_put_contents("$file", "$str");
-      foreach($_GET['species'] as $selectedOption) {
-        $content = file_get_contents("./scripts/whitelist_species_list.txt");
-        $newcontent = str_replace($selectedOption, "", "$content");
-        $newcontent = str_replace(htmlspecialchars_decode($selectedOption, ENT_QUOTES), "", "$content");
-        file_put_contents("./scripts/whitelist_species_list.txt", "$newcontent");
-      }
-      $file = './scripts/whitelist_species_list.txt';
-      $str = file_get_contents("$file");
-      $str = preg_replace('/^\h*\v+/m', '', $str);
-      file_put_contents("$file", "$str");
+    if(isset($_GET['species']) && (isset($_GET['add']) or isset($_GET['del']))){
+        update_species_list("./scripts/whitelist_species_list.txt", $_GET['species'], isset($_GET['add']));
     }
-    include('./scripts/whitelist_list.php');
+    $species_list="whitelist";
+    include('./scripts/species_list.php');
   }
   if($_GET['view'] == "File"){
     echo "<iframe src='scripts/filemanager/filemanager.php'></iframe>";
@@ -283,7 +254,8 @@ if(isset($_GET['view'])){
                      'sudo reboot',
                      'update_birdnet.sh',
                      'sudo shutdown now',
-                     'sudo clear_all_data.sh');
+                     'sudo clear_all_data.sh',
+                     "$restore");
     $command = $_GET['submit'];
     if(in_array($command,$allowedCommands)){
       if(isset($command)){
@@ -380,19 +352,21 @@ function myFunction() {
   }
 }
 function setLiveStreamVolume(vol) {
-  var audioelement =  window.parent.document.getElementsByTagName("audio")[0];
-  if (typeof(audioelement) != 'undefined' && audioelement != null)
-  {
-    audioelement.volume = vol
-  }
+  var audioElements = document.querySelectorAll(".custom-audio-player audio");
+  audioElements.forEach(audioEl => {
+    if (audioEl) {
+      audioEl.volume = vol;
+    }
+  });
 }
 window.onbeforeunload = function(event) {
   // if the user is playing a video and then navigates away mid-play, the live stream audio should be unmuted again
-  var audioelement =  window.parent.document.getElementsByTagName("audio")[0];
-  if (typeof(audioelement) != 'undefined' && audioelement != null)
-  {
-    audioelement.volume = 1
-  }
+  var audioElements = document.querySelectorAll(".custom-audio-player audio");
+  audioElements.forEach(audioEl => {
+    if (audioEl) {
+      audioEl.volume = 1;
+    }
+  });
 }
 
 function getTheDate(increment) {
@@ -434,7 +408,7 @@ function installKeyAndSwipeEventHandler() {
       let diffTime = 0;
     
       function checkDirection() {
-        if (Math.abs(diffX) > Math.abs(diffY) && diffTime < 500) {
+        if (Math.abs(diffX) > Math.abs(diffY) && diffTime < 350) {
           if (diffX > 20) getTheDate(+1);
           if (diffX < -20) getTheDate(-1);
         }

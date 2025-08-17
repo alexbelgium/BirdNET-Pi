@@ -9,26 +9,23 @@ get_tf_whl () {
     aarch64-39)
       WHL=tflite_runtime-2.11.0-cp39-none-linux_aarch64.whl
       ;;
-    aarch64-310)
-      WHL=tflite_runtime-2.11.0-cp310-none-linux_aarch64.whl
-      ;;
     aarch64-311)
-      WHL=tflite_runtime-2.11.0-cp311-cp311-linux_aarch64.whl
+      WHL=tflite_runtime-2.17.1-cp311-cp311-linux_aarch64.whl
       ;;
     aarch64-312)
-      WHL=tflite_runtime-2.11.0-cp312-cp312-linux_aarch64.whl
+      WHL=tflite_runtime-2.17.1-cp312-cp312-linux_aarch64.whl
       ;;
     x86_64-39)
       WHL=tflite_runtime-2.11.0-cp39-cp39-linux_x86_64.whl
       ;;
     x86_64-311)
-      WHL=tflite_runtime-2.11.0-cp311-cp311-linux_x86_64.whl
+      WHL=tflite_runtime-2.17.1-cp311-cp311-linux_x86_64.whl
       ;;
     x86_64-312)
-      WHL=tflite_runtime-2.11.0-cp312-cp312-linux_x86_64.whl
+      WHL=tflite_runtime-2.17.1-cp312-cp312-linux_x86_64.whl
       ;;
     *)
-      echo "No tflite version found"
+      echo "No tflite version found for ${ARCH}-${PY_VERSION}"
       WHL=''
       ;;
   esac
@@ -57,4 +54,16 @@ Options=mode=1777,nosuid,nodev
 WantedBy=multi-user.target
 EOF
   ln -sf $HOME/BirdNET-Pi/templates/$TMP_MOUNT /usr/lib/systemd/system
+}
+
+install_tmp_mount() {
+  STATE=$(systemctl is-enabled tmp.mount 2>&1 | grep -E '(enabled|disabled)')
+  ! [ -f /usr/share/systemd/tmp.mount ] && echo "Warning: no /usr/share/systemd/tmp.mount found"
+  if [ -z $STATE ]; then
+    cp -f /usr/share/systemd/tmp.mount /etc/systemd/system/tmp.mount
+    systemctl daemon-reload
+    systemctl enable tmp.mount
+  else
+    echo "tmp.mount is $STATE, skipping"
+  fi
 }

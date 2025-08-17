@@ -14,6 +14,7 @@ set_timezone();
 <html lang="en">
 <title><?php echo $site_name; ?></title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link id="iconLink" rel="shortcut icon" sizes=85x85 href="images/bird.png" />
 <link rel="stylesheet" href="<?php echo $color_scheme . '?v=' . date('n.d.y', filemtime($color_scheme)); ?>">
 <link rel="stylesheet" type="text/css" href="static/dialog-polyfill.css" />
 <body>

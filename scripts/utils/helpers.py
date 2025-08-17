@@ -12,6 +12,22 @@ _settings = None
 
 DB_PATH = os.path.expanduser('~/BirdNET-Pi/scripts/birds.db')
 ANALYZING_NOW = os.path.expanduser('~/BirdSongs/StreamData/analyzing_now.txt')
+FONT_DIR = os.path.expanduser('~/BirdNET-Pi/homepage/static')
+
+
+def get_font():
+    conf = get_settings()
+    if conf['DATABASE_LANG'] == 'ar':
+        ret = {'font.family': 'Noto Sans Arabic', 'path': os.path.join(FONT_DIR, 'NotoSansArabic-Regular.ttf')}
+    elif conf['DATABASE_LANG'] in ['ja', 'zh']:
+        ret = {'font.family': 'Noto Sans JP', 'path': os.path.join(FONT_DIR, 'NotoSansJP-Regular.ttf')}
+    elif conf['DATABASE_LANG'] == 'ko':
+        ret = {'font.family': 'Noto Sans KR', 'path': os.path.join(FONT_DIR, 'NotoSansKR-Regular.ttf')}
+    elif conf['DATABASE_LANG'] == 'th':
+        ret = {'font.family': 'Noto Sans Thai', 'path': os.path.join(FONT_DIR, 'NotoSansThai-Regular.ttf')}
+    else:
+        ret = {'font.family': 'Roboto Flex', 'path': os.path.join(FONT_DIR, 'RobotoFlex-Regular.ttf')}
+    return ret
 
 
 class PHPConfigParser(ConfigParser):
@@ -42,9 +58,14 @@ def get_settings(settings_path='/etc/birdnet/birdnet.conf', force_reload=False):
 
 
 class Detection:
-    def __init__(self, start_time, stop_time, species, confidence):
+    def __init__(self, file_date, start_time, stop_time, species, confidence):
         self.start = float(start_time)
         self.stop = float(stop_time)
+        self.datetime = file_date + datetime.timedelta(seconds=self.start)
+        self.date = self.datetime.strftime("%Y-%m-%d")
+        self.time = self.datetime.strftime("%H:%M:%S")
+        self.iso8601 = self.datetime.astimezone(get_localzone()).isoformat()
+        self.week = self.datetime.isocalendar()[1]
         self.confidence = round(float(confidence), 4)
         self.confidence_pct = round(self.confidence * 100)
         self.species = species
@@ -65,16 +86,6 @@ class ParseFileName:
 
         ident_match = re.search("RTSP_[0-9]+-", file_name)
         self.RTSP_id = ident_match.group() if ident_match is not None else ""
-
-    @property
-    def date(self):
-        current_date = self.file_date.strftime("%Y-%m-%d")
-        return current_date
-
-    @property
-    def time(self):
-        current_time = self.file_date.strftime("%H:%M:%S")
-        return current_time
 
     @property
     def iso8601(self):
