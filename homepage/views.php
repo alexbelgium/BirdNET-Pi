@@ -4,6 +4,33 @@
 $_GET   = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING);
 $_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sci_name'])) {
+  $sci = trim($_POST['sci_name']);
+  $file = __DIR__ . '/../scripts/confirmed_species_list.txt';
+  $species = [];
+  if (file_exists($file)) {
+    $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    $species = array_map(function($line) {
+      return trim(explode('_', $line)[0]);
+    }, $lines);
+    $species = array_values(array_unique(array_filter($species)));
+  }
+  $status = 'unconfirmed';
+  if ($sci !== '') {
+    if (in_array($sci, $species)) {
+      $species = array_values(array_diff($species, [$sci]));
+    } else {
+      $species[] = $sci;
+      $status = 'confirmed';
+    }
+    $species = array_values(array_unique($species));
+    sort($species);
+    file_put_contents($file, implode(PHP_EOL, $species) . (count($species) ? PHP_EOL : ''));
+  }
+  echo $status;
+  exit;
+}
+
 session_start();
 
 require_once 'scripts/common.php';
@@ -435,7 +462,8 @@ installKeyAndSwipeEventHandler();
 <?php if($config['CONFIRM_SPECIES'] == 1) { ?>
 function toggleConfirmed(sci, el) {
   var xhr = new XMLHttpRequest();
-  xhr.open('POST', 'scripts/confirm_species.php');
+  xhr.open('POST', window.location.pathname);
+  xhr.withCredentials = true;
   xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
   xhr.onload = function() {
     if (xhr.status === 200) {
@@ -446,7 +474,7 @@ function toggleConfirmed(sci, el) {
 }
 
 function setupConfirmedIcons() {
-  fetch('scripts/confirmed_species_list.txt?' + Date.now())
+  fetch('scripts/confirmed_species_list.txt?' + Date.now(), {credentials: 'same-origin'})
     .then(r => r.text())
     .then(text => {
       var confirmed = new Set(text.split(/\r?\n/)
