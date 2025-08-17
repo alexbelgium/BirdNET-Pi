@@ -168,6 +168,9 @@ if (get_included_files()[0] === __FILE__) {
 
 ?>
 <script src="static/custom-audio-player.js"></script>
+<script src="static/Chart.bundle.js"></script>
+<script src="static/chartjs-plugin-trendline.min.js"></script>
+<script src="static/minigraph.js"></script>
 <script>
 
 function deleteDetection(filename,copylink=false) {
@@ -534,6 +537,7 @@ $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 40;
 
 $results=$result2->fetchArray(SQLITE3_ASSOC);
 $com_name = $results['Com_Name'];
+$comnamegraph = str_replace("'", "\\'", $com_name);
 $result2->reset(); // reset the pointer to the beginning of the result set
 $sciname = $name;
 $info_url = get_info_url($sciname);
@@ -543,6 +547,7 @@ echo "<table>
   <i>$sciname</i></span><br>
     <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
     <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
+    <img style=\"width: unset !important;display: inline;height: 1em;cursor:pointer\" title=\"View species stats\" onclick=\"generateMiniGraph(this, '$comnamegraph')\" width=\"25\" src=\"images/chart.svg\">
   </th></tr>";
   $iter=0;
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
