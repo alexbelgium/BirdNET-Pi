@@ -116,9 +116,17 @@ function hideDialog() {
   document.getElementById('attribution-dialog').close();
 }
 
-function setModalText(iter, title, text, authorlink) {
+function setModalText(iter, title, text, authorlink, photolink, licenseurl) {
+  var imageHtml = "";
+  if (photolink) {
+    imageHtml = "<div><img style='border-radius:5px;max-height: calc(100vh - 15rem);display: block;margin: 0 auto;' src='"+photolink+"'></div><br>";
+  }
+  var licenseHtml = "";
+  if (licenseurl) {
+    licenseHtml = "<br>License URL: <a href="+licenseurl+" target='_blank'>"+licenseurl+"</a>";
+  }
   document.getElementById('modalHeading').innerHTML = "Photo "+iter+": \""+title+"\" Attribution";
-  document.getElementById('modalText').innerHTML = "<div style='white-space:nowrap'>Image link: <a target='_blank' href="+text+">"+text+"</a><br>Author link: <a target='_blank' href="+authorlink+">"+authorlink+"</a></div>";
+  document.getElementById('modalText').innerHTML = imageHtml+"<div style='white-space:nowrap'>Image link: <a target='_blank' href="+text+">"+text+"</a><br>Author link: <a target='_blank' href="+authorlink+">"+authorlink+"</a>"+licenseHtml+"</div>";
   showDialog();
 }
 </script>  
@@ -131,6 +139,7 @@ function setModalText(iter, title, text, authorlink) {
   $species = $_GET['species'];
   $iter=0;
   $config = get_config();
+  $flickr = new Flickr();
   $result3 = fetch_best_detection(htmlspecialchars_decode($_GET['species'], ENT_QUOTES));
 while($results=$result3->fetchArray(SQLITE3_ASSOC)){
   $count = $results['COUNT(*)'];
@@ -149,34 +158,41 @@ while($results=$result3->fetchArray(SQLITE3_ASSOC)){
   $info_url = get_info_url($results['Sci_Name']);
   $url = $info_url['URL'];
   $url_title = $info_url['TITLE'];
-  echo str_pad("<h3>$species</h3>
+  $image = null;
+  if (!empty($config["FLICKR_API_KEY"])) {
+    $image = $flickr->get_image($sciname);
+  }
+?>
+  <h3><?php echo $species; ?></h3>
+  <div class="centered_image_container">
+    <?php if (!empty($config["FLICKR_API_KEY"]) && $image && strlen($image['title']) > 0) { ?>
+      <img onclick='setModalText(1,"<?php echo urlencode($image["title"]); ?>","<?php echo $image["photos_url"]; ?>","<?php echo $image["author_url"]; ?>","<?php echo $image["image_url"]; ?>","<?php echo $image["license_url"]; ?>")' src="<?php echo $image["image_url"]; ?>" class="img1">
+    <?php } ?>
     <table><tr>
-  <td class=\"relative\"><a target=\"_blank\" href=\"index.php?filename=".$results['File_Name']."\"><img title=\"Open in new tab\" class=\"copyimage\" width=25 src=\"images/copy.png\"></a><i>$sciname</i>
-  <a href=\"$url\" target=\"_blank\"><img style=\"width: unset !important; display: inline; height: 1em; cursor: pointer;\" title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
-  <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img style=\"width: unset !important; display: inline; height: 1em; cursor: pointer;\" title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a><br>
-  Occurrences: $count<br>
-  Max Confidence: $maxconf<br>
-  Best Recording: $date $time<br><br>
-  <video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster=\"$filename.png\" title=\"$filename\"><source src=\"$filename\"></video></td>
-  </tr>
-    </table>
-  <p>Loading Images from Flickr</p>", '6096');
-  
-  echo "<script>document.getElementsByTagName(\"h3\")[0].scrollIntoView();</script>";
-  
+      <td class="relative"><a target="_blank" href="index.php?filename=<?php echo $results['File_Name']; ?>"><img title="Open in new tab" class="copyimage" width=25 src="images/copy.png"></a><i><?php echo $sciname; ?></i>
+      <a href="<?php echo $url; ?>" target="_blank"><img style="width: unset !important; display: inline; height: 1em; cursor: pointer;" title="<?php echo $url_title; ?>" src="images/info.png" width="20"></a>
+      <a href="https://wikipedia.org/wiki/<?php echo $sciname; ?>" target="_blank"><img style="width: unset !important; display: inline; height: 1em; cursor: pointer;" title="Wikipedia" src="images/wiki.png" width="20"></a><br>
+      Occurrences: <?php echo $count; ?><br>
+      Max Confidence: <?php echo $maxconf; ?><br>
+      Best Recording: <?php echo $date . " " . $time; ?><br><br>
+      <video onplay='setLiveStreamVolume(0)' onended='setLiveStreamVolume(1)' onpause='setLiveStreamVolume(1)' controls poster="<?php echo $filename . ".png"; ?>" title="<?php echo $filename; ?>"><source src="<?php echo $filename; ?>"></video></td>
+    </tr></table>
+  </div>
+<?php
+  echo "<script>document.getElementsByTagName('h3')[0].scrollIntoView();</script>";
+
   ob_flush();
   flush();
 
   if (! empty($config["FLICKR_API_KEY"])) {
+    echo "<p class='centered'>More Images from Flickr</p>";
     $flickrjson = json_decode(file_get_contents("https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=".$config["FLICKR_API_KEY"]."&text=\"".str_replace(' ', '%20', $engname)."\"&license=2%2C3%2C4%2C5%2C6%2C9&sort=relevance&per_page=15&format=json&nojsoncallback=1"), true)["photos"]["photo"];
-
     foreach ($flickrjson as $val) {
-
       $iter++;
       $modaltext = "https://flickr.com/photos/".$val["owner"]."/".$val["id"];
       $authorlink = "https://flickr.com/people/".$val["owner"];
-      $imageurl = 'https://farm' .$val["farm"]. '.static.flickr.com/' .$val["server"]. '/' .$val["id"]. '_'  .$val["secret"].  '.jpg';
-      echo "<span style='cursor:pointer;' onclick='setModalText(".$iter.",\"".$val["title"]."\",\"".$modaltext."\", \"".$authorlink."\")'><img style='vertical-align:top' src=\"$imageurl\"></span>";
+      $imageurl = 'https://farm' .$val["farm"]. '.static.flickr.com/' .$val["server"]. '/' .$val["id"]. '_'  .$val["secret"]. '.jpg';
+      echo "<span style='cursor:pointer;' onclick='setModalText(".$iter.",\"".$val["title"]."\",\"".$modaltext."\", \"".$authorlink."\",\"".$imageurl."\",\"\")'><img style='vertical-align:top' src=\"$imageurl\"></span>";
     }
   }
 }
