@@ -34,7 +34,7 @@ $sf_thresh = isset($config['SF_THRESH']) ? floatval($config['SF_THRESH']) : 0;
 
 if (isset($_GET['toggle']) && isset($_GET['species']) && isset($_GET['action'])) {
     $list = $_GET['toggle'];
-    $species = $_GET['species'];
+    $species = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
     $file = ($list === 'exclude') ? $exclude_file : $whitelist_file;
     $lines = file_exists($file) ? file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
     if ($_GET['action'] === 'add') {
@@ -50,7 +50,7 @@ if (isset($_GET['toggle']) && isset($_GET['species']) && isset($_GET['action']))
 }
 
 if (isset($_GET['getcounts'])) {
-    $species = $_GET['getcounts'];
+    $species = htmlspecialchars_decode($_GET['getcounts'], ENT_QUOTES);
     $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name FROM detections WHERE Com_Name = :name');
     ensure_db_ok($stmt);
     $stmt->bindValue(':name', $species, SQLITE3_TEXT);
@@ -71,7 +71,7 @@ if (isset($_GET['getcounts'])) {
 }
 
 if (isset($_GET['delete'])) {
-    $species = $_GET['delete'];
+    $species = htmlspecialchars_decode($_GET['delete'], ENT_QUOTES);
     $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name FROM detections WHERE Com_Name = :name');
     ensure_db_ok($stmt);
     $stmt->bindValue(':name', $species, SQLITE3_TEXT);
