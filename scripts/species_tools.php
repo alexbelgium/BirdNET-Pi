@@ -60,10 +60,15 @@ if (isset($_GET['getcounts'])) {
     while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
         $count++;
         $dir = str_replace([' ', "'"], ['_', ''], $row['Com_Name']);
-        $file = $home.'/BirdSongs/Extracted/By_Date/'.$row['Date'].'/'.$dir.'/'.$row['File_Name'];
-        $real = realpath($file);
-        if ($real && strpos($real, $home.'/BirdSongs/Extracted/By_Date/') === 0 && file_exists($real)) {
-            $files[$real] = true;
+        $paths = [
+            $home.'/BirdSongs/Extracted/By_Date/'.$row['Date'].'/'.$dir.'/'.$row['File_Name'],
+            $home.'/BirdSongs/Extracted/By_Date/shifted/'.$row['Date'].'/'.$dir.'/'.$row['File_Name']
+        ];
+        foreach ($paths as $file) {
+            $real = realpath($file);
+            if ($real && strpos($real, $home.'/BirdSongs/Extracted/By_Date/') === 0 && file_exists($real)) {
+                $files[$real] = true;
+            }
         }
     }
     echo json_encode(['count' => $count, 'files' => count($files)]);
@@ -81,19 +86,28 @@ if (isset($_GET['delete'])) {
     while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
         if (!$sci_name) { $sci_name = $row['Sci_Name']; }
         $dir = str_replace([' ', "'"], ['_', ''], $row['Com_Name']);
-        $file = $home.'/BirdSongs/Extracted/By_Date/'.$row['Date'].'/'.$dir.'/'.$row['File_Name'];
-        $real = realpath($file);
-        if ($real && strpos($real, $home.'/BirdSongs/Extracted/By_Date/') === 0 && file_exists($real)) {
-            $files[$real] = true;
+        $paths = [
+            $home.'/BirdSongs/Extracted/By_Date/'.$row['Date'].'/'.$dir.'/'.$row['File_Name'],
+            $home.'/BirdSongs/Extracted/By_Date/shifted/'.$row['Date'].'/'.$dir.'/'.$row['File_Name']
+        ];
+        foreach ($paths as $file) {
+            $real = realpath($file);
+            if ($real && strpos($real, $home.'/BirdSongs/Extracted/By_Date/') === 0) {
+                $files[$real] = true;
+            }
         }
     }
+    $deleted_files = 0;
     foreach (array_keys($files) as $fp) {
-        @unlink($fp);
+        if (file_exists($fp) && @unlink($fp)) {
+            $deleted_files++;
+        }
     }
     $del = $db->prepare('DELETE FROM detections WHERE Com_Name = :name');
     ensure_db_ok($del);
     $del->bindValue(':name', $species, SQLITE3_TEXT);
     $del->execute();
+    $lines_deleted = $db->changes();
     if (file_exists($confirm_file) && $sci_name !== null) {
         $identifier = str_replace("'", '', $sci_name.'_'.$species);
         $lines = array_filter($confirmed_species, function($line) use ($identifier) {
@@ -101,7 +115,7 @@ if (isset($_GET['delete'])) {
         });
         file_put_contents($confirm_file, implode("\n", $lines));
     }
-    echo 'OK';
+    echo json_encode(['lines' => $lines_deleted, 'files' => $deleted_files]);
     exit;
 }
 
@@ -196,7 +210,13 @@ function deleteSpecies(species) {
     if (confirm('Delete ' + info.count + ' detections and ' + info.files + ' files for ' + species + '?')) {
       const xhttp2 = new XMLHttpRequest();
       xhttp2.onload = function() {
-        if (this.responseText == 'OK') { alert('Deletion complete'); location.reload(); }
+        try {
+          const res = JSON.parse(this.responseText);
+          alert('Deleted ' + res.lines + ' detections and ' + res.files + ' files for ' + species);
+        } catch (e) {
+          alert('Deletion complete');
+        }
+        location.reload();
       };
       xhttp2.open('GET', scriptsBase + 'species_tools.php?delete=' + encodeURIComponent(species), true);
       xhttp2.send();
