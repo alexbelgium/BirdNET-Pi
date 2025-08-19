@@ -10,9 +10,21 @@ require_once 'scripts/common.php';
 $home = get_home();
 $config = get_config();
 $user = get_user();
+$confirmspecies_enabled = $config["CONFIRM_SPECIES"];
 
 $db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
 $db->busyTimeout(1000);
+
+$confirmedspecies_filename = $home."/BirdNET-Pi/scripts/confirmed_species_list.txt";
+if (!file_exists($confirmedspecies_filename) || filesize($confirmedspecies_filename) == 0) {
+  file_put_contents($confirmedspecies_filename, "# List of confirmed species\n");
+}
+$fp = @fopen($confirmedspecies_filename, 'r');
+if ($fp) {
+  $confirmed_species = explode("\n", fread($fp, filesize($confirmedspecies_filename)));
+} else {
+  $confirmed_species = [];
+}
 
 if(isset($_GET['deletefile'])) {
   ensure_authenticated('You must be authenticated to delete files.');
@@ -63,6 +75,25 @@ if(isset($_GET['excludefile'])) {
       }
     }
     file_put_contents($home."/BirdNET-Pi/scripts/disk_check_exclude.txt", $result);
+    echo "OK";
+    die();
+  }
+}
+
+if(isset($_GET['confirmspecies'])) {
+  if(isset($_GET['confirm_add'])) {
+    $myfile = fopen($home."/BirdNET-Pi/scripts/confirmed_species_list.txt", "a") or die("Unable to open file!");
+    $txt = $_GET['confirmspecies'];
+    fwrite($myfile, $txt."\n");
+    fclose($myfile);
+    echo "OK";
+    die();
+  } else {
+    $search = $_GET['confirmspecies'];
+    $lines = array_filter($confirmed_species, function($line) use ($search) {
+      return stripos($line, $search) === false;
+    });
+    file_put_contents($home."/BirdNET-Pi/scripts/confirmed_species_list.txt", implode("\n", $lines));
     echo "OK";
     die();
   }
@@ -187,6 +218,21 @@ function deleteDetection(filename,copylink=false) {
     xhttp.open("GET", "play.php?deletefile="+filename, true);
     xhttp.send();
   }
+}
+
+function confirmspecies(species, type) {
+  const xhttp = new XMLHttpRequest();
+  xhttp.onload = function() {
+    if(this.responseText == "OK"){
+        location.reload();
+      }
+  }
+  if(type == "add") {
+    xhttp.open("GET", "play.php?confirmspecies="+species+"&confirm_add=true", true);
+  } else {
+    xhttp.open("GET", "play.php?confirmspecies="+species+"&confirm_del=true", true);
+  }
+  xhttp.send();
 }
 
 function toggleLock(filename, type, elem) {
@@ -417,10 +463,14 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
   } elseif($view == "byspecies") {
     $birds = array();
     $values = array();
+    $birds_sciname_name = array();
     while($results=$result->fetchArray(SQLITE3_ASSOC))
     {
-      $birds[] = $results['Sci_Name'];
+      $com_name = $results['Com_Name'];
+      $sci_name = $results['Sci_Name'];
+      $birds[] = $sci_name;
       $values[] = get_label($results, $_GET['sort']);
+      $birds_sciname_name[] = $sci_name . "_" . $com_name;
     }
 
     if(count($birds) > 45) {
@@ -439,7 +489,13 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
         if ($index < count($birds)) {
           ?>
           <td class="spec">
-              <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $values[$index];?></button>
+              <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $values[$index];?>
+              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $birds_sciname_name[$index]), $confirmed_species)) {
+                echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"del\")'";
+              } else {
+                echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"add\")'";
+              }}
+              ?>></button>
           </td>
           <?php
         } else {
@@ -452,12 +508,14 @@ if(!isset($_GET['species']) && !isset($_GET['filename'])){
   } elseif($view == "date") {
     $birds = array();
     $values = array();
+    $birds_sciname_name = array();
 while($results=$result->fetchArray(SQLITE3_ASSOC))
 {
   $dir_name = str_replace("'", '', $results['Com_Name']);
   if(realpath($home."/BirdSongs/Extracted/By_Date/".$date."/".str_replace(" ", "_", $dir_name)) !== false){
     $birds[] = $results['Sci_Name'];
     $values[] = get_label($results, $_GET['sort'], $_GET['date']);
+    $birds_sciname_name[] = $results['Sci_Name'] . "_" . $results['Com_Name'];
   }
 }
 
@@ -477,7 +535,13 @@ for ($row = 0; $row < $num_rows; $row++) {
     if ($index < count($birds)) {
       ?>
       <td class="spec">
-          <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $values[$index];?></button>
+          <button type="submit" name="species" value="<?php echo $birds[$index];?>"><?php echo $values[$index];?>
+              <img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=<?php if($confirmspecies_enabled == 1) { if (in_array(str_replace("'", "", $birds_sciname_name[$index]), $confirmed_species)) {
+                echo "\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"del\")'";
+              } else {
+                echo "\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $birds_sciname_name[$index])."\",\"add\")'";
+              }}
+              ?>></button>
       </td>
       <?php
     } else {
@@ -536,14 +600,23 @@ $results=$result2->fetchArray(SQLITE3_ASSOC);
 $com_name = $results['Com_Name'];
 $result2->reset(); // reset the pointer to the beginning of the result set
 $sciname = $name;
+$sciname_name = $sciname . '_' . $com_name;
 $info_url = get_info_url($sciname);
 $url = $info_url['URL'];
-echo "<table>
-  <tr><th>$com_name<br><span style=\"font-weight:normal;\">
-  <i>$sciname</i></span><br>
-    <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
-    <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
-  </th></tr>";
+echo "<table>";
+echo "  <tr><th>$com_name";
+echo "<span style=\"font-weight:normal;\">";
+if ($confirmspecies_enabled == 1) {
+  if (in_array(str_replace("'", "", $sciname_name), $confirmed_species)) {
+    echo "<img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"del\")'>";
+  } else {
+    echo "<img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"add\")'>";
+  }
+}
+echo "<br><i>$sciname</i></span><br>";
+echo "    <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>";
+echo "    <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>";
+echo "  </th></tr>";
   $iter=0;
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
   {
@@ -640,14 +713,23 @@ echo "<table>
     $result2 = $statement2->execute();
     $comname = str_replace("_", " ", strtok($name, '-'));
     $sciname = get_sci_name($comname);
+    $sciname_name = $sciname . '_' . $comname;
     $info_url = get_info_url($sciname);
     $url = $info_url['URL'];
-    echo "<table>
-      <tr><th>$name<br>
-      <i>$sciname</i><br>
-          <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
-          <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
-      </th></tr>";
+    echo "<table>";
+    echo "      <tr><th>$name";
+    if ($confirmspecies_enabled == 1) {
+      if (in_array(str_replace("'", "", $sciname_name), $confirmed_species)) {
+        echo "<img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"del\")'>";
+      } else {
+        echo "<img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"add\")'>";
+      }
+    }
+    echo "<br>";
+    echo "      <i>$sciname</i><br>";
+    echo "          <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>";
+    echo "          <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>";
+    echo "      </th></tr>";
       while($results=$result2->fetchArray(SQLITE3_ASSOC))
       {
         $comname = preg_replace('/ /', '_', $results['Com_Name']);
