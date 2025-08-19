@@ -4,26 +4,26 @@
 $_GET   = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING);
 $_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 
-require_once 'scripts/common.php';
+require_once __DIR__ . '/common.php';
 ensure_authenticated();
 
 $home = get_home();
-$db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READWRITE);
+$db = new SQLite3(__DIR__ . '/birds.db', SQLITE3_OPEN_READWRITE);
 $db->busyTimeout(1000);
 
-$confirm_file = './scripts/confirmed_species_list.txt';
+$confirm_file = __DIR__ . '/confirmed_species_list.txt';
 $confirmed_species = [];
 if (file_exists($confirm_file)) {
     $confirmed_species = file($confirm_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 }
 
-$exclude_file = './scripts/exclude_species_list.txt';
+$exclude_file = __DIR__ . '/exclude_species_list.txt';
 $excluded_species = [];
 if (file_exists($exclude_file)) {
     $excluded_species = file($exclude_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 }
 
-$whitelist_file = './scripts/whitelist_species_list.txt';
+$whitelist_file = __DIR__ . '/whitelist_species_list.txt';
 $whitelisted_species = [];
 if (file_exists($whitelist_file)) {
     $whitelisted_species = file($whitelist_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -33,17 +33,20 @@ $config = get_config();
 $sf_thresh = isset($config['SF_THRESH']) ? floatval($config['SF_THRESH']) : 0;
 
 $predicted_probs = [];
-$user = get_user();
-$species_py = $home . '/BirdNET-Pi/scripts/species.py';
-$python = $home . '/BirdNET-Pi/birdnet/bin/python3';
-if (file_exists($species_py) && file_exists($python)) {
-    $cmd = 'sudo -u ' . escapeshellarg($user) . ' ' . escapeshellarg($python) . ' ' . escapeshellarg($species_py) . ' --threshold 0 2>&1';
-    $out = shell_exec($cmd);
-    if ($out) {
-        foreach (explode("\n", trim($out)) as $line) {
-            if (preg_match('/^(.+)\s-\s([0-9.]+)/', trim($line), $m)) {
-                $predicted_probs[$m[1]] = (float)$m[2];
-            }
+$out = @file_get_contents('https://birdnet.alexandrep.cc/scripts/config.php?threshold=0');
+if ($out === false) {
+    $user = get_user();
+    $species_py = $home . '/BirdNET-Pi/scripts/species.py';
+    $python = $home . '/BirdNET-Pi/birdnet/bin/python3';
+    if (file_exists($species_py) && file_exists($python)) {
+        $cmd = 'sudo -u ' . escapeshellarg($user) . ' ' . escapeshellarg($python) . ' ' . escapeshellarg($species_py) . ' --threshold 0 2>&1';
+        $out = shell_exec($cmd);
+    }
+}
+if ($out) {
+    foreach (explode("\n", trim($out)) as $line) {
+        if (preg_match('/^(.+)\s-\s([0-9.]+)/', trim($line), $m)) {
+            $predicted_probs[$m[1]] = (float)$m[2];
         }
     }
 }
@@ -148,18 +151,19 @@ $result = fetch_species_array('alphabetical');
          "<td data-sort='".($is_excluded?1:0)."'><img style='cursor:pointer;max-width:12px;max-height:12px' src='".$excl_icon."' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','".$excl_action."')\"></td>".
          "<td data-sort='".($is_whitelisted?1:0)."'><img style='cursor:pointer;max-width:12px;max-height:12px' src='".$white_icon."' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','".$white_action."')\"></td>".
          "<td data-sort='".$prob_fmt."'><span style='color:".$prob_color."'>".$prob_fmt."</span></td>".
-         "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\"></td></tr>";
+         "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\"></td></tr>"; 
 } ?>
   </tbody>
 </table>
 </div>
 <script>
+const scriptsBase = '../scripts/';
 function toggleSpecies(list, species, action) {
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
     if (this.responseText == 'OK') { location.reload(); }
   };
-  xhttp.open('GET', 'play.php?' + list + 'species=' + encodeURIComponent(species) + '&' + list + '_' + action + '=true', true);
+  xhttp.open('GET', scriptsBase + 'play.php?' + list + 'species=' + encodeURIComponent(species) + '&' + list + '_' + action + '=true', true);
   xhttp.send();
 }
 function deleteSpecies(species) {
@@ -171,11 +175,11 @@ function deleteSpecies(species) {
       xhttp2.onload = function() {
         if (this.responseText == 'OK') { alert('Deletion complete'); location.reload(); }
       };
-      xhttp2.open('GET', 'scripts/species_tools.php?delete=' + encodeURIComponent(species), true);
+      xhttp2.open('GET', scriptsBase + 'species_tools.php?delete=' + encodeURIComponent(species), true);
       xhttp2.send();
     }
   };
-  xhttp.open('GET', 'scripts/species_tools.php?getcounts=' + encodeURIComponent(species), true);
+  xhttp.open('GET', scriptsBase + 'species_tools.php?getcounts=' + encodeURIComponent(species), true);
   xhttp.send();
 }
 function sortTable(n) {
