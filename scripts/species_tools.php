@@ -32,25 +32,6 @@ if (file_exists($whitelist_file)) {
 $config = get_config();
 $sf_thresh = isset($config['SF_THRESH']) ? floatval($config['SF_THRESH']) : 0;
 
-$predicted_probs = [];
-$out = @file_get_contents('https://birdnet.alexandrep.cc/scripts/config.php?threshold=0');
-if ($out === false) {
-    $user = get_user();
-    $species_py = $home . '/BirdNET-Pi/scripts/species.py';
-    $python = $home . '/BirdNET-Pi/birdnet/bin/python3';
-    if (file_exists($species_py) && file_exists($python)) {
-        $cmd = 'sudo -u ' . escapeshellarg($user) . ' ' . escapeshellarg($python) . ' ' . escapeshellarg($species_py) . ' --threshold 0 2>&1';
-        $out = shell_exec($cmd);
-    }
-}
-if ($out) {
-    foreach (explode("\n", trim($out)) as $line) {
-        if (preg_match('/^(.+)\s-\s([0-9.]+)/', trim($line), $m)) {
-            $predicted_probs[$m[1]] = (float)$m[2];
-        }
-    }
-}
-
 if (isset($_GET['toggle']) && isset($_GET['species']) && isset($_GET['action'])) {
     $list = $_GET['toggle'];
     $species = $_GET['species'];
@@ -159,14 +140,10 @@ $result = fetch_species_array('alphabetical');
         ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','del')\">"
         : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
 
-    $prob = isset($predicted_probs[$row['Com_Name']]) ? $predicted_probs[$row['Com_Name']] : 0;
-    $prob_fmt = number_format($prob, 4, '.', '');
-    $prob_color = ($prob >= $sf_thresh) ? 'green' : 'red';
-
-    echo "<tr><td>".$common."</td><td><i>".$scient."</i></td><td>".$count."</td>".
+    echo "<tr data-comname=\"".$common."\"><td>".$common."</td><td><i>".$scient."</i></td><td>".$count."</td>".
          "<td data-sort='".($is_excluded?1:0)."'>".$excl_cell."</td>".
          "<td data-sort='".($is_whitelisted?1:0)."'>".$white_cell."</td>".
-         "<td data-sort='".$prob_fmt."'><span style='color:".$prob_color."'>".$prob_fmt."</span></td>".
+         "<td class='threshold' data-sort='0'>0.0000</td>".
          "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\"></td></tr>";
 } ?>
   </tbody>
@@ -174,6 +151,36 @@ $result = fetch_species_array('alphabetical');
 </div>
 <script>
 const scriptsBase = '../scripts/';
+const sfThresh = <?php echo $sf_thresh; ?>;
+
+function loadThresholds() {
+  const xhttp = new XMLHttpRequest();
+  xhttp.onload = function() {
+    const lines = this.responseText.trim().split('\n');
+    const map = {};
+    lines.forEach(line => {
+      const m = line.match(/^(.+)\s-\s([0-9.]+)/);
+      if (m) { map[m[1]] = parseFloat(m[2]); }
+    });
+    const decoder = document.createElement('textarea');
+    document.querySelectorAll('#speciesTable tbody tr').forEach(row => {
+      decoder.innerHTML = row.getAttribute('data-comname');
+      const name = decoder.value;
+      if (name in map) {
+        const val = map[name];
+        const cell = row.querySelector('td.threshold');
+        cell.textContent = val.toFixed(4);
+        cell.style.color = val >= sfThresh ? 'green' : 'red';
+        cell.dataset.sort = val.toFixed(4);
+      }
+    });
+  };
+  xhttp.open('GET', scriptsBase + 'config.php?threshold=0');
+  xhttp.send();
+}
+
+document.addEventListener('DOMContentLoaded', loadThresholds);
+
 function toggleSpecies(list, species, action) {
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
