@@ -11,6 +11,9 @@ $home = get_home();
 $db = new SQLite3(__DIR__ . '/birds.db', SQLITE3_OPEN_READWRITE);
 $db->busyTimeout(1000);
 
+$base_symlink = $home . '/BirdSongs/Extracted/By_Date';
+$base = realpath($base_symlink);
+
 $confirm_file = __DIR__ . '/confirmed_species_list.txt';
 $confirmed_species = [];
 if (file_exists($confirm_file)) {
@@ -50,6 +53,11 @@ if (isset($_GET['toggle']) && isset($_GET['species']) && isset($_GET['action']))
 }
 
 if (isset($_GET['getcounts'])) {
+    if ($base === false) {
+        http_response_code(500);
+        exit(json_encode(['error' => 'Base directory not found']));
+    }
+
     $species = htmlspecialchars_decode($_GET['getcounts'], ENT_QUOTES);
     $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name FROM detections WHERE Com_Name = :name');
     ensure_db_ok($stmt);
@@ -60,14 +68,20 @@ if (isset($_GET['getcounts'])) {
     while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
         $count++;
         $dir = str_replace([' ', "'"], ['_', ''], $row['Com_Name']);
-        $paths = [
+        foreach ([
             $home.'/BirdSongs/Extracted/By_Date/'.$row['Date'].'/'.$dir.'/'.$row['File_Name'],
-            $home.'/BirdSongs/Extracted/By_Date/shifted/'.$row['Date'].'/'.$dir.'/'.$row['File_Name']
-        ];
-        foreach ($paths as $file) {
-            $real = realpath($file);
-            if ($real && strpos($real, $home.'/BirdSongs/Extracted/By_Date/') === 0 && file_exists($real)) {
-                $files[$real] = true;
+            $home.'/BirdSongs/Extracted/By_Date/shifted/'.$row['Date'].'/'.$dir.'/'.$row['File_Name'],
+        ] as $candidate) {
+            $candDir = realpath(dirname($candidate));
+            if ($candDir === false) {
+                error_log('Missing dir: '.$candidate);
+                continue;
+            }
+            $abs = $candDir . DIRECTORY_SEPARATOR . basename($candidate);
+            if (strpos($abs, $base . DIRECTORY_SEPARATOR) === 0) {
+                if (is_file($abs)) { $files[$abs] = true; }
+            } else {
+                error_log('File outside base: '.$abs);
             }
         }
     }
@@ -76,6 +90,11 @@ if (isset($_GET['getcounts'])) {
 }
 
 if (isset($_GET['delete'])) {
+    if ($base === false) {
+        http_response_code(500);
+        exit(json_encode(['error' => 'Base directory not found']));
+    }
+
     $species = htmlspecialchars_decode($_GET['delete'], ENT_QUOTES);
     $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name FROM detections WHERE Com_Name = :name');
     ensure_db_ok($stmt);
@@ -86,21 +105,31 @@ if (isset($_GET['delete'])) {
     while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
         if (!$sci_name) { $sci_name = $row['Sci_Name']; }
         $dir = str_replace([' ', "'"], ['_', ''], $row['Com_Name']);
-        $paths = [
+        foreach ([
             $home.'/BirdSongs/Extracted/By_Date/'.$row['Date'].'/'.$dir.'/'.$row['File_Name'],
-            $home.'/BirdSongs/Extracted/By_Date/shifted/'.$row['Date'].'/'.$dir.'/'.$row['File_Name']
-        ];
-        foreach ($paths as $file) {
-            $real = realpath($file);
-            if ($real && strpos($real, $home.'/BirdSongs/Extracted/By_Date/') === 0) {
-                $files[$real] = true;
+            $home.'/BirdSongs/Extracted/By_Date/shifted/'.$row['Date'].'/'.$dir.'/'.$row['File_Name'],
+        ] as $candidate) {
+            $candDir = realpath(dirname($candidate));
+            if ($candDir === false) {
+                error_log('Missing dir: '.$candidate);
+                continue;
+            }
+            $abs = $candDir . DIRECTORY_SEPARATOR . basename($candidate);
+            if (strpos($abs, $base . DIRECTORY_SEPARATOR) === 0) {
+                $files[$abs] = true;
+            } else {
+                error_log('File outside base: '.$abs);
             }
         }
     }
     $deleted_files = 0;
     foreach (array_keys($files) as $fp) {
-        if (file_exists($fp) && @unlink($fp)) {
+        if (is_file($fp) && @unlink($fp)) {
             $deleted_files++;
+            $png = $fp . '.png';
+            if (is_file($png)) { @unlink($png); }
+        } else {
+            if (is_file($fp)) { error_log('Failed to delete file: '.$fp); }
         }
     }
     $del = $db->prepare('DELETE FROM detections WHERE Com_Name = :name');
