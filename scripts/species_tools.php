@@ -199,26 +199,45 @@ const sfThresh = <?php echo $sf_thresh; ?>;
 function loadThresholds() {
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
-    const lines = this.responseText.trim().split('\n');
-    const map = {};
-    lines.forEach(line => {
-      const m = line.match(/^(.+)\s-\s([0-9.]+)/);
-      if (m) { map[m[1]] = parseFloat(m[2]); }
-    });
+    const text = this.responseText || '';
+    const lines = text.split(/\r?\n/);
+    const map = Object.create(null);
+
+    for (const line of lines) {
+      // Match "... - 0.1234" anywhere in the line
+      const m = line.match(/^(.*)\s-\s([0-9.]+)\s*$/);
+      if (!m) continue;
+
+      const left = m[1].trim();          // could be "Sci_Common" or just "Common"
+      const val  = parseFloat(m[2]);
+      if (isNaN(val)) continue;
+
+      // If there is an underscore, assume "Sci_Common" and take Common part
+      const underscoreIdx = left.lastIndexOf('_');
+      const common = underscoreIdx >= 0 ? left.slice(underscoreIdx + 1) : left;
+
+      // Store by Common Name (what your table uses)
+      map[common] = val;
+
+      // (Optional) also store the raw left side in case some rows ever use it
+      map[left] = val;
+    }
+
+    // decode entities from data-comname
     const decoder = document.createElement('textarea');
     document.querySelectorAll('#speciesTable tbody tr').forEach(row => {
-      decoder.innerHTML = row.getAttribute('data-comname');
-      const name = decoder.value;
-      if (name in map) {
-        const val = map[name];
+      decoder.innerHTML = row.getAttribute('data-comname') || '';
+      const commonName = decoder.value;
+      if (commonName in map) {
+        const v = map[commonName];
         const cell = row.querySelector('td.threshold');
-        cell.textContent = val.toFixed(4);
-        cell.style.color = val >= sfThresh ? 'green' : 'red';
-        cell.dataset.sort = val.toFixed(4);
+        cell.textContent = v.toFixed(4);
+        cell.style.color = v >= sfThresh ? 'green' : 'red';
+        cell.dataset.sort = v.toFixed(4);
       }
     });
   };
-  xhttp.open('GET', scriptsBase + 'config.php?threshold=0');
+  xhttp.open('GET', scriptsBase + 'config.php?threshold=0', true);
   xhttp.send();
 }
 
