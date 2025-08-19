@@ -51,6 +51,23 @@ if ($out) {
     }
 }
 
+if (isset($_GET['toggle']) && isset($_GET['species']) && isset($_GET['action'])) {
+    $list = $_GET['toggle'];
+    $species = $_GET['species'];
+    $file = ($list === 'exclude') ? $exclude_file : $whitelist_file;
+    $lines = file_exists($file) ? file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+    if ($_GET['action'] === 'add') {
+        if (!in_array($species, $lines)) {
+            $lines[] = $species;
+        }
+    } else {
+        $lines = array_filter($lines, function($line) use ($species) { return $line !== $species; });
+    }
+    file_put_contents($file, implode("\n", $lines) . "\n");
+    echo 'OK';
+    exit;
+}
+
 if (isset($_GET['getcounts'])) {
     $species = $_GET['getcounts'];
     $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name FROM detections WHERE Com_Name = :name');
@@ -109,6 +126,9 @@ if (isset($_GET['delete'])) {
 
 $result = fetch_species_array('alphabetical');
 ?>
+<style>
+.circle-icon { display:inline-block;width:12px;height:12px;border:1px solid #777;border-radius:50%;cursor:pointer; }
+</style>
 <div class="centered">
 <table id="speciesTable">
   <thead>
@@ -116,10 +136,9 @@ $result = fetch_species_array('alphabetical');
       <th onclick="sortTable(0)">Common Name</th>
       <th onclick="sortTable(1)">Scientific Name</th>
       <th onclick="sortTable(2)">Identifications</th>
-      <th onclick="sortTable(3)">Confirmed</th>
-      <th onclick="sortTable(4)">Excluded</th>
-      <th onclick="sortTable(5)">Whitelisted</th>
-      <th onclick="sortTable(6)">Threshold</th>
+      <th onclick="sortTable(3)">Excluded</th>
+      <th onclick="sortTable(4)">Whitelisted</th>
+      <th onclick="sortTable(5)">Threshold</th>
       <th>Delete</th>
     </tr>
   </thead>
@@ -130,28 +149,25 @@ $result = fetch_species_array('alphabetical');
     $count = $row['Count'];
     $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
 
-    $is_confirmed = in_array($identifier, $confirmed_species);
-    $conf_icon = $is_confirmed ? 'images/check.svg' : 'images/question.svg';
-    $conf_action = $is_confirmed ? 'del' : 'add';
-
     $is_excluded = in_array($identifier, $excluded_species);
-    $excl_icon = $is_excluded ? 'images/check.svg' : 'images/question.svg';
-    $excl_action = $is_excluded ? 'del' : 'add';
-
     $is_whitelisted = in_array($identifier, $whitelisted_species);
-    $white_icon = $is_whitelisted ? 'images/check.svg' : 'images/question.svg';
-    $white_action = $is_whitelisted ? 'del' : 'add';
+    $excl_cell = $is_excluded
+        ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','del')\">"
+        : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','add')\"></span>";
+
+    $white_cell = $is_whitelisted
+        ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','del')\">"
+        : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
 
     $prob = isset($predicted_probs[$row['Com_Name']]) ? $predicted_probs[$row['Com_Name']] : 0;
     $prob_fmt = number_format($prob, 4, '.', '');
     $prob_color = ($prob >= $sf_thresh) ? 'green' : 'red';
 
     echo "<tr><td>".$common."</td><td><i>".$scient."</i></td><td>".$count."</td>".
-         "<td data-sort='".($is_confirmed?1:0)."'><img style='cursor:pointer;max-width:12px;max-height:12px' src='".$conf_icon."' onclick=\"toggleSpecies('confirm','".str_replace("'", '', $identifier)."','".$conf_action."')\"></td>".
-         "<td data-sort='".($is_excluded?1:0)."'><img style='cursor:pointer;max-width:12px;max-height:12px' src='".$excl_icon."' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','".$excl_action."')\"></td>".
-         "<td data-sort='".($is_whitelisted?1:0)."'><img style='cursor:pointer;max-width:12px;max-height:12px' src='".$white_icon."' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','".$white_action."')\"></td>".
+         "<td data-sort='".($is_excluded?1:0)."'>".$excl_cell."</td>".
+         "<td data-sort='".($is_whitelisted?1:0)."'>".$white_cell."</td>".
          "<td data-sort='".$prob_fmt."'><span style='color:".$prob_color."'>".$prob_fmt."</span></td>".
-         "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\"></td></tr>"; 
+         "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\"></td></tr>";
 } ?>
   </tbody>
 </table>
@@ -163,7 +179,7 @@ function toggleSpecies(list, species, action) {
   xhttp.onload = function() {
     if (this.responseText == 'OK') { location.reload(); }
   };
-  xhttp.open('GET', scriptsBase + 'play.php?' + list + 'species=' + encodeURIComponent(species) + '&' + list + '_' + action + '=true', true);
+  xhttp.open('GET', scriptsBase + 'species_tools.php?toggle=' + list + '&species=' + encodeURIComponent(species) + '&action=' + action, true);
   xhttp.send();
 }
 function deleteSpecies(species) {
