@@ -109,6 +109,10 @@ APPRISE_MINIMUM_SECONDS_BETWEEN_NOTIFICATIONS_PER_SPECIES=0
 APPRISE_ONLY_NOTIFY_SPECIES_NAMES=""
 APPRISE_ONLY_NOTIFY_SPECIES_NAMES_2=""
 
+#----------------------  Image Provider Configuration ------------------------#
+## WIKIPEDIA or FLICKR (Flickr requires API key)
+IMAGE_PROVIDER=WIKIPEDIA
+
 #----------------------  Flickr Images API Configuration -----------------------#
 ## If FLICKR_API_KEY is set, the web interface will try and display bird images 
 ## for each detection. If FLICKR_FILTER_EMAIL is set, the images will only be 
@@ -276,6 +280,11 @@ CUSTOM_IMAGE_TITLE=""
 
 ## RARE_SPECIES_THRESHOLD defines after how many days a species is considered as rare and highlighted on overview page
 RARE_SPECIES_THRESHOLD=30
+
+## CONFIRM_SPECIES adds an icon next to species in the Recordings tab to keep track which species are manually confirmed
+## It generates a confirmed_species_list.txt file, and allows to better visualize species that could be false positives
+
+CONFIRM_SPECIES=0
 
 ## These are just for debugging
 LAST_RUN=
