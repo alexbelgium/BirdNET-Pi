@@ -1,3 +1,10 @@
+Merged PR :
+- Add interactive chart option : https://github.com/alexbelgium/BirdNET-Pi/pull/107
+- New plot : https://github.com/alexbelgium/BirdNET-Pi/pull/105
+- Add species management tools : https://github.com/alexbelgium/BirdNET-Pi/pull/104
+- Add species confirmation option to recordings : https://github.com/alexbelgium/BirdNET-Pi/pull/102
+- Add selectable duration mini-graphs for species pages : https://github.com/alexbelgium/BirdNET-Pi/pull/101
+
 <h1 align="center"><a href="https://github.com/mcguirepr89/BirdNET-Pi/blob/main/LICENSE">Review the license!!</a></h1>
 <h1 align="center">You may not use BirdNET-Pi to develop a commercial product!!!!</h1>
 <h1 align="center">
