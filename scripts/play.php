@@ -636,8 +636,9 @@ $sciname = $name;
 $sciname_name = $sciname;
 $info_url = get_info_url($sciname);
 $url = $info_url['URL'];
+$url_title = $info_url['TITLE'];
 echo "<table>";
-  <tr><th>$com_name<br><span style=\"font-weight:normal;\">
+echo "  <tr><th>$com_name<br><span style=\"font-weight:normal;\">";
 if ($confirmspecies_enabled == 1) {
   if (in_array(str_replace("'", "", $sciname_name), $confirmed_species)) {
     echo "<img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"del\")'>";
@@ -648,7 +649,7 @@ if ($confirmspecies_enabled == 1) {
 echo "<br><i>$sciname</i></span><br>";
 echo "    <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>";
 echo "    <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>";
-echo "    <img style=\"width: unset !important;display: inline;height: 1em;cursor:pointer\" title=\"View species stats\" onclick=\"generateMiniGraph(this, '$comnamegraph')\" width=\"25\" src=\"images/chart.svg\">"
+echo "    <img style=\"width: unset !important;display: inline;height: 1em;cursor:pointer\" title=\"View species stats\" onclick=\"generateMiniGraph(this, '$comnamegraph')\" width=\"25\" src=\"images/chart.svg\">";
 echo "  </th></tr>";
   $iter=0;
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
