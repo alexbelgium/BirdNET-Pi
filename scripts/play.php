@@ -648,7 +648,7 @@ if ($confirmspecies_enabled == 1) {
 echo "<br><i>$sciname</i></span><br>";
 echo "    <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>";
 echo "    <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>";
-echo "    <img style=\"width: unset !important;display: inline;height: 1em;cursor:pointer\" title=\"View species stats\" onclick=\"generateMiniGraph(this, '$comnamegraph')\" width=\"25\" src=\"images/chart.svg\">"
+echo "    <img style=\"width: unset !important;display: inline;height: 1em;cursor:pointer\" title=\"View species stats\" onclick=\"generateMiniGraph(this, '$comnamegraph')\" width=\"25\" src=\"images/chart.svg\">";
 echo "  </th></tr>";
   $iter=0;
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
