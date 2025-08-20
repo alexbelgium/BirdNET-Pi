@@ -198,6 +198,9 @@ if (get_included_files()[0] === __FILE__) {
 
 ?>
 <script src="static/custom-audio-player.js"></script>
+<script src="static/Chart.bundle.js"></script>
+<script src="static/chartjs-plugin-trendline.min.js"></script>
+<script src="static/minigraph.js"></script>
 <script>
 
 function deleteDetection(filename,copylink=false) {
@@ -627,14 +630,14 @@ $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 40;
 
 $results=$result2->fetchArray(SQLITE3_ASSOC);
 $com_name = $results['Com_Name'];
+$comnamegraph = str_replace("'", "\\'", $com_name);
 $result2->reset(); // reset the pointer to the beginning of the result set
 $sciname = $name;
 $sciname_name = $sciname;
 $info_url = get_info_url($sciname);
 $url = $info_url['URL'];
 echo "<table>";
-echo "  <tr><th>$com_name";
-echo "<span style=\"font-weight:normal;\">";
+  <tr><th>$com_name<br><span style=\"font-weight:normal;\">
 if ($confirmspecies_enabled == 1) {
   if (in_array(str_replace("'", "", $sciname_name), $confirmed_species)) {
     echo "<img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"del\")'>";
@@ -645,6 +648,7 @@ if ($confirmspecies_enabled == 1) {
 echo "<br><i>$sciname</i></span><br>";
 echo "    <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>";
 echo "    <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>";
+echo "    <img style=\"width: unset !important;display: inline;height: 1em;cursor:pointer\" title=\"View species stats\" onclick=\"generateMiniGraph(this, '$comnamegraph')\" width=\"25\" src=\"images/chart.svg\">"
 echo "  </th></tr>";
   $iter=0;
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
