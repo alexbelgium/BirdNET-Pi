@@ -637,7 +637,8 @@ $sciname_name = $sciname;
 $info_url = get_info_url($sciname);
 $url = $info_url['URL'];
 echo "<table>";
-  <tr><th>$com_name<br><span style=\"font-weight:normal;\">
+echo '<tr><th>' . htmlspecialchars($com_name) . '<br><span style="font-weight:normal;">';
+
 if ($confirmspecies_enabled == 1) {
   if (in_array(str_replace("'", "", $sciname_name), $confirmed_species)) {
     echo "<img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"del\")'>";
