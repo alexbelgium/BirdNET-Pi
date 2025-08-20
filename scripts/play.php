@@ -1,8 +1,8 @@
 <?php
 
 /* Prevent XSS input */
-$_GET   = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING);
-$_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+$_GET   = filter_input_array(INPUT_GET, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+$_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
 error_reporting(E_ERROR);
 ini_set('display_errors',1);
@@ -11,6 +11,9 @@ $home = get_home();
 $config = get_config();
 $user = get_user();
 $confirmspecies_enabled = $config["CONFIRM_SPECIES"];
+if (session_status() === PHP_SESSION_NONE) {
+  session_start();
+}
 
 $db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
 $db->busyTimeout(1000);
@@ -33,12 +36,16 @@ if(isset($_GET['deletefile'])) {
     die();
   }
   $db_writable = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READWRITE);
-  $db->busyTimeout(1000);
+  $db_writable->busyTimeout(1000);
   $statement1 = $db_writable->prepare('DELETE FROM detections WHERE File_Name = :file_name LIMIT 1');
   ensure_db_ok($statement1);
   $statement1->bindValue(':file_name', explode("/", $_GET['deletefile'])[2]);
   $file_pointer = $home."/BirdSongs/Extracted/By_Date/".$_GET['deletefile'];
-  if (!exec("sudo rm $file_pointer 2>&1 && sudo rm $file_pointer.png 2>&1", $output)) {
+  $cmd = 'sudo rm '.escapeshellarg($file_pointer).' 2>&1 && sudo rm '.escapeshellarg($file_pointer.'.png').' 2>&1';
+  $output = [];
+  $ret = 0;
+  exec($cmd, $output, $ret);
+  if ($ret === 0) {
     echo "OK";
   } else {
     echo "Error - file deletion failed : " . implode(", ", $output) . "<br>";
@@ -164,7 +171,6 @@ if(isset($_GET['bydate'])){
   #Specific Date
 } elseif(isset($_GET['date'])) {
   $date = $_GET['date'];
-  session_start();
   $_SESSION['date'] = $date;
   $result = fetch_species_array($_GET['sort'], $date);
   $view = "date";
@@ -177,7 +183,6 @@ if(isset($_GET['bydate'])){
   #Specific Species
 } elseif(isset($_GET['species'])) {
   $species = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
-  session_start();
   $_SESSION['species'] = $species;
   $result2 = fetch_all_detections($species, $_GET['sort'], $_SESSION['date']);
   $view = "species";
@@ -636,8 +641,9 @@ $sciname = $name;
 $sciname_name = $sciname;
 $info_url = get_info_url($sciname);
 $url = $info_url['URL'];
+$url_title = $info_url['TITLE'];
 echo "<table>";
-  <tr><th>$com_name<br><span style=\"font-weight:normal;\">
+echo '<tr><th>' . htmlspecialchars($com_name) . '<br><span style="font-weight:normal;">';
 if ($confirmspecies_enabled == 1) {
   if (in_array(str_replace("'", "", $sciname_name), $confirmed_species)) {
     echo "<img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"del\")'>";
@@ -648,7 +654,7 @@ if ($confirmspecies_enabled == 1) {
 echo "<br><i>$sciname</i></span><br>";
 echo "    <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>";
 echo "    <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>";
-echo "    <img style=\"width: unset !important;display: inline;height: 1em;cursor:pointer\" title=\"View species stats\" onclick=\"generateMiniGraph(this, '$comnamegraph')\" width=\"25\" src=\"images/chart.svg\">"
+echo "    <img style=\"width: unset !important;display: inline;height: 1em;cursor:pointer\" title=\"View species stats\" onclick=\"generateMiniGraph(this, '$comnamegraph')\" width=\"25\" src=\"images/chart.svg\">";
 echo "  </th></tr>";
   $iter=0;
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
