@@ -636,7 +636,7 @@ $sciname = $name;
 $sciname_name = $sciname;
 $info_url = get_info_url($sciname);
 $url = $info_url['URL'];
-url_title = $info_url['TITLE'];
+$url_title = $info_url['TITLE'];
 echo "<table>";
 echo '<tr><th>' . htmlspecialchars($com_name) . '<br><span style="font-weight:normal;">';
 
