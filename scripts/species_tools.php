@@ -1,158 +1,170 @@
 <?php
-
-/* Prevent XSS input */
-$_GET   = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING);
-$_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+/* Basic input sanitation */
+$_GET  = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING)  ?: [];
+$_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING) ?: [];
 
 require_once __DIR__ . '/common.php';
 ensure_authenticated();
 
 $home = get_home();
-$db = new SQLite3(__DIR__ . '/birds.db', SQLITE3_OPEN_READWRITE);
+$db   = new SQLite3(__DIR__ . '/birds.db', SQLITE3_OPEN_READWRITE);
 $db->busyTimeout(1000);
 
-$base_symlink = $home . '/BirdSongs/Extracted/By_Date';
-$base = realpath($base_symlink);
+/* Paths / lists */
+$base_symlink   = $home . '/BirdSongs/Extracted/By_Date';
+$base           = realpath($base_symlink); // used only for safety checks
 
-$confirm_file = __DIR__ . '/confirmed_species_list.txt';
-$confirmed_species = [];
-if (file_exists($confirm_file)) {
-    $confirmed_species = file($confirm_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-}
-
-$exclude_file = __DIR__ . '/exclude_species_list.txt';
-$excluded_species = [];
-if (file_exists($exclude_file)) {
-    $excluded_species = file($exclude_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-}
-
+$confirm_file   = __DIR__ . '/confirmed_species_list.txt';
+$exclude_file   = __DIR__ . '/exclude_species_list.txt';
 $whitelist_file = __DIR__ . '/whitelist_species_list.txt';
-$whitelisted_species = [];
-if (file_exists($whitelist_file)) {
-    $whitelisted_species = file($whitelist_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+$confirmed_species   = file_exists($confirm_file)   ? file($confirm_file,   FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+$excluded_species    = file_exists($exclude_file)   ? file($exclude_file,   FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+$whitelisted_species = file_exists($whitelist_file) ? file($whitelist_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+
+$config    = get_config();
+$sf_thresh = isset($config['SF_THRESH']) ? (float)$config['SF_THRESH'] : 0.0;
+
+/* ---------- helpers (tiny, single-purpose) ---------- */
+function join_path(...$parts): string {
+  return preg_replace('#/+#', '/', implode('/', $parts));
+}
+function can_unlink(string $p): bool {
+  // unlink-able: symlink (even dangling) or regular file
+  return is_link($p) || is_file($p);
+}
+function under_base(string $path, string $base): bool {
+  if ($base === false) return false;
+  $baseReal = rtrim(realpath($base) ?: $base, DIRECTORY_SEPARATOR);
+
+  $resolved = realpath($path);
+  if ($resolved === false) {
+    $parent = realpath(dirname($path));
+    if ($parent === false) return false;
+    $resolved = $parent . DIRECTORY_SEPARATOR . basename($path);
+  }
+  return $resolved === $baseReal || strpos($resolved, $baseReal . DIRECTORY_SEPARATOR) === 0;
 }
 
-$config = get_config();
-$sf_thresh = isset($config['SF_THRESH']) ? floatval($config['SF_THRESH']) : 0;
+/**
+ * Collect detection count, files to delete (unique), first scientific name,
+ * and dirs to try rmdir later — for a given species.
+ */
+function collect_species_targets(SQLite3 $db, string $species, string $home, $base): array {
+  $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name FROM detections WHERE Com_Name = :name');
+  ensure_db_ok($stmt);
+  $stmt->bindValue(':name', $species, SQLITE3_TEXT);
+  $res = $stmt->execute();
 
-if (isset($_GET['toggle']) && isset($_GET['species']) && isset($_GET['action'])) {
-    $list = $_GET['toggle'];
-    $species = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
-    $file = ($list === 'exclude') ? $exclude_file : $whitelist_file;
-    $lines = file_exists($file) ? file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
-    if ($_GET['action'] === 'add') {
-        if (!in_array($species, $lines)) {
-            $lines[] = $species;
+  $count = 0;
+  $files = [];
+  $dirs  = [];
+  $sci   = null;
+
+  while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
+    $count++;
+    if ($sci === null) $sci = $row['Sci_Name'];
+    $dir = str_replace([' ', "'"], ['_', ''], $row['Com_Name']);
+
+    $candidates = [
+      join_path($home, 'BirdSongs/Extracted/By_Date',        $row['Date'], $dir, $row['File_Name']),
+      join_path($home, 'BirdSongs/Extracted/By_Date/shifted', $row['Date'], $dir, $row['File_Name']),
+    ];
+
+    foreach ($candidates as $c) {
+      if (can_unlink($c) && under_base($c, $base)) {
+        $files[$c] = true; $dirs[] = dirname($c); continue;
+      }
+      $d = realpath(dirname($c));
+      if ($d !== false) {
+        $alt = $d . DIRECTORY_SEPARATOR . basename($c);
+        if (can_unlink($alt) && under_base($alt, $base)) {
+          $files[$alt] = true; $dirs[] = dirname($alt);
         }
-    } else {
-        $lines = array_filter($lines, function($line) use ($species) { return $line !== $species; });
+      }
     }
-    file_put_contents($file, implode("\n", $lines) . "\n");
-    echo 'OK';
-    exit;
+  }
+  return [
+    'count' => $count,
+    'files' => array_keys($files),
+    'dirs'  => array_values(array_unique($dirs)),
+    'sci'   => $sci,
+  ];
 }
 
+/* ---------- toggle exclude/whitelist ---------- */
+if (isset($_GET['toggle'], $_GET['species'], $_GET['action'])) {
+  $list    = $_GET['toggle'] === 'exclude' ? 'exclude' : 'whitelist';
+  $species = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
+  $file    = $list === 'exclude' ? $exclude_file : $whitelist_file;
+
+  $lines = file_exists($file) ? file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+  if ($_GET['action'] === 'add') {
+    if (!in_array($species, $lines, true)) $lines[] = $species;
+  } else {
+    $lines = array_values(array_filter($lines, fn($l) => $l !== $species));
+  }
+  file_put_contents($file, implode("\n", $lines) . (empty($lines) ? "" : "\n"));
+  header('Content-Type: text/plain'); echo 'OK'; exit;
+}
+
+/* ---------- count (keeps your old "getcounts=" API) ---------- */
 if (isset($_GET['getcounts'])) {
-    if ($base === false) {
-        http_response_code(500);
-        exit(json_encode(['error' => 'Base directory not found']));
-    }
-
-    $species = htmlspecialchars_decode($_GET['getcounts'], ENT_QUOTES);
-    $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name FROM detections WHERE Com_Name = :name');
-    ensure_db_ok($stmt);
-    $stmt->bindValue(':name', $species, SQLITE3_TEXT);
-    $res = $stmt->execute();
-    $count = 0;
-    $files = [];
-    while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
-        $count++;
-        $dir = str_replace([' ', "'"], ['_', ''], $row['Com_Name']);
-        foreach ([
-            $home.'/BirdSongs/Extracted/By_Date/'.$row['Date'].'/'.$dir.'/'.$row['File_Name'],
-            $home.'/BirdSongs/Extracted/By_Date/shifted/'.$row['Date'].'/'.$dir.'/'.$row['File_Name'],
-        ] as $candidate) {
-            $candDir = realpath(dirname($candidate));
-            if ($candDir === false) {
-                error_log('Missing dir: '.$candidate);
-                continue;
-            }
-            $abs = $candDir . DIRECTORY_SEPARATOR . basename($candidate);
-            if (strpos($abs, $base . DIRECTORY_SEPARATOR) === 0) {
-                if (is_file($abs)) { $files[$abs] = true; }
-            } else {
-                error_log('File outside base: '.$abs);
-            }
-        }
-    }
-    echo json_encode(['count' => $count, 'files' => count($files)]);
-    exit;
+  header('Content-Type: application/json');
+  if ($base === false) { http_response_code(500); exit(json_encode(['error' => 'Base directory not found'])); }
+  $species = htmlspecialchars_decode($_GET['getcounts'], ENT_QUOTES);
+  $info = collect_species_targets($db, $species, $home, $base);
+  echo json_encode(['count' => $info['count'], 'files' => count($info['files'])]); exit;
 }
 
+/* ---------- delete (keeps your old "delete=" API) ---------- */
 if (isset($_GET['delete'])) {
-    if ($base === false) {
-        http_response_code(500);
-        exit(json_encode(['error' => 'Base directory not found']));
-    }
+  header('Content-Type: application/json');
+  if ($base === false) { http_response_code(500); exit(json_encode(['error' => 'Base directory not found'])); }
+  $species = htmlspecialchars_decode($_GET['delete'], ENT_QUOTES);
+  $info = collect_species_targets($db, $species, $home, $base);
 
-    $species = htmlspecialchars_decode($_GET['delete'], ENT_QUOTES);
-    $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name FROM detections WHERE Com_Name = :name');
-    ensure_db_ok($stmt);
-    $stmt->bindValue(':name', $species, SQLITE3_TEXT);
-    $res = $stmt->execute();
-    $files = [];
-    $sci_name = null;
-    while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
-        if (!$sci_name) { $sci_name = $row['Sci_Name']; }
-        $dir = str_replace([' ', "'"], ['_', ''], $row['Com_Name']);
-        foreach ([
-            $home.'/BirdSongs/Extracted/By_Date/'.$row['Date'].'/'.$dir.'/'.$row['File_Name'],
-            $home.'/BirdSongs/Extracted/By_Date/shifted/'.$row['Date'].'/'.$dir.'/'.$row['File_Name'],
-        ] as $candidate) {
-            $candDir = realpath(dirname($candidate));
-            if ($candDir === false) {
-                error_log('Missing dir: '.$candidate);
-                continue;
-            }
-            $abs = $candDir . DIRECTORY_SEPARATOR . basename($candidate);
-            if (strpos($abs, $base . DIRECTORY_SEPARATOR) === 0) {
-                $files[$abs] = true;
-            } else {
-                error_log('File outside base: '.$abs);
-            }
-        }
+  $deleted = 0;
+  foreach ($info['files'] as $fp) {
+    if (!under_base($fp, $base)) continue;
+    if (can_unlink($fp) && @unlink($fp)) {
+      $deleted++;
+      // thumbnails: "file.wav.png" and "file.png"
+      foreach ([$fp . '.png', preg_replace('/\.[^.]+$/', '.png', $fp)] as $png) {
+        if (can_unlink($png)) @unlink($png);
+      }
     }
-    $deleted_files = 0;
-    foreach (array_keys($files) as $fp) {
-        if (is_file($fp) && @unlink($fp)) {
-            $deleted_files++;
-            $png = $fp . '.png';
-            if (is_file($png)) { @unlink($png); }
-        } else {
-            if (is_file($fp)) { error_log('Failed to delete file: '.$fp); }
-        }
-    }
-    $del = $db->prepare('DELETE FROM detections WHERE Com_Name = :name');
-    ensure_db_ok($del);
-    $del->bindValue(':name', $species, SQLITE3_TEXT);
-    $del->execute();
-    $lines_deleted = $db->changes();
-    if (file_exists($confirm_file) && $sci_name !== null) {
-        $identifier = str_replace("'", '', $sci_name.'_'.$species);
-        $lines = array_filter($confirmed_species, function($line) use ($identifier) {
-            return $line !== $identifier;
-        });
-        file_put_contents($confirm_file, implode("\n", $lines));
-    }
-    echo json_encode(['lines' => $lines_deleted, 'files' => $deleted_files]);
-    exit;
+  }
+  foreach ($info['dirs'] as $dir) {
+    if (under_base($dir, $base)) @rmdir($dir); // best effort
+  }
+
+  // DB rows
+  $del = $db->prepare('DELETE FROM detections WHERE Com_Name = :name');
+  ensure_db_ok($del);
+  $del->bindValue(':name', $species, SQLITE3_TEXT);
+  $del->execute();
+  $lines_deleted = $db->changes();
+
+  // Remove from confirmed list
+  if ($info['sci'] !== null && file_exists($confirm_file)) {
+    $identifier = str_replace("'", '', $info['sci'] . '_' . $species);
+    $lines = array_values(array_filter($confirmed_species, fn($l) => $l !== $identifier));
+    file_put_contents($confirm_file, implode("\n", $lines) . (empty($lines) ? "" : "\n"));
+  }
+
+  echo json_encode(['lines' => $lines_deleted, 'files' => $deleted]); exit;
 }
 
+/* ---------- page (unchanged semantics; minor tidy) ---------- */
 $result = fetch_species_array('alphabetical');
 ?>
 <style>
-.circle-icon { display:inline-block;width:12px;height:12px;border:1px solid #777;border-radius:50%;cursor:pointer; }
+  .circle-icon{display:inline-block;width:12px;height:12px;border:1px solid #777;border-radius:50%;cursor:pointer;}
+  .centered{max-width:1100px;margin:0 auto}
+  #speciesTable th{cursor:pointer}
 </style>
+
 <div class="centered">
 <table id="speciesTable">
   <thead>
@@ -167,68 +179,59 @@ $result = fetch_species_array('alphabetical');
     </tr>
   </thead>
   <tbody>
-<?php while($row = $result->fetchArray(SQLITE3_ASSOC)) {
-    $common = htmlspecialchars($row['Com_Name'], ENT_QUOTES);
-    $scient = htmlspecialchars($row['Sci_Name'], ENT_QUOTES);
-    $count = $row['Count'];
-    $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
+<?php while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+  $common = htmlspecialchars($row['Com_Name'], ENT_QUOTES);
+  $scient = htmlspecialchars($row['Sci_Name'], ENT_QUOTES);
+  $count  = (int)$row['Count'];
+  $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
 
-    $is_excluded = in_array($identifier, $excluded_species);
-    $is_whitelisted = in_array($identifier, $whitelisted_species);
-    $excl_cell = $is_excluded
-        ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','del')\">"
-        : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','add')\"></span>";
+  $is_excluded    = in_array($identifier, $excluded_species, true);
+  $is_whitelisted = in_array($identifier, $whitelisted_species, true);
 
-    $white_cell = $is_whitelisted
-        ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','del')\">"
-        : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
+  $excl_cell = $is_excluded
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','add')\"></span>";
 
-    echo "<tr data-comname=\"".$common."\"><td>".$common."</td><td><i>".$scient."</i></td><td>".$count."</td>".
-         "<td data-sort='".($is_excluded?1:0)."'>".$excl_cell."</td>".
-         "<td data-sort='".($is_whitelisted?1:0)."'>".$white_cell."</td>".
-         "<td class='threshold' data-sort='0'>0.0000</td>".
-         "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\"></td></tr>";
+  $white_cell = $is_whitelisted
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
+
+  echo "<tr data-comname=\"{$common}\"><td>{$common}</td><td><i>{$scient}</i></td><td>{$count}</td>"
+     . "<td data-sort='".($is_excluded?1:0)."'>".$excl_cell."</td>"
+     . "<td data-sort='".($is_whitelisted?1:0)."'>".$white_cell."</td>"
+     . "<td class='threshold' data-sort='0'>0.0000</td>"
+     . "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\"></td></tr>";
 } ?>
   </tbody>
 </table>
 </div>
+
 <script>
 const scriptsBase = '../scripts/';
-const sfThresh = <?php echo $sf_thresh; ?>;
+const sfThresh = <?php echo json_encode($sf_thresh, JSON_UNESCAPED_UNICODE); ?>;
+
+// tiny fetch helper
+const get = (url) => fetch(url, {cache:'no-store'}).then(r => r.text());
 
 function loadThresholds() {
-  const xhttp = new XMLHttpRequest();
-  xhttp.onload = function() {
-    const text = this.responseText || '';
-    const lines = text.split(/\r?\n/);
+  get(scriptsBase + 'config.php?threshold=0').then(text => {
+    const lines = (text || '').split(/\r?\n/);
     const map = Object.create(null);
-
     for (const line of lines) {
-      // Match "... - 0.1234" anywhere in the line
       const m = line.match(/^(.*)\s-\s([0-9.]+)\s*$/);
       if (!m) continue;
-
-      const left = m[1].trim();          // could be "Sci_Common" or just "Common"
+      const left = m[1].trim();
       const val  = parseFloat(m[2]);
-      if (isNaN(val)) continue;
-
-      // If there is an underscore, assume "Sci_Common" and take Common part
-      const underscoreIdx = left.lastIndexOf('_');
-      const common = underscoreIdx >= 0 ? left.slice(underscoreIdx + 1) : left;
-
-      // Store by Common Name (what your table uses)
-      map[common] = val;
-
-      // (Optional) also store the raw left side in case some rows ever use it
-      map[left] = val;
+      if (Number.isNaN(val)) continue;
+      const u = left.lastIndexOf('_');
+      const common = u >= 0 ? left.slice(u + 1) : left;
+      map[common] = val; map[left] = val;
     }
-
-    // decode entities from data-comname
     const decoder = document.createElement('textarea');
     document.querySelectorAll('#speciesTable tbody tr').forEach(row => {
       decoder.innerHTML = row.getAttribute('data-comname') || '';
       const commonName = decoder.value;
-      if (commonName in map) {
+      if (Object.prototype.hasOwnProperty.call(map, commonName)) {
         const v = map[commonName];
         const cell = row.querySelector('td.threshold');
         cell.textContent = v.toFixed(4);
@@ -236,59 +239,42 @@ function loadThresholds() {
         cell.dataset.sort = v.toFixed(4);
       }
     });
-  };
-  xhttp.open('GET', scriptsBase + 'config.php?threshold=0', true);
-  xhttp.send();
+  });
 }
-
 document.addEventListener('DOMContentLoaded', loadThresholds);
 
 function toggleSpecies(list, species, action) {
-  const xhttp = new XMLHttpRequest();
-  xhttp.onload = function() {
-    if (this.responseText == 'OK') { location.reload(); }
-  };
-  xhttp.open('GET', scriptsBase + 'species_tools.php?toggle=' + list + '&species=' + encodeURIComponent(species) + '&action=' + action, true);
-  xhttp.send();
+  get(scriptsBase + 'species_tools.php?toggle=' + list + '&species=' + encodeURIComponent(species) + '&action=' + action)
+    .then(t => { if (t.trim() === 'OK') location.reload(); });
 }
+
 function deleteSpecies(species) {
-  const xhttp = new XMLHttpRequest();
-  xhttp.onload = function() {
-    const info = JSON.parse(this.responseText);
-    if (confirm('Delete ' + info.count + ' detections and ' + info.files + ' files for ' + species + '?')) {
-      const xhttp2 = new XMLHttpRequest();
-      xhttp2.onload = function() {
-        try {
-          const res = JSON.parse(this.responseText);
-          alert('Deleted ' + res.lines + ' detections and ' + res.files + ' files for ' + species);
-        } catch (e) {
-          alert('Deletion complete');
-        }
-        location.reload();
-      };
-      xhttp2.open('GET', scriptsBase + 'species_tools.php?delete=' + encodeURIComponent(species), true);
-      xhttp2.send();
-    }
-  };
-  xhttp.open('GET', scriptsBase + 'species_tools.php?getcounts=' + encodeURIComponent(species), true);
-  xhttp.send();
+  get(scriptsBase + 'species_tools.php?getcounts=' + encodeURIComponent(species)).then(t => {
+    let info; try { info = JSON.parse(t); } catch { alert('Could not parse count response'); return; }
+    if (!confirm('Delete ' + info.count + ' detections and ' + info.files + ' files for ' + species + '?')) return;
+    get(scriptsBase + 'species_tools.php?delete=' + encodeURIComponent(species)).then(t2 => {
+      try {
+        const res = JSON.parse(t2);
+        alert('Deleted ' + res.lines + ' detections and ' + res.files + ' files for ' + species);
+      } catch { alert('Deletion complete'); }
+      location.reload();
+    });
+  });
 }
+
 function sortTable(n) {
   const table = document.getElementById('speciesTable');
   const tbody = table.tBodies[0];
   const rows = Array.from(tbody.rows);
   const asc = table.getAttribute('data-sort-' + n) !== 'asc';
-  rows.sort(function(a, b) {
+  rows.sort((a, b) => {
     let x = a.cells[n].dataset.sort ?? a.cells[n].innerText.toLowerCase();
     let y = b.cells[n].dataset.sort ?? b.cells[n].innerText.toLowerCase();
     const nx = parseFloat(x), ny = parseFloat(y);
-    if (!isNaN(nx) && !isNaN(ny)) { x = nx; y = ny; }
-    if (x < y) return asc ? -1 : 1;
-    if (x > y) return asc ? 1 : -1;
-    return 0;
+    if (!Number.isNaN(nx) && !Number.isNaN(ny)) { x = nx; y = ny; }
+    return (x < y ? (asc ? -1 : 1) : (x > y ? (asc ? 1 : -1) : 0));
   });
-  rows.forEach(row => tbody.appendChild(row));
+  rows.forEach(r => tbody.appendChild(r));
   table.setAttribute('data-sort-' + n, asc ? 'asc' : 'desc');
 }
 </script>
-
