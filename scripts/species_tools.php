@@ -67,7 +67,7 @@ function collect_species_targets(SQLite3 $db, string $species, string $home, $ba
     $dir = str_replace([' ', "'"], ['_', ''], $row['Com_Name']);
 
     $candidates = [
-      join_path($home, 'BirdSongs/Extracted/By_Date',         $row['Date'], $dir, $row['File_Name']),
+      join_path($home, 'BirdSongs/Extracted/By_Date',        $row['Date'], $dir, $row['File_Name']),
       join_path($home, 'BirdSongs/Extracted/By_Date/shifted', $row['Date'], $dir, $row['File_Name']),
     ];
 
@@ -92,19 +92,11 @@ function collect_species_targets(SQLite3 $db, string $species, string $home, $ba
   ];
 }
 
-/* ---------- toggle exclude/whitelist/confirmed ---------- */
+/* ---------- toggle exclude/whitelist ---------- */
 if (isset($_GET['toggle'], $_GET['species'], $_GET['action'])) {
-  $toggle  = $_GET['toggle'];
+  $list    = $_GET['toggle'] === 'exclude' ? 'exclude' : 'whitelist';
   $species = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
-
-  // decide which list file to use
-  if ($toggle === 'exclude') {
-    $file = $exclude_file;
-  } elseif ($toggle === 'confirmed') {
-    $file = $confirm_file;
-  } else {
-    $file = $whitelist_file; // default
-  }
+  $file    = $list === 'exclude' ? $exclude_file : $whitelist_file;
 
   $lines = file_exists($file) ? file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
   if ($_GET['action'] === 'add') {
@@ -113,10 +105,7 @@ if (isset($_GET['toggle'], $_GET['species'], $_GET['action'])) {
     $lines = array_values(array_filter($lines, fn($l) => $l !== $species));
   }
   file_put_contents($file, implode("\n", $lines) . (empty($lines) ? "" : "\n"));
-
-  header('Content-Type: text/plain');
-  echo 'OK';
-  exit;
+  header('Content-Type: text/plain'); echo 'OK'; exit;
 }
 
 /* ---------- count (keeps your old "getcounts=" API) ---------- */
@@ -167,7 +156,7 @@ if (isset($_GET['delete'])) {
   echo json_encode(['lines' => $lines_deleted, 'files' => $deleted]); exit;
 }
 
-/* ---------- page (unchanged semantics; with Confirmed column + link change) ---------- */
+/* ---------- page (unchanged semantics; minor tidy) ---------- */
 $result = fetch_species_array('alphabetical');
 ?>
 <style>
@@ -203,7 +192,7 @@ $result = fetch_species_array('alphabetical');
   $is_whitelisted  = in_array($identifier, $whitelisted_species, true);
   $is_confirmed    = in_array($identifier, $confirmed_species, true);
 
-  // Cells with toggles
+  // Build cells (Excluded/Whitelisted keep your toggle behavior)
   $excl_cell = $is_excluded
     ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','".str_replace(\"'\", '', $identifier)."','del')\" alt='excluded' title='Excluded'>"
     : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','".str_replace(\"'\", '', $identifier)."','add')\" title='Mark excluded'></span>";
@@ -212,18 +201,19 @@ $result = fetch_species_array('alphabetical');
     ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace(\"'\", '', $identifier)."','del')\" alt='whitelisted' title='Whitelisted'>"
     : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace(\"'\", '', $identifier)."','add')\" title='Add to whitelist'></span>";
 
+  // Confirmed is display-only (no toggle requested)
   $conf_cell = $is_confirmed
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('confirmed','".str_replace(\"'\", '', $identifier)."','del')\" alt='confirmed' title='Confirmed (click to unset)'>"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('confirmed','".str_replace(\"'\", '', $identifier)."','add')\" title='Mark as confirmed'></span>";
+    ? "<img style='max-width:12px;max-height:12px' src='images/check.svg' alt='confirmed' title='Confirmed'>"
+    : "<span class='circle-icon' style='cursor:default' title='Not confirmed'></span>";
 
   // Common-name cell now links to scientific-name URL (spaces as '+')
   $scient_q = str_replace('%20', '+', rawurlencode($row['Sci_Name']));
-  $common_cell = "<a href=\"/views.php?view=Recordings&species={$scient_q}\" title=\"Open recordings for {$scient}\">{$common}</a>";
+  $common_cell = "<a href=\"/views.php?view=Recordings&species={$scient_q}\">{$common}</a>";
 
   echo "<tr data-comname=\"{$common}\">"
      . "<td>{$common_cell}</td>"          // Common (clickable -> scientific URL)
      . "<td><i>{$scient}</i></td>"        // Scientific (display)
-     . "<td data-sort='".($is_confirmed?1:0)."'>".$conf_cell."</td>"  // Confirmed (toggleable)
+     . "<td data-sort='".($is_confirmed?1:0)."'>".$conf_cell."</td>"  // Confirmed (display-only)
      . "<td>{$count}</td>"                // Identifications
      . "<td data-sort='".($is_excluded?1:0)."'>".$excl_cell."</td>"   // Excluded
      . "<td data-sort='".($is_whitelisted?1:0)."'>".$white_cell."</td>" // Whitelisted
@@ -274,7 +264,7 @@ document.addEventListener('DOMContentLoaded', loadThresholds);
 
 function toggleSpecies(list, species, action) {
   get(scriptsBase + 'species_tools.php?toggle=' + list + '&species=' + encodeURIComponent(species) + '&action=' + action)
-    .then(t => { if ((t || '').trim() === 'OK') location.reload(); });
+    .then(t => { if (t.trim() === 'OK') location.reload(); });
 }
 
 function deleteSpecies(species) {
