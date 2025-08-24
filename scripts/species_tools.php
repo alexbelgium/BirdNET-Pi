@@ -18,14 +18,14 @@ $confirm_file   = __DIR__ . '/confirmed_species_list.txt';
 $exclude_file   = __DIR__ . '/exclude_species_list.txt';
 $whitelist_file = __DIR__ . '/whitelist_species_list.txt';
 
-$confirmed_species    = file_exists($confirm_file)    ? file($confirm_file,    FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
-$excluded_species     = file_exists($exclude_file)    ? file($exclude_file,    FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
-$whitelisted_species  = file_exists($whitelist_file)  ? file($whitelist_file,  FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+$confirmed_species   = file_exists($confirm_file)   ? file($confirm_file,   FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+$excluded_species    = file_exists($exclude_file)   ? file($exclude_file,   FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+$whitelisted_species = file_exists($whitelist_file) ? file($whitelist_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
 
 $config    = get_config();
 $sf_thresh = isset($config['SF_THRESH']) ? (float)$config['SF_THRESH'] : 0.0;
 
-/* ---------- helpers ---------- */
+/* ---------- helpers (tiny, single-purpose) ---------- */
 function join_path(...$parts): string {
   return preg_replace('#/+#', '/', implode('/', $parts));
 }
@@ -47,7 +47,8 @@ function under_base(string $path, string $base): bool {
 }
 
 /**
- * Collect detection count, unique files, dirs to try rmdir, and first Sci name.
+ * Collect detection count, files to delete (unique), first scientific name,
+ * and dirs to try rmdir later — for a given species.
  */
 function collect_species_targets(SQLite3 $db, string $species, string $home, $base): array {
   $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name FROM detections WHERE Com_Name = :name');
@@ -55,17 +56,22 @@ function collect_species_targets(SQLite3 $db, string $species, string $home, $ba
   $stmt->bindValue(':name', $species, SQLITE3_TEXT);
   $res = $stmt->execute();
 
-  $count = 0; $files = []; $dirs = []; $sci = null;
+  $count = 0;
+  $files = [];
+  $dirs  = [];
+  $sci   = null;
 
   while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
     $count++;
     if ($sci === null) $sci = $row['Sci_Name'];
     $dir = str_replace([' ', "'"], ['_', ''], $row['Com_Name']);
 
-    foreach ([
+    $candidates = [
       join_path($home, 'BirdSongs/Extracted/By_Date',         $row['Date'], $dir, $row['File_Name']),
       join_path($home, 'BirdSongs/Extracted/By_Date/shifted', $row['Date'], $dir, $row['File_Name']),
-    ] as $c) {
+    ];
+
+    foreach ($candidates as $c) {
       if (can_unlink($c) && under_base($c, $base)) {
         $files[$c] = true; $dirs[] = dirname($c); continue;
       }
@@ -78,19 +84,27 @@ function collect_species_targets(SQLite3 $db, string $species, string $home, $ba
       }
     }
   }
-  return ['count'=>$count, 'files'=>array_keys($files), 'dirs'=>array_values(array_unique($dirs)), 'sci'=>$sci];
+  return [
+    'count' => $count,
+    'files' => array_keys($files),
+    'dirs'  => array_values(array_unique($dirs)),
+    'sci'   => $sci,
+  ];
 }
 
 /* ---------- toggle exclude/whitelist/confirmed ---------- */
 if (isset($_GET['toggle'], $_GET['species'], $_GET['action'])) {
-  $which   = $_GET['toggle'];
+  $toggle  = $_GET['toggle'];
   $species = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
 
-  // allow "exclude", "whitelist", "confirmed"
-  if (!in_array($which, ['exclude','whitelist','confirmed'], true)) {
-    header('Content-Type: text/plain'); http_response_code(400); echo 'ERR'; exit;
+  // decide which list file to use
+  if ($toggle === 'exclude') {
+    $file = $exclude_file;
+  } elseif ($toggle === 'confirmed') {
+    $file = $confirm_file;
+  } else {
+    $file = $whitelist_file; // default
   }
-  $file = $which === 'exclude' ? $exclude_file : ($which === 'whitelist' ? $whitelist_file : $confirm_file);
 
   $lines = file_exists($file) ? file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
   if ($_GET['action'] === 'add') {
@@ -99,10 +113,13 @@ if (isset($_GET['toggle'], $_GET['species'], $_GET['action'])) {
     $lines = array_values(array_filter($lines, fn($l) => $l !== $species));
   }
   file_put_contents($file, implode("\n", $lines) . (empty($lines) ? "" : "\n"));
-  header('Content-Type: text/plain'); echo 'OK'; exit;
+
+  header('Content-Type: text/plain');
+  echo 'OK';
+  exit;
 }
 
-/* ---------- count (keeps "getcounts=" API) ---------- */
+/* ---------- count (keeps your old "getcounts=" API) ---------- */
 if (isset($_GET['getcounts'])) {
   header('Content-Type: application/json');
   if ($base === false) { http_response_code(500); exit(json_encode(['error' => 'Base directory not found'])); }
@@ -111,7 +128,7 @@ if (isset($_GET['getcounts'])) {
   echo json_encode(['count' => $info['count'], 'files' => count($info['files'])]); exit;
 }
 
-/* ---------- delete (keeps "delete=" API) ---------- */
+/* ---------- delete (keeps your old "delete=" API) ---------- */
 if (isset($_GET['delete'])) {
   header('Content-Type: application/json');
   if ($base === false) { http_response_code(500); exit(json_encode(['error' => 'Base directory not found'])); }
@@ -123,22 +140,24 @@ if (isset($_GET['delete'])) {
     if (!under_base($fp, $base)) continue;
     if (can_unlink($fp) && @unlink($fp)) {
       $deleted++;
+      // thumbnails: "file.wav.png" and "file.png"
       foreach ([$fp . '.png', preg_replace('/\.[^.]+$/', '.png', $fp)] as $png) {
         if (can_unlink($png)) @unlink($png);
       }
     }
   }
   foreach ($info['dirs'] as $dir) {
-    if (under_base($dir, $base)) @rmdir($dir);
+    if (under_base($dir, $base)) @rmdir($dir); // best effort
   }
 
+  // DB rows
   $del = $db->prepare('DELETE FROM detections WHERE Com_Name = :name');
   ensure_db_ok($del);
   $del->bindValue(':name', $species, SQLITE3_TEXT);
   $del->execute();
   $lines_deleted = $db->changes();
 
-  // Also remove from confirmed list
+  // Remove from confirmed list
   if ($info['sci'] !== null && file_exists($confirm_file)) {
     $identifier = str_replace("'", '', $info['sci'] . '_' . $species);
     $lines = array_values(array_filter($confirmed_species, fn($l) => $l !== $identifier));
@@ -148,24 +167,13 @@ if (isset($_GET['delete'])) {
   echo json_encode(['lines' => $lines_deleted, 'files' => $deleted]); exit;
 }
 
-/* ---------- precompute max confidence per species ---------- */
-$maxConfMap = [];
-$mq = $db->query('SELECT Com_Name, Sci_Name, MAX(Confidence) AS MaxC FROM detections GROUP BY Com_Name, Sci_Name');
-if ($mq) {
-  while ($r = $mq->fetchArray(SQLITE3_ASSOC)) {
-    $id = str_replace("'", '', $r['Sci_Name'].'_'.$r['Com_Name']);
-    $maxConfMap[$id] = isset($r['MaxC']) ? (float)$r['MaxC'] : 0.0;
-  }
-}
-
-/* ---------- page ---------- */
+/* ---------- page (unchanged semantics; with Confirmed column + link change) ---------- */
 $result = fetch_species_array('alphabetical');
 ?>
 <style>
   .circle-icon{display:inline-block;width:12px;height:12px;border:1px solid #777;border-radius:50%;cursor:pointer;}
   .centered{max-width:1100px;margin:0 auto}
   #speciesTable th{cursor:pointer}
-  a.species-link{color:inherit;text-decoration:underline}
 </style>
 
 <div class="centered">
@@ -174,56 +182,53 @@ $result = fetch_species_array('alphabetical');
     <tr>
       <th onclick="sortTable(0)">Common Name</th>
       <th onclick="sortTable(1)">Scientific Name</th>
-      <th onclick="sortTable(2)">Identifications</th>
-      <th onclick="sortTable(3)">Confirmed</th>
+      <th onclick="sortTable(2)">Confirmed</th>
+      <th onclick="sortTable(3)">Identifications</th>
       <th onclick="sortTable(4)">Excluded</th>
       <th onclick="sortTable(5)">Whitelisted</th>
-      <th onclick="sortTable(6)">Max Conf</th>
-      <th onclick="sortTable(7)">Threshold</th>
+      <th onclick="sortTable(6)">Threshold</th>
       <th>Delete</th>
     </tr>
   </thead>
   <tbody>
 <?php while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-  $comRaw = $row['Com_Name'];
-  $sciRaw = $row['Sci_Name'];
-  $common = htmlspecialchars($comRaw, ENT_QUOTES);
-  $scient = htmlspecialchars($sciRaw, ENT_QUOTES);
+  $common = htmlspecialchars($row['Com_Name'], ENT_QUOTES);
+  $scient = htmlspecialchars($row['Sci_Name'], ENT_QUOTES);
   $count  = (int)$row['Count'];
-  $identifier = str_replace("'", '', $sciRaw.'_'.$comRaw);
 
-  $is_confirmed   = in_array($identifier, $confirmed_species,   true);
-  $is_excluded    = in_array($identifier, $excluded_species,    true);
-  $is_whitelisted = in_array($identifier, $whitelisted_species, true);
+  // Identifier format consistent with your lists (apostrophes removed)
+  $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
 
-  $conf_cell = $is_confirmed
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('confirmed','".str_replace(\"'\", '', $identifier)."','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('confirmed','".str_replace(\"'\", '', $identifier)."','add')\"></span>";
+  $is_excluded     = in_array($identifier, $excluded_species, true);
+  $is_whitelisted  = in_array($identifier, $whitelisted_species, true);
+  $is_confirmed    = in_array($identifier, $confirmed_species, true);
 
+  // Cells with toggles
   $excl_cell = $is_excluded
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','".str_replace(\"'\", '', $identifier)."','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','".str_replace(\"'\", '', $identifier)."','add')\"></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','".str_replace(\"'\", '', $identifier)."','del')\" alt='excluded' title='Excluded'>"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','".str_replace(\"'\", '', $identifier)."','add')\" title='Mark excluded'></span>";
 
   $white_cell = $is_whitelisted
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace(\"'\", '', $identifier)."','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace(\"'\", '', $identifier)."','add')\"></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace(\"'\", '', $identifier)."','del')\" alt='whitelisted' title='Whitelisted'>"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace(\"'\", '', $identifier)."','add')\" title='Add to whitelist'></span>";
 
-  $maxConf = isset($maxConfMap[$identifier]) ? $maxConfMap[$identifier] : 0.0;
-  $maxConfTxt = number_format($maxConf, 4, '.', '');
+  $conf_cell = $is_confirmed
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('confirmed','".str_replace(\"'\", '', $identifier)."','del')\" alt='confirmed' title='Confirmed (click to unset)'>"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('confirmed','".str_replace(\"'\", '', $identifier)."','add')\" title='Mark as confirmed'></span>";
 
-  $linkSci = urlencode($sciRaw);
-  $commonLink = "<a class='species-link' href='/views.php?view=Recordings&species={$linkSci}'>{$common}</a>";
+  // Common-name cell now links to scientific-name URL (spaces as '+')
+  $scient_q = str_replace('%20', '+', rawurlencode($row['Sci_Name']));
+  $common_cell = "<a href=\"/views.php?view=Recordings&species={$scient_q}\" title=\"Open recordings for {$scient}\">{$common}</a>";
 
   echo "<tr data-comname=\"{$common}\">"
-     . "<td>{$commonLink}</td>"
-     . "<td><i>{$scient}</i></td>"
-     . "<td>{$count}</td>"
-     . "<td data-sort='".($is_confirmed?1:0)."'>".$conf_cell."</td>"
-     . "<td data-sort='".($is_excluded?1:0)."'>".$excl_cell."</td>"
-     . "<td data-sort='".($is_whitelisted?1:0)."'>".$white_cell."</td>"
-     . "<td class='maxconf' data-sort='{$maxConfTxt}'>{$maxConfTxt}</td>"
-     . "<td class='threshold' data-sort='0'>0.0000</td>"
-     . "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($comRaw)."')\"></td>"
+     . "<td>{$common_cell}</td>"          // Common (clickable -> scientific URL)
+     . "<td><i>{$scient}</i></td>"        // Scientific (display)
+     . "<td data-sort='".($is_confirmed?1:0)."'>".$conf_cell."</td>"  // Confirmed (toggleable)
+     . "<td>{$count}</td>"                // Identifications
+     . "<td data-sort='".($is_excluded?1:0)."'>".$excl_cell."</td>"   // Excluded
+     . "<td data-sort='".($is_whitelisted?1:0)."'>".$white_cell."</td>" // Whitelisted
+     . "<td class='threshold' data-sort='0'>0.0000</td>"              // Threshold (filled later)
+     . "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\" alt='delete' title='Delete all detections'></td>"
      . "</tr>";
 } ?>
   </tbody>
@@ -231,7 +236,7 @@ $result = fetch_species_array('alphabetical');
 </div>
 
 <script>
-const scriptsBase = '../scripts/';
+const scriptsBase = 'scripts/';
 const sfThresh = <?php echo json_encode($sf_thresh, JSON_UNESCAPED_UNICODE); ?>;
 
 // tiny fetch helper
@@ -269,7 +274,7 @@ document.addEventListener('DOMContentLoaded', loadThresholds);
 
 function toggleSpecies(list, species, action) {
   get(scriptsBase + 'species_tools.php?toggle=' + list + '&species=' + encodeURIComponent(species) + '&action=' + action)
-    .then(t => { if (t.trim() === 'OK') location.reload(); });
+    .then(t => { if ((t || '').trim() === 'OK') location.reload(); });
 }
 
 function deleteSpecies(species) {
