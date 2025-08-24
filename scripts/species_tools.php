@@ -1,532 +1,304 @@
-"""Interactive daily heatmap for BirdNET-Pi (no search/filter UI)."""
-from __future__ import annotations
+<?php
+/* Basic input sanitation */
+$_GET  = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING)  ?: [];
+$_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING) ?: [];
 
-import json
-import os
-from typing import Iterable, List, Dict
+require_once __DIR__ . '/common.php';
+ensure_authenticated();
 
-import numpy as np
-import pandas as pd
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+$home = get_home();
+$db   = new SQLite3(__DIR__ . '/birds.db', SQLITE3_OPEN_READWRITE);
+$db->busyTimeout(1000);
 
-from utils.helpers import get_settings
+/* Paths / lists */
+$base_symlink   = $home . '/BirdSongs/Extracted/By_Date';
+$base           = realpath($base_symlink); // used only for safety checks
 
-conf = get_settings()
-color_scheme = conf.get("COLOR_SCHEME", "light")
+$confirm_file   = __DIR__ . '/confirmed_species_list.txt';
+$exclude_file   = __DIR__ . '/exclude_species_list.txt';
+$whitelist_file = __DIR__ . '/whitelist_species_list.txt';
 
-# --- Theme --------------------------------------------------------------------
-if color_scheme == "dark":
-    PLOT_BGCOLOR = "#F0F0F0"
-    PAPER_BGCOLOR = "#AAAAAA"
-    CUSTOM_COLOR_SCALE = [
-        [0.0, PLOT_BGCOLOR],
-        [0.2, "#BDBDBD"],
-        [0.4, "#969696"],
-        [0.6, "#737373"],
-        [0.8, "#525252"],
-        [1.0, "#252525"],
-    ]
-else:
-    PLOT_BGCOLOR = "#FFFFFF"
-    PAPER_BGCOLOR = "#7BC58A"
-    CUSTOM_COLOR_SCALE = [
-        [0.0, PLOT_BGCOLOR],
-        [0.2, "#A3D8A1"],
-        [0.4, "#70BD70"],
-        [0.6, "#46A846"],
-        [0.8, "#2E7D2E"],
-        [1.0, "#004D00"],
-    ]
+$confirmed_species    = file_exists($confirm_file)    ? file($confirm_file,    FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+$excluded_species     = file_exists($exclude_file)    ? file($exclude_file,    FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+$whitelisted_species  = file_exists($whitelist_file)  ? file($whitelist_file,  FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
 
-ALL_HOURS: List[int] = list(range(24))
+$config    = get_config();
+$sf_thresh = isset($config['SF_THRESH']) ? (float)$config['SF_THRESH'] : 0.0;
 
+/* ---------- helpers ---------- */
+function join_path(...$parts): string {
+  return preg_replace('#/+#', '/', implode('/', $parts));
+}
+function can_unlink(string $p): bool {
+  // unlink-able: symlink (even dangling) or regular file
+  return is_link($p) || is_file($p);
+}
+function under_base(string $path, string $base): bool {
+  if ($base === false) return false;
+  $baseReal = rtrim(realpath($base) ?: $base, DIRECTORY_SEPARATOR);
 
-# --- Utils --------------------------------------------------------------------
-def load_fonts() -> str:
-    lang = conf.get("DATABASE_LANG")
-    if lang in ["ja", "zh"]:
-        return "Noto Sans JP"
-    if lang == "th":
-        return "Noto Sans Thai"
-    return "Roboto Flex"
+  $resolved = realpath($path);
+  if ($resolved === false) {
+    $parent = realpath(dirname($path));
+    if ($parent === false) return false;
+    $resolved = $parent . DIRECTORY_SEPARATOR . basename($path);
+  }
+  return $resolved === $baseReal || strpos($resolved, $baseReal . DIRECTORY_SEPARATOR) === 0;
+}
 
+/**
+ * Collect detection count, unique files, dirs to try rmdir, and first Sci name.
+ */
+function collect_species_targets(SQLite3 $db, string $species, string $home, $base): array {
+  $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name FROM detections WHERE Com_Name = :name');
+  ensure_db_ok($stmt);
+  $stmt->bindValue(':name', $species, SQLITE3_TEXT);
+  $res = $stmt->execute();
 
-def normalize_logarithmic(arr: np.ndarray) -> np.ndarray:
-    arr = arr.astype(float)
-    if arr.size == 0:
-        return arr
-    min_val = 0.5
-    arr = np.clip(arr, min_val, None)
-    amax = float(np.max(arr))
-    if amax <= min_val:
-        return arr - min_val
-    return np.log(arr / min_val) / np.log(amax / min_val)
+  $count = 0; $files = []; $dirs = []; $sci = null;
 
+  while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
+    $count++;
+    if ($sci === null) $sci = $row['Sci_Name'];
+    $dir = str_replace([' ', "'"], ['_', ''], $row['Com_Name']);
 
-def determine_text_color(z: np.ndarray, threshold: float = 0.8) -> np.ndarray:
-    return np.where(
-        z == 0,
-        PLOT_BGCOLOR,
-        np.where(z > threshold, PLOT_BGCOLOR, "#1A1A1A"),
-    )
+    foreach ([
+      join_path($home, 'BirdSongs/Extracted/By_Date',         $row['Date'], $dir, $row['File_Name']),
+      join_path($home, 'BirdSongs/Extracted/By_Date/shifted', $row['Date'], $dir, $row['File_Name']),
+    ] as $c) {
+      if (can_unlink($c) && under_base($c, $base)) {
+        $files[$c] = true; $dirs[] = dirname($c); continue;
+      }
+      $d = realpath(dirname($c));
+      if ($d !== false) {
+        $alt = $d . DIRECTORY_SEPARATOR . basename($c);
+        if (can_unlink($alt) && under_base($alt, $base)) {
+          $files[$alt] = true; $dirs[] = dirname($alt);
+        }
+      }
+    }
+  }
+  return ['count'=>$count, 'files'=>array_keys($files), 'dirs'=>array_values(array_unique($dirs)), 'sci'=>$sci];
+}
 
+/* ---------- toggle exclude/whitelist/confirmed ---------- */
+if (isset($_GET['toggle'], $_GET['species'], $_GET['action'])) {
+  $which   = $_GET['toggle'];
+  $species = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
 
-def _labels_hide_zeros(values: np.ndarray) -> np.ndarray:
-    s = values.astype(int).astype(str)
-    s = np.where(values == 0, "", s)
-    return s
+  // allow "exclude", "whitelist", "confirmed"
+  if (!in_array($which, ['exclude','whitelist','confirmed'], true)) {
+    header('Content-Type: text/plain'); http_response_code(400); echo 'ERR'; exit;
+  }
+  $file = $which === 'exclude' ? $exclude_file : ($which === 'whitelist' ? $whitelist_file : $confirm_file);
 
+  $lines = file_exists($file) ? file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+  if ($_GET['action'] === 'add') {
+    if (!in_array($species, $lines, true)) $lines[] = $species;
+  } else {
+    $lines = array_values(array_filter($lines, fn($l) => $l !== $species));
+  }
+  file_put_contents($file, implode("\n", $lines) . (empty($lines) ? "" : "\n"));
+  header('Content-Type: text/plain'); echo 'OK'; exit;
+}
 
-def add_annotations(
-    text_array: np.ndarray,
-    text_colors: np.ndarray,
-    col: int,
-    species_list: Iterable[str],
-    all_hours: Iterable[int],
-    annotations: list,
-    font_family: str,
-) -> None:
-    species_list = list(species_list)
-    all_hours = list(all_hours)
+/* ---------- count (keeps "getcounts=" API) ---------- */
+if (isset($_GET['getcounts'])) {
+  header('Content-Type: application/json');
+  if ($base === false) { http_response_code(500); exit(json_encode(['error' => 'Base directory not found'])); }
+  $species = htmlspecialchars_decode($_GET['getcounts'], ENT_QUOTES);
+  $info = collect_species_targets($db, $species, $home, $base);
+  echo json_encode(['count' => $info['count'], 'files' => count($info['files'])]); exit;
+}
 
-    if col in [1, 2]:
-        for i, species in enumerate(species_list):
-            t = text_array[i, 0]
-            if not t:
-                continue
-            annotations.append(
-                dict(
-                    x=0,
-                    y=species,
-                    text=t,
-                    showarrow=False,
-                    font=dict(family=font_family, color=text_colors[i, 0], size=10),
-                    xref=f"x{col}",
-                    yref=f"y{col}",
-                    xanchor="center",
-                    yanchor="middle",
-                )
-            )
-    elif col == 3:
-        for i, species in enumerate(species_list):
-            for j, hr in enumerate(all_hours):
-                t = text_array[i, j]
-                if not t:
-                    continue
-                annotations.append(
-                    dict(
-                        x=hr,
-                        y=species,
-                        text=t,
-                        showarrow=False,
-                        font=dict(family=font_family, color=text_colors[i, j], size=10),
-                        xref="x3",
-                        yref="y3",
-                        xanchor="center",
-                        yanchor="middle",
-                    )
-                )
+/* ---------- delete (keeps "delete=" API) ---------- */
+if (isset($_GET['delete'])) {
+  header('Content-Type: application/json');
+  if ($base === false) { http_response_code(500); exit(json_encode(['error' => 'Base directory not found'])); }
+  $species = htmlspecialchars_decode($_GET['delete'], ENT_QUOTES);
+  $info = collect_species_targets($db, $species, $home, $base);
 
+  $deleted = 0;
+  foreach ($info['files'] as $fp) {
+    if (!under_base($fp, $base)) continue;
+    if (can_unlink($fp) && @unlink($fp)) {
+      $deleted++;
+      foreach ([$fp . '.png', preg_replace('/\.[^.]+$/', '.png', $fp)] as $png) {
+        if (can_unlink($png)) @unlink($png);
+      }
+    }
+  }
+  foreach ($info['dirs'] as $dir) {
+    if (under_base($dir, $base)) @rmdir($dir);
+  }
 
-# --- NEW: build common→scientific map ----------------------------------------
-def _load_labels_mapping_from_file(labels_path: str) -> Dict[str, str]:
-    """
-    Parse BirdNET labels.txt lines like 'Genus species_Common name'
-    into { 'Common name': 'Genus species' }.
-    """
-    mapping: Dict[str, str] = {}
-    try:
-        with open(labels_path, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line or "_" not in line:
-                    continue
-                sci, com = line.split("_", 1)
-                mapping[com.strip()] = sci.strip()
-    except Exception:
-        pass
-    return mapping
+  $del = $db->prepare('DELETE FROM detections WHERE Com_Name = :name');
+  ensure_db_ok($del);
+  $del->bindValue(':name', $species, SQLITE3_TEXT);
+  $del->execute();
+  $lines_deleted = $db->changes();
 
+  // Also remove from confirmed list
+  if ($info['sci'] !== null && file_exists($confirm_file)) {
+    $identifier = str_replace("'", '', $info['sci'] . '_' . $species);
+    $lines = array_values(array_filter($confirmed_species, fn($l) => $l !== $identifier));
+    file_put_contents($confirm_file, implode("\n", $lines) . (empty($lines) ? "" : "\n"));
+  }
 
-def _discover_labels_candidates() -> List[str]:
-    """
-    Try several plausible locations. You can also set in conf:
-    - LABELS_PATH, MODEL_DIR (containing labels.txt)
-    Or environment:
-    - LABELS_PATH, MODEL_DIR
-    """
-    cands: List[str] = []
+  echo json_encode(['lines' => $lines_deleted, 'files' => $deleted]); exit;
+}
 
-    # From conf
-    for key in ("LABELS_PATH", "MODEL_DIR"):
-        val = conf.get(key)
-        if not val:
-            continue
-        if os.path.isdir(val):
-            cands.append(os.path.join(val, "labels.txt"))
-        else:
-            cands.append(val)
+/* ---------- precompute max confidence per species ---------- */
+$maxConfMap = [];
+$mq = $db->query('SELECT Com_Name, Sci_Name, MAX(Confidence) AS MaxC FROM detections GROUP BY Com_Name, Sci_Name');
+if ($mq) {
+  while ($r = $mq->fetchArray(SQLITE3_ASSOC)) {
+    $id = str_replace("'", '', $r['Sci_Name'].'_'.$r['Com_Name']);
+    $maxConfMap[$id] = isset($r['MaxC']) ? (float)$r['MaxC'] : 0.0;
+  }
+}
 
-    # From env
-    for key in ("LABELS_PATH", "MODEL_DIR"):
-        val = os.environ.get(key)
-        if not val:
-            continue
-        if os.path.isdir(val):
-            cands.append(os.path.join(val, "labels.txt"))
-        else:
-            cands.append(val)
+/* ---------- page ---------- */
+$result = fetch_species_array('alphabetical');
+?>
+<style>
+  .circle-icon{display:inline-block;width:12px;height:12px;border:1px solid #777;border-radius:50%;cursor:pointer;}
+  .centered{max-width:1100px;margin:0 auto}
+  #speciesTable th{cursor:pointer}
+  a.species-link{color:inherit;text-decoration:underline}
+</style>
 
-    # Typical locations
-    home = os.path.expanduser("~")
-    cands += [
-        os.path.join(home, "BirdNET-Pi", "model", "labels.txt"),
-        os.path.join(os.getcwd(), "model", "labels.txt"),
-        "/config/BirdNET-Pi/model/labels.txt",
-        "/data/BirdNET-Pi/model/labels.txt",
-        "/share/BirdNET-Pi/model/labels.txt",
-    ]
-    # Path relative to this file
-    here = os.path.dirname(os.path.abspath(__file__))
-    cands.append(os.path.normpath(os.path.join(here, "..", "model", "labels.txt")))
-    # Deduplicate, keep order
-    seen, out = set(), []
-    for p in cands:
-        if p and p not in seen:
-            seen.add(p)
-            out.append(p)
-    return out
+<div class="centered">
+<table id="speciesTable">
+  <thead>
+    <tr>
+      <th onclick="sortTable(0)">Common Name</th>
+      <th onclick="sortTable(1)">Scientific Name</th>
+      <th onclick="sortTable(2)">Identifications</th>
+      <th onclick="sortTable(3)">Confirmed</th>
+      <th onclick="sortTable(4)">Excluded</th>
+      <th onclick="sortTable(5)">Whitelisted</th>
+      <th onclick="sortTable(6)">Max Conf</th>
+      <th onclick="sortTable(7)">Threshold</th>
+      <th>Delete</th>
+    </tr>
+  </thead>
+  <tbody>
+<?php while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+  $comRaw = $row['Com_Name'];
+  $sciRaw = $row['Sci_Name'];
+  $common = htmlspecialchars($comRaw, ENT_QUOTES);
+  $scient = htmlspecialchars($sciRaw, ENT_QUOTES);
+  $count  = (int)$row['Count'];
+  $identifier = str_replace("'", '', $sciRaw.'_'.$comRaw);
 
+  $is_confirmed   = in_array($identifier, $confirmed_species,   true);
+  $is_excluded    = in_array($identifier, $excluded_species,    true);
+  $is_whitelisted = in_array($identifier, $whitelisted_species, true);
 
-def build_common_to_scientific(df_birds: pd.DataFrame) -> Dict[str, str]:
-    """
-    Prefer mapping from dataframe if Sci_Name exists; else load labels.txt.
-    """
-    mapping: Dict[str, str] = {}
-    if "Sci_Name" in df_birds.columns:
-        tmp = (
-            df_birds[["Com_Name", "Sci_Name"]]
-            .dropna()
-            .drop_duplicates()
-            .astype(str)
-        )
-        mapping = dict(zip(tmp["Com_Name"], tmp["Sci_Name"]))
-        if mapping:
-            return mapping
+  $conf_cell = $is_confirmed
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('confirmed','".str_replace(\"'\", '', $identifier)."','del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('confirmed','".str_replace(\"'\", '', $identifier)."','add')\"></span>";
 
-    for p in _discover_labels_candidates():
-        if os.path.isfile(p):
-            m = _load_labels_mapping_from_file(p)
-            if m:
-                return m
-    return {}  # fallback handled in JS
+  $excl_cell = $is_excluded
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','".str_replace(\"'\", '', $identifier)."','del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','".str_replace(\"'\", '', $identifier)."','add')\"></span>";
 
+  $white_cell = $is_whitelisted
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace(\"'\", '', $identifier)."','del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace(\"'\", '', $identifier)."','add')\"></span>";
 
-# --- Main ---------------------------------------------------------------------
-def create_plotly_heatmap(df_birds: pd.DataFrame, now) -> None:
-    font_family = load_fonts()
+  $maxConf = isset($maxConfMap[$identifier]) ? $maxConfMap[$identifier] : 0.0;
+  $maxConfTxt = number_format($maxConf, 4, '.', '');
 
-    if df_birds.empty:
-        html = (
-            "<div style='padding:1rem;font-family:sans-serif'>"
-            "<h3>No detections for this period</h3>"
-            "<p>The dataset is empty; nothing to plot.</p>"
-            "</div>"
-        )
-        _write_html(html)
-        return
+  $linkSci = urlencode($sciRaw);
+  $commonLink = "<a class='species-link' href='/views.php?view=Recordings&species={$linkSci}'>{$common}</a>";
 
-    main_title = f"Hourly Overview — updated {now.strftime('%Y-%m-%d %H:%M:%S')}"
-    subtitle = f"({df_birds['Com_Name'].nunique()} species; {len(df_birds)} detections)"
+  echo "<tr data-comname=\"{$common}\">"
+     . "<td>{$commonLink}</td>"
+     . "<td><i>{$scient}</i></td>"
+     . "<td>{$count}</td>"
+     . "<td data-sort='".($is_confirmed?1:0)."'>".$conf_cell."</td>"
+     . "<td data-sort='".($is_excluded?1:0)."'>".$excl_cell."</td>"
+     . "<td data-sort='".($is_whitelisted?1:0)."'>".$white_cell."</td>"
+     . "<td class='maxconf' data-sort='{$maxConfTxt}'>{$maxConfTxt}</td>"
+     . "<td class='threshold' data-sort='0'>0.0000</td>"
+     . "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($comRaw)."')\"></td>"
+     . "</tr>";
+} ?>
+  </tbody>
+</table>
+</div>
 
-    if not pd.api.types.is_datetime64_any_dtype(df_birds["Time"]):
-        df_birds["Time"] = pd.to_datetime(df_birds["Time"], errors="coerce")
-    df_birds["Hour"] = df_birds["Time"].dt.hour
+<script>
+const scriptsBase = '../scripts/';
+const sfThresh = <?php echo json_encode($sf_thresh, JSON_UNESCAPED_UNICODE); ?>;
 
-    plot_dataframe = (
-        df_birds.groupby(["Hour", "Com_Name"], as_index=False)
-        .agg(Count=("Com_Name", "count"), Conf=("Confidence", "max"))
-        .fillna({"Conf": 0, "Count": 0})
-    )
+// tiny fetch helper
+const get = (url) => fetch(url, {cache:'no-store'}).then(r => r.text());
 
-    df_birds_summary = (
-        plot_dataframe.groupby("Com_Name", as_index=False)
-        .agg(Count=("Count", "sum"), Conf=("Conf", "max"))
-        .query("Count > 0")
-        .sort_values(["Count", "Conf"], ascending=[False, False], kind="mergesort")
-    )
-    species_list: List[str] = df_birds_summary["Com_Name"].tolist()
+function loadThresholds() {
+  get(scriptsBase + 'config.php?threshold=0').then(text => {
+    const lines = (text || '').split(/\r?\n/);
+    const map = Object.create(null);
+    for (const line of lines) {
+      const m = line.match(/^(.*)\s-\s([0-9.]+)\s*$/);
+      if (!m) continue;
+      const left = m[1].trim();
+      const val  = parseFloat(m[2]);
+      if (Number.isNaN(val)) continue;
+      const u = left.lastIndexOf('_');
+      const common = u >= 0 ? left.slice(u + 1) : left;
+      map[common] = val; map[left] = val;
+    }
+    const decoder = document.createElement('textarea');
+    document.querySelectorAll('#speciesTable tbody tr').forEach(row => {
+      decoder.innerHTML = row.getAttribute('data-comname') || '';
+      const commonName = decoder.value;
+      if (Object.prototype.hasOwnProperty.call(map, commonName)) {
+        const v = map[commonName];
+        const cell = row.querySelector('td.threshold');
+        cell.textContent = v.toFixed(4);
+        cell.style.color = v >= sfThresh ? 'green' : 'red';
+        cell.dataset.sort = v.toFixed(4);
+      }
+    });
+  });
+}
+document.addEventListener('DOMContentLoaded', loadThresholds);
 
-    # --- NEW: build common→scientific mapping for the visible species ----------
-    com2sci_full = build_common_to_scientific(df_birds)
-    # keep only those present in y-axis to reduce HTML size
-    com2sci = {k: v for k, v in com2sci_full.items() if k in species_list}
-    com2sci_json = json.dumps(com2sci, ensure_ascii=False)
+function toggleSpecies(list, species, action) {
+  get(scriptsBase + 'species_tools.php?toggle=' + list + '&species=' + encodeURIComponent(species) + '&action=' + action)
+    .then(t => { if (t.trim() === 'OK') location.reload(); });
+}
 
-    # Left columns
-    z_confidence = normalize_logarithmic(
-        df_birds_summary["Conf"].values.reshape(-1, 1)
-    ) * 100.0
-    text_confidence = (
-        (df_birds_summary["Conf"].values * 100).round().astype(int).astype(str)
-    ).reshape(-1, 1)
+function deleteSpecies(species) {
+  get(scriptsBase + 'species_tools.php?getcounts=' + encodeURIComponent(species)).then(t => {
+    let info; try { info = JSON.parse(t); } catch { alert('Could not parse count response'); return; }
+    if (!confirm('Delete ' + info.count + ' detections and ' + info.files + ' files for ' + species + '?')) return;
+    get(scriptsBase + 'species_tools.php?delete=' + encodeURIComponent(species)).then(t2 => {
+      try {
+        const res = JSON.parse(t2);
+        alert('Deleted ' + res.lines + ' detections and ' + res.files + ' files for ' + species);
+      } catch { alert('Deletion complete'); }
+      location.reload();
+    });
+  });
+}
 
-    z_detections = normalize_logarithmic(
-        df_birds_summary["Count"].values.reshape(-1, 1)
-    )
-    text_detections = _labels_hide_zeros(
-        df_birds_summary["Count"].values.reshape(-1, 1)
-    )
-    text_color_detections = determine_text_color(z_detections, threshold=0.5)
-
-    # Hourly pivot
-    df_hourly_counts = (
-        plot_dataframe.pivot_table(
-            index="Com_Name", columns="Hour", values="Count", aggfunc="sum"
-        )
-        .fillna(0)
-        .reindex(species_list)
-        .reindex(columns=ALL_HOURS, fill_value=0)
-    )
-    df_hourly_conf = (
-        plot_dataframe.pivot_table(
-            index="Com_Name", columns="Hour", values="Conf", aggfunc="max"
-        )
-        .fillna(0)
-        .reindex(species_list)
-        .reindex(columns=ALL_HOURS, fill_value=0)
-    )
-
-    z_hourly = normalize_logarithmic(df_hourly_counts.values)
-    text_hourly = _labels_hide_zeros(df_hourly_counts.values)
-    text_color_hourly = determine_text_color(z_hourly, threshold=0.5)
-
-    custom_data_hourly = np.dstack(
-        (df_hourly_counts.values, (df_hourly_conf.values * 100).astype(int))
-    )
-
-    fig = make_subplots(
-        rows=1,
-        cols=3,
-        shared_yaxes=True,
-        column_widths=[0.12, 0.12, 0.76],
-        horizontal_spacing=0.003,
-    )
-
-    custom_data_confidence = np.array(
-        [{"confidence": float(c) * 100.0} for c in df_birds_summary["Conf"].values]
-    ).reshape(-1, 1)
-    custom_data_count = np.array(
-        [{"count": int(n)} for n in df_birds_summary["Count"].values]
-    ).reshape(-1, 1)
-
-    fig.add_trace(
-        go.Heatmap(
-            z=z_confidence,
-            customdata=custom_data_confidence,
-            x=["Confidence"],
-            y=species_list,
-            colorscale=CUSTOM_COLOR_SCALE,
-            showscale=False,
-            hovertemplate=(
-                "Species: %{y}<br>"
-                "Max Confidence: %{customdata.confidence:.0f}%<extra></extra>"
-            ),
-            xgap=1,
-            ygap=1,
-            zmin=0,
-            zmax=100,
-        ),
-        row=1,
-        col=1,
-    )
-
-    fig.add_trace(
-        go.Heatmap(
-            z=z_detections,
-            customdata=custom_data_count,
-            x=["Count"],
-            y=species_list,
-            colorscale=CUSTOM_COLOR_SCALE,
-            showscale=False,
-            hovertemplate=(
-                "Species: %{y}<br>"
-                "Total Counts: %{customdata.count}<extra></extra>"
-            ),
-            xgap=1,
-            ygap=1,
-            zmin=0,
-            zmax=1,
-        ),
-        row=1,
-        col=2,
-    )
-
-    fig.add_trace(
-        go.Heatmap(
-            z=z_hourly,
-            customdata=custom_data_hourly,
-            x=ALL_HOURS,
-            y=species_list,
-            colorscale=CUSTOM_COLOR_SCALE,
-            showscale=False,
-            text=text_hourly,
-            hovertemplate=(
-                "Species: %{y}<br>"
-                "Hour: %{x}<br>"
-                "Detections: %{customdata[0]}<br>"
-                "Max Confidence: %{customdata[1]}%<extra></extra>"
-            ),
-            xgap=1,
-            ygap=1,
-            zmin=0,
-            zmax=1,
-        ),
-        row=1,
-        col=3,
-    )
-
-    annotations: list = []
-    add_annotations(
-        text_confidence,
-        determine_text_color(z_confidence, threshold=0.5),
-        col=1,
-        species_list=species_list,
-        all_hours=ALL_HOURS,
-        annotations=annotations,
-        font_family=font_family,
-    )
-    add_annotations(
-        text_detections,
-        text_color_detections,
-        col=2,
-        species_list=species_list,
-        all_hours=ALL_HOURS,
-        annotations=annotations,
-        font_family=font_family,
-    )
-    add_annotations(
-        text_hourly,
-        text_color_hourly,
-        col=3,
-        species_list=species_list,
-        all_hours=ALL_HOURS,
-        annotations=annotations,
-        font_family=font_family,
-    )
-    fig.update_layout(annotations=annotations)
-
-    fig.update_layout(
-        title=dict(
-            text=f"<b>{main_title}</b><br><span style='font-size:12px'>{subtitle}</span>",
-            x=0.5,
-            y=0.97,
-            xanchor="center",
-            yanchor="top",
-            font=dict(family=font_family, size=20),
-        ),
-        autosize=True,
-        height=max(600, len(species_list) * 24 + 120),
-        margin=dict(l=12, r=12, t=80, b=80),
-        plot_bgcolor=PAPER_BGCOLOR,
-        paper_bgcolor=PAPER_BGCOLOR,
-        clickmode="event+select",
-        dragmode=False,
-        font=dict(family=font_family, size=10, color="#000000"),
-        yaxis=dict(
-            autorange="reversed",
-            categoryorder="array",
-            categoryarray=species_list,
-            tickfont=dict(family=font_family, size=10),
-            showticklabels=True,
-            ticklabelstandoff=12,
-            fixedrange=True,
-            automargin=True,
-        ),
-        xaxis1=dict(
-            title="Max Confidence",
-            showticklabels=False,
-            title_font=dict(family=font_family, size=10),
-            fixedrange=True,
-        ),
-        xaxis2=dict(
-            title="Total Counts",
-            showticklabels=False,
-            title_font=dict(family=font_family, size=10),
-            fixedrange=True,
-        ),
-        xaxis3=dict(
-            title="Hour",
-            tickfont=dict(family=font_family, size=10),
-            tickmode="linear",
-            dtick=1,
-            fixedrange=True,
-        ),
-    )
-    fig.update_xaxes(showgrid=False, zeroline=False)
-    fig.update_yaxes(showgrid=False, zeroline=False)
-
-    # Single HTML build with common→scientific map injected
-    div_id = "daily-heatmap"
-    html_str = f"""
-    <div class="chart-container" style="position:relative;max-width:1200px;width:98%;margin:0 auto;">
-        {fig.to_html(
-            include_plotlyjs="cdn",
-            full_html=False,
-            default_height="80%",
-            default_width="100%",
-            div_id=div_id,
-            config=dict(
-                scrollZoom=False,
-                doubleClick=False,
-                displaylogo=False,
-                displayModeBar=False,
-                modeBarButtonsToRemove=[
-                    "zoom2d","pan2d","select2d","lasso2d","zoomIn2d","zoomOut2d","resetScale2d"
-                ],
-            ),
-        )}
-    </div>
-    <script>
-    (function() {{
-        var plot = document.getElementById("{div_id}");
-        if (!plot) return;
-
-        // Map from common name -> scientific name (subset for displayed species)
-        var COM2SCI = {com2sci_json};
-
-        // Keep plot responsive
-        window.addEventListener("resize", function() {{
-            if (window.Plotly && plot) {{
-                Plotly.Plots.resize(plot);
-            }}
-        }});
-
-        // Click -> navigate using SCIENTIFIC name in the URL
-        plot.on("plotly_click", function(data) {{
-            try {{
-                if (data && data.points && data.points[0] && data.points[0].y) {{
-                    var com = String(data.points[0].y || "").trim();
-                    var sci = COM2SCI[com] || com; // fallback if mapping missing
-                    // URL-encode; keep '+' for spaces for backwards compat.
-                    var param = encodeURIComponent(sci).replace(/%20/g, "+");
-                    var url = "/views.php?view=Recordings&species=" + param;
-                    window.location.href = url;
-                }}
-            }} catch(e) {{}}
-        }});
-    }})();
-    </script>
-    """
-
-    _write_html(html_str)
-
-
-# --- I/O ----------------------------------------------------------------------
-def _write_html(html_str: str) -> None:
-    output_dir = os.path.expanduser("~/BirdSongs/Extracted/Charts/")
-    os.makedirs(output_dir, exist_ok=True)
-    path = os.path.join(output_dir, "interactive_daily_plot.html")
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(html_str)
+function sortTable(n) {
+  const table = document.getElementById('speciesTable');
+  const tbody = table.tBodies[0];
+  const rows = Array.from(tbody.rows);
+  const asc = table.getAttribute('data-sort-' + n) !== 'asc';
+  rows.sort((a, b) => {
+    let x = a.cells[n].dataset.sort ?? a.cells[n].innerText.toLowerCase();
+    let y = b.cells[n].dataset.sort ?? b.cells[n].innerText.toLowerCase();
+    const nx = parseFloat(x), ny = parseFloat(y);
+    if (!Number.isNaN(nx) && !Number.isNaN(ny)) { x = nx; y = ny; }
+    return (x < y ? (asc ? -1 : 1) : (x > y ? (asc ? 1 : -1) : 0));
+  });
+  rows.forEach(r => tbody.appendChild(r));
+  table.setAttribute('data-sort-' + n, asc ? 'asc' : 'desc');
+}
+</script>
