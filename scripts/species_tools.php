@@ -171,11 +171,10 @@ $result = fetch_species_array('alphabetical');
     <tr>
       <th onclick="sortTable(0)">Common Name</th>
       <th onclick="sortTable(1)">Scientific Name</th>
-      <th onclick="sortTable(2)">Confirmed</th>
-      <th onclick="sortTable(3)">Identifications</th>
-      <th onclick="sortTable(4)">Excluded</th>
-      <th onclick="sortTable(5)">Whitelisted</th>
-      <th onclick="sortTable(6)">Threshold</th>
+      <th onclick="sortTable(2)">Identifications</th>
+      <th onclick="sortTable(3)">Excluded</th>
+      <th onclick="sortTable(4)">Whitelisted</th>
+      <th onclick="sortTable(5)">Threshold</th>
       <th>Delete</th>
     </tr>
   </thead>
@@ -184,42 +183,24 @@ $result = fetch_species_array('alphabetical');
   $common = htmlspecialchars($row['Com_Name'], ENT_QUOTES);
   $scient = htmlspecialchars($row['Sci_Name'], ENT_QUOTES);
   $count  = (int)$row['Count'];
-
-  // Identifier format consistent with your lists (apostrophes removed)
   $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
 
-  $is_excluded     = in_array($identifier, $excluded_species, true);
-  $is_whitelisted  = in_array($identifier, $whitelisted_species, true);
-  $is_confirmed    = in_array($identifier, $confirmed_species, true);
+  $is_excluded    = in_array($identifier, $excluded_species, true);
+  $is_whitelisted = in_array($identifier, $whitelisted_species, true);
 
-  // Build cells (Excluded/Whitelisted keep your toggle behavior)
   $excl_cell = $is_excluded
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','".str_replace(\"'\", '', $identifier)."','del')\" alt='excluded' title='Excluded'>"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','".str_replace(\"'\", '', $identifier)."','add')\" title='Mark excluded'></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','add')\"></span>";
 
   $white_cell = $is_whitelisted
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace(\"'\", '', $identifier)."','del')\" alt='whitelisted' title='Whitelisted'>"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace(\"'\", '', $identifier)."','add')\" title='Add to whitelist'></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
 
-  // Confirmed is display-only (no toggle requested)
-  $conf_cell = $is_confirmed
-    ? "<img style='max-width:12px;max-height:12px' src='images/check.svg' alt='confirmed' title='Confirmed'>"
-    : "<span class='circle-icon' style='cursor:default' title='Not confirmed'></span>";
-
-  // Common-name cell now links to scientific-name URL (spaces as '+')
-  $scient_q = str_replace('%20', '+', rawurlencode($row['Sci_Name']));
-  $common_cell = "<a href=\"/views.php?view=Recordings&species={$scient_q}\">{$common}</a>";
-
-  echo "<tr data-comname=\"{$common}\">"
-     . "<td>{$common_cell}</td>"          // Common (clickable -> scientific URL)
-     . "<td><i>{$scient}</i></td>"        // Scientific (display)
-     . "<td data-sort='".($is_confirmed?1:0)."'>".$conf_cell."</td>"  // Confirmed (display-only)
-     . "<td>{$count}</td>"                // Identifications
-     . "<td data-sort='".($is_excluded?1:0)."'>".$excl_cell."</td>"   // Excluded
-     . "<td data-sort='".($is_whitelisted?1:0)."'>".$white_cell."</td>" // Whitelisted
-     . "<td class='threshold' data-sort='0'>0.0000</td>"              // Threshold (filled later)
-     . "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\" alt='delete' title='Delete all detections'></td>"
-     . "</tr>";
+  echo "<tr data-comname=\"{$common}\"><td>{$common}</td><td><i>{$scient}</i></td><td>{$count}</td>"
+     . "<td data-sort='".($is_excluded?1:0)."'>".$excl_cell."</td>"
+     . "<td data-sort='".($is_whitelisted?1:0)."'>".$white_cell."</td>"
+     . "<td class='threshold' data-sort='0'>0.0000</td>"
+     . "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\"></td></tr>";
 } ?>
   </tbody>
 </table>
