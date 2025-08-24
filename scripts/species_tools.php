@@ -207,7 +207,7 @@ $result = fetch_species_array('alphabetical');
 </div>
 
 <script>
-const scriptsBase = '../scripts/';
+const scriptsBase = 'scripts/';
 const sfThresh = <?php echo json_encode($sf_thresh, JSON_UNESCAPED_UNICODE); ?>;
 
 // tiny fetch helper
