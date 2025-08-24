@@ -1,10 +1,10 @@
 Merged PR :
 
-Add interactive chart option : https://github.com/alexbelgium/BirdNET-Pi/tree/to_keep/create-clean-pr-for-interactive-plot-changes
-New plot : https://github.com/alexbelgium/BirdNET-Pi/tree/to_keep/daily_graph
-Add species management tools : https://github.com/alexbelgium/BirdNET-Pi/tree/to_keep/add-species-management-table-to-tools-section
-Add species confirmation option to recordings : https://github.com/alexbelgium/BirdNET-Pi/tree/to_keep/selective-species-confirmation-logic
-Add selectable duration mini-graphs for species pages : https://github.com/alexbelgium/BirdNET-Pi/tree/to_keep/add-generateminigraph-icon-and-size-selector
+- Add interactive chart option : https://github.com/alexbelgium/BirdNET-Pi/tree/to_keep/create-clean-pr-for-interactive-plot-changes
+- New plot : https://github.com/alexbelgium/BirdNET-Pi/tree/to_keep/daily_graph
+- Add species management tools : https://github.com/alexbelgium/BirdNET-Pi/tree/to_keep/add-species-management-table-to-tools-section
+- Add species confirmation option to recordings : https://github.com/alexbelgium/BirdNET-Pi/tree/to_keep/selective-species-confirmation-logic
+- Add selectable duration mini-graphs for species pages : https://github.com/alexbelgium/BirdNET-Pi/tree/to_keep/add-generateminigraph-icon-and-size-selector
 
 <h1 align="center"><a href="https://github.com/mcguirepr89/BirdNET-Pi/blob/main/LICENSE">Review the license!!</a></h1>
 <h1 align="center">You may not use BirdNET-Pi to develop a commercial product!!!!</h1>
