@@ -214,11 +214,11 @@ $result = fetch_species_array('alphabetical');
     : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
 
   echo "<tr data-comname=\"{$common}\"><td>{$common}</td><td><i>{$scient}</i></td><td>{$count}</td>"
-     . "<td data-sort='".($is_confirmed?1:0)."'>".$confirm_cell."</td>"
      . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"
-     . "<td data-sort='".($is_excluded?1:0)."'>".$excl_cell."</td>"
-     . "<td data-sort='".($is_whitelisted?1:0)."'>".$white_cell."</td>"
      . "<td class='threshold' data-sort='0'>0.0000</td>"
+     . "<td data-sort='".($is_confirmed?0:1)."'>".$confirm_cell."</td>"
+     . "<td data-sort='".($is_excluded?0:1)."'>".$excl_cell."</td>"
+     . "<td data-sort='".($is_whitelisted?0:1)."'>".$white_cell."</td>"
      . "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\"></td></tr>";
 } ?>
   </tbody>
