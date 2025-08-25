@@ -157,7 +157,7 @@ if (isset($_GET['delete'])) {
 
   // Remove from confirmed list
   if ($info['sci'] !== null && file_exists($confirm_file)) {
-    $identifier = str_replace("'", '', $info['sci'] . '_' . $species);
+    $identifier = str_replace("'", '', $info['sci']);
     $lines = array_values(array_filter($confirmed_species, fn($l) => $l !== $identifier));
     file_put_contents($confirm_file, implode("\n", $lines) . (empty($lines) ? "" : "\n"));
   }
@@ -196,11 +196,12 @@ $result = fetch_species_array('alphabetical');
   $count  = (int)$row['Count'];
   $max_confidence = round((float)$row['MaxConfidence'] * 100, 1);
   $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
+  $identifier_sci = str_replace("'", '', $row['Sci_Name']);
 
   $common_link = "<a href='/views.php?view=Recordings&species="
     . rawurlencode($row['Sci_Name']) . "'>{$common}</a>";
 
-  $is_confirmed   = in_array($identifier, $confirmed_species, true);
+  $is_confirmed   = in_array($identifier_sci, $confirmed_species, true);
   $is_excluded    = in_array($identifier, $excluded_species, true);
   $is_whitelisted = in_array($identifier, $whitelisted_species, true);
 
