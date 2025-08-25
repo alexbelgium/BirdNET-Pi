@@ -92,11 +92,20 @@ function collect_species_targets(SQLite3 $db, string $species, string $home, $ba
   ];
 }
 
-/* ---------- toggle exclude/whitelist ---------- */
+/* ---------- toggle exclude/whitelist/confirmed ---------- */
 if (isset($_GET['toggle'], $_GET['species'], $_GET['action'])) {
-  $list    = $_GET['toggle'] === 'exclude' ? 'exclude' : 'whitelist';
+  $list    = $_GET['toggle'];
   $species = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
-  $file    = $list === 'exclude' ? $exclude_file : $whitelist_file;
+  
+  if ($list === 'exclude') {
+    $file = $exclude_file;
+  } elseif ($list === 'whitelist') {
+    $file = $whitelist_file;
+  } elseif ($list === 'confirmed') {
+    $file = $confirm_file;
+  } else {
+    header('Content-Type: text/plain'); echo 'Invalid list type'; exit;
+  }
 
   $lines = file_exists($file) ? file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
   if ($_GET['action'] === 'add') {
@@ -172,9 +181,11 @@ $result = fetch_species_array('alphabetical');
       <th onclick="sortTable(0)">Common Name</th>
       <th onclick="sortTable(1)">Scientific Name</th>
       <th onclick="sortTable(2)">Identifications</th>
-      <th onclick="sortTable(3)">Excluded</th>
-      <th onclick="sortTable(4)">Whitelisted</th>
-      <th onclick="sortTable(5)">Threshold</th>
+      <th onclick="sortTable(3)">Confirmed</th>
+      <th onclick="sortTable(4)">Max Confidence</th>
+      <th onclick="sortTable(5)">Excluded</th>
+      <th onclick="sortTable(6)">Whitelisted</th>
+      <th onclick="sortTable(7)">Threshold</th>
       <th>Delete</th>
     </tr>
   </thead>
@@ -183,10 +194,16 @@ $result = fetch_species_array('alphabetical');
   $common = htmlspecialchars($row['Com_Name'], ENT_QUOTES);
   $scient = htmlspecialchars($row['Sci_Name'], ENT_QUOTES);
   $count  = (int)$row['Count'];
+  $max_confidence = round((float)$row['MaxConfidence'] * 100, 1);
   $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
 
+  $is_confirmed   = in_array($identifier, $confirmed_species, true);
   $is_excluded    = in_array($identifier, $excluded_species, true);
   $is_whitelisted = in_array($identifier, $whitelisted_species, true);
+
+  $confirm_cell = $is_confirmed
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('confirmed','".str_replace("'", '', $identifier)."','del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('confirmed','".str_replace("'", '', $identifier)."','add')\"></span>";
 
   $excl_cell = $is_excluded
     ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','del')\">"
@@ -197,6 +214,8 @@ $result = fetch_species_array('alphabetical');
     : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
 
   echo "<tr data-comname=\"{$common}\"><td>{$common}</td><td><i>{$scient}</i></td><td>{$count}</td>"
+     . "<td data-sort='".($is_confirmed?1:0)."'>".$confirm_cell."</td>"
+     . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"
      . "<td data-sort='".($is_excluded?1:0)."'>".$excl_cell."</td>"
      . "<td data-sort='".($is_whitelisted?1:0)."'>".$white_cell."</td>"
      . "<td class='threshold' data-sort='0'>0.0000</td>"
