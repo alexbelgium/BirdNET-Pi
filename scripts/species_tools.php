@@ -197,6 +197,9 @@ $result = fetch_species_array('alphabetical');
   $max_confidence = round((float)$row['MaxConfidence'] * 100, 1);
   $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
 
+  $common_link = "<a href='/views.php?view=Recordings&species="
+    . rawurlencode($row['Sci_Name']) . "'>{$common}</a>";
+
   $is_confirmed   = in_array($identifier, $confirmed_species, true);
   $is_excluded    = in_array($identifier, $excluded_species, true);
   $is_whitelisted = in_array($identifier, $whitelisted_species, true);
@@ -213,7 +216,7 @@ $result = fetch_species_array('alphabetical');
     ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','del')\">"
     : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
 
-  echo "<tr data-comname=\"{$common}\"><td>{$common}</td><td><i>{$scient}</i></td><td>{$count}</td>"
+  echo "<tr data-comname=\"{$common}\"><td>{$common_link}</td><td><i>{$scient}</i></td><td>{$count}</td>"
      . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"
      . "<td class='threshold' data-sort='0'>0.0000</td>"
      . "<td data-sort='".($is_confirmed?0:1)."'>".$confirm_cell."</td>"
