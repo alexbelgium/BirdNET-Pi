@@ -1,14 +1,14 @@
-#===============================================================================
-#=== daily_plot.py (adjusted version @jmtmp) ==========================================
-#===============================================================================
-#=== 2024-04-19: new version
-#=== 2024-04-28: new custom formatting for millions (my_int_fmt function)
-#===             new formatting of total occurence in semi-monthly plot
-#=== 2024-09-01: updated suptitle and xlabels formatting
-#=== 2024-09-05: Daemon implementing
-#=== 2024-09-26: transparent first column
-#=== 2024-10-02: code refactor
-#===============================================================================
+# ===============================================================================
+# === daily_plot.py (adjusted version @jmtmp) ==========================================
+# ===============================================================================
+# === 2024-04-19: new version
+# === 2024-04-28: new custom formatting for millions (my_int_fmt function)
+# ===             new formatting of total occurence in semi-monthly plot
+# === 2024-09-01: updated suptitle and xlabels formatting
+# === 2024-09-05: Daemon implementing
+# === 2024-09-26: transparent first column
+# === 2024-10-02: code refactor
+# ===============================================================================
 
 import argparse
 import sqlite3
@@ -26,10 +26,12 @@ from functools import lru_cache
 from utils.helpers import DB_PATH, FONT_DIR, get_settings, get_font
 from utils.interactive_plot import create_plotly_heatmap
 
+
 # Cache the settings to avoid redundant calls
 @lru_cache(maxsize=None)
 def get_settings_cached():
     return get_settings()
+
 
 def load_fonts():
     # Add every font at the specified location
@@ -38,6 +40,7 @@ def load_fonts():
         font_manager.fontManager.addfont(font)
     # Set font family globally
     rcParams['font.family'] = get_font()['font.family']
+
 
 def my_int_fmt(number, converthundreds=False):
     try:
@@ -53,6 +56,7 @@ def my_int_fmt(number, converthundreds=False):
     else:
         return str(int(number))
 
+
 def clr_plot_facecolor():
     # Update colors according to color scheme
     if get_settings_cached()['COLOR_SCHEME'] == "dark":
@@ -60,12 +64,14 @@ def clr_plot_facecolor():
     else:
         return '#77C487'
 
+
 def clr_current_ticklabel():
     # Update colors according to color scheme
     if get_settings_cached()['COLOR_SCHEME'] == "dark":
         return 'white'
     else:
         return 'red'
+
 
 def my_heatmap(axis, crosstable, clrmap, clrnorm, annotfmt='', annotsize='medium'):
     # annotsize: float or {'xx-small', 'x-small', 'small', 'medium', 'large', 'x-large', 'xx-large'}
@@ -75,6 +81,7 @@ def my_heatmap(axis, crosstable, clrmap, clrnorm, annotfmt='', annotsize='medium
     for _, spine in hm_axes.spines.items():
         spine.set_visible(True)
     return hm_axes
+
 
 def get_daily_plot_data(conn, now):
     sql_fields = "Time, Confidence, COUNT(DISTINCT Com_Name) as Species, COUNT(Com_Name) as Detections, COUNT(DISTINCT Date) as Days"
@@ -97,6 +104,7 @@ def get_daily_plot_data(conn, now):
     plot_dataframe = pd.read_sql_query(sql, conn)
     return plot_suptitle, plot_dataframe
 
+
 def get_data(now=None):
     uri = f"file:{DB_PATH}?mode=ro"
     conn = sqlite3.connect(uri, uri=True)
@@ -113,6 +121,7 @@ def get_data(now=None):
     df['Hour of Day'] = [r.hour for r in df.Time]
 
     return df, now
+
 
 def get_yearly_plot_data(conn, now):
     sql_fields = "COUNT(DISTINCT Com_Name) as Species, COUNT(Com_Name) as Detections, COUNT(DISTINCT Date) as Days"
@@ -133,6 +142,7 @@ def get_yearly_plot_data(conn, now):
     """
     plot_dataframe = pd.read_sql_query(sql, conn)
     return plot_suptitle, plot_dataframe
+
 
 def create_plot(chart_name, chart_suptitle, df_birds, now, time_unit, period_col, xlabel, xtick_labels):
     # Common code for data preparation
@@ -221,6 +231,7 @@ def create_plot(chart_name, chart_suptitle, df_birds, now, time_unit, period_col
     plt.show()
     plt.close()
 
+
 def main(daemon, sleep_m):
     load_fonts()
     while True:
@@ -265,6 +276,7 @@ def main(daemon, sleep_m):
             sleep(60 * sleep_m)
         else:
             break
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
