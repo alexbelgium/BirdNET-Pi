@@ -198,7 +198,7 @@ $result = fetch_species_array('alphabetical');
   $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
   $identifier_sci = str_replace("'", '', $row['Sci_Name']);
 
-  $common_link = "<a href='/views.php?view=Recordings&species="
+  $common_link = "<a href='views.php?view=Recordings&species="
     . rawurlencode($row['Sci_Name']) . "'>{$common}</a>";
 
   $is_confirmed   = in_array($identifier_sci, $confirmed_species, true);
