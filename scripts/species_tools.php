@@ -181,11 +181,11 @@ $result = fetch_species_array('alphabetical');
       <th onclick="sortTable(0)">Common Name</th>
       <th onclick="sortTable(1)">Scientific Name</th>
       <th onclick="sortTable(2)">Identifications</th>
-      <th onclick="sortTable(3)">Confirmed</th>
-      <th onclick="sortTable(4)">Max Confidence</th>
-      <th onclick="sortTable(5)">Excluded</th>
-      <th onclick="sortTable(6)">Whitelisted</th>
-      <th onclick="sortTable(7)">Threshold</th>
+      <th onclick="sortTable(3)">Max Confidence</th>
+      <th onclick="sortTable(4)">Threshold</th>
+      <th onclick="sortTable(5)">Confirmed</th>
+      <th onclick="sortTable(6)">Excluded</th>
+      <th onclick="sortTable(7)">Whitelisted</th>
       <th>Delete</th>
     </tr>
   </thead>
