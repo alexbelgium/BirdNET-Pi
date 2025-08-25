@@ -632,20 +632,19 @@ $sciname = $name;
 $sciname_name = $sciname;
 $info_url = get_info_url($sciname);
 $url = $info_url['URL'];
-echo "<table>";
-echo "  <tr><th>$com_name";
-echo "<span style=\"font-weight:normal;\">";
-if ($confirmspecies_enabled == 1) {
+echo "<table>
+  <tr><th>$com_name<br><span style=\"font-weight:normal;\">
+";if ($confirmspecies_enabled == 1) {
   if (in_array(str_replace("'", "", $sciname_name), $confirmed_species)) {
     echo "<img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=\"images/check.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"del\")'>";
   } else {
     echo "<img style='display: inline; cursor: pointer; max-width: 12px; max-height: 12px;' src=\"images/question.svg\" onclick='confirmspecies(\"".str_replace("'", "", $sciname_name)."\",\"add\")'>";
   }
-}
-echo "<br><i>$sciname</i></span><br>";
-echo "    <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>";
-echo "    <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>";
-echo "  </th></tr>";
+}; echo "
+  <i>$sciname</i></span><br>
+    <a href=\"$url\" target=\"_blank\"><img title=\"$url_title\" src=\"images/info.png\" width=\"20\"></a>
+    <a href=\"https://wikipedia.org/wiki/$sciname\" target=\"_blank\"><img title=\"Wikipedia\" src=\"images/wiki.png\" width=\"20\"></a>
+  </th></tr>";
   $iter=0;
   while($results=$result2->fetchArray(SQLITE3_ASSOC))
   {
