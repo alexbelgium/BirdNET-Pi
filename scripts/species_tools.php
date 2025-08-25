@@ -18,9 +18,15 @@ $confirm_file   = __DIR__ . '/confirmed_species_list.txt';
 $exclude_file   = __DIR__ . '/exclude_species_list.txt';
 $whitelist_file = __DIR__ . '/whitelist_species_list.txt';
 
-$confirmed_species   = file_exists($confirm_file)   ? file($confirm_file,   FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
-$excluded_species    = file_exists($exclude_file)   ? file($exclude_file,   FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
-$whitelisted_species = file_exists($whitelist_file) ? file($whitelist_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+$confirmed_species   = file_exists($confirm_file)
+  ? array_map(fn($l) => str_replace("'", '', $l), file($confirm_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES))
+  : [];
+$excluded_species    = file_exists($exclude_file)
+  ? array_map(fn($l) => str_replace("'", '', $l), file($exclude_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES))
+  : [];
+$whitelisted_species = file_exists($whitelist_file)
+  ? array_map(fn($l) => str_replace("'", '', $l), file($whitelist_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES))
+  : [];
 
 $config    = get_config();
 $sf_thresh = isset($config['SF_THRESH']) ? (float)$config['SF_THRESH'] : 0.0;
@@ -157,7 +163,7 @@ if (isset($_GET['delete'])) {
 
   // Remove from confirmed list
   if ($info['sci'] !== null && file_exists($confirm_file)) {
-    $identifier = str_replace("'", '', $info['sci'] . '_' . $species);
+    $identifier = str_replace("'", '', $info['sci']);
     $lines = array_values(array_filter($confirmed_species, fn($l) => $l !== $identifier));
     file_put_contents($confirm_file, implode("\n", $lines) . (empty($lines) ? "" : "\n"));
   }
@@ -195,15 +201,19 @@ $result = fetch_species_array('alphabetical');
   $scient = htmlspecialchars($row['Sci_Name'], ENT_QUOTES);
   $count  = (int)$row['Count'];
   $max_confidence = round((float)$row['MaxConfidence'] * 100, 1);
-  $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
+  $identifier         = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
+  $confirm_identifier = str_replace("'", '', $row['Sci_Name']);
 
-  $is_confirmed   = in_array($identifier, $confirmed_species, true);
+  $common_link = "<a href='/views.php?view=Recordings&species="
+    . rawurlencode($row['Sci_Name']) . "'>{$common}</a>";
+
+  $is_confirmed   = in_array($confirm_identifier, $confirmed_species, true);
   $is_excluded    = in_array($identifier, $excluded_species, true);
   $is_whitelisted = in_array($identifier, $whitelisted_species, true);
 
   $confirm_cell = $is_confirmed
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('confirmed','".str_replace("'", '', $identifier)."','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('confirmed','".str_replace("'", '', $identifier)."','add')\"></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('confirmed','".$confirm_identifier."','del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('confirmed','".$confirm_identifier."','add')\"></span>";
 
   $excl_cell = $is_excluded
     ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','del')\">"
@@ -213,7 +223,7 @@ $result = fetch_species_array('alphabetical');
     ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','del')\">"
     : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
 
-  echo "<tr data-comname=\"{$common}\"><td>{$common}</td><td><i>{$scient}</i></td><td>{$count}</td>"
+  echo "<tr data-comname=\"{$common}\"><td>{$common_link}</td><td><i>{$scient}</i></td><td>{$count}</td>"
      . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"
      . "<td class='threshold' data-sort='0'>0.0000</td>"
      . "<td data-sort='".($is_confirmed?0:1)."'>".$confirm_cell."</td>"
