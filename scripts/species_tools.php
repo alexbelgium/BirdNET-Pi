@@ -21,9 +21,7 @@ $exclude_file   = __DIR__ . '/exclude_species_list.txt';
 $whitelist_file = __DIR__ . '/whitelist_species_list.txt';
 
 foreach ([$confirm_file, $exclude_file, $whitelist_file] as $file) {
-    if (!file_exists($file)) {
-        touch($file);
-    }
+    if (!file_exists($file)) touch($file);
 }
 
 $confirmed_species   = file_exists($confirm_file)   ? file($confirm_file,   FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
@@ -33,12 +31,11 @@ $whitelisted_species = file_exists($whitelist_file) ? file($whitelist_file, FILE
 $config    = get_config();
 $sf_thresh = isset($config['SF_THRESH']) ? (float)$config['SF_THRESH'] : 0.0;
 
-/* ---------- helpers (tiny, single-purpose) ---------- */
+/* ---------- helpers ---------- */
 function join_path(...$parts): string {
   return preg_replace('#/+#', '/', implode('/', $parts));
 }
 function can_unlink(string $p): bool {
-  // unlink-able: symlink (even dangling) or regular file
   return is_link($p) || is_file($p);
 }
 function under_base(string $path, string $base): bool {
@@ -57,17 +54,17 @@ function under_base(string $path, string $base): bool {
 /**
  * Collect detection count, files to delete (unique), first scientific name,
  * and dirs to try rmdir later — for a given species.
+ * NOTE: Row-wise enumeration (no aggregates) so we gather every file.
  */
 function collect_species_targets(SQLite3 $db, string $species, string $home, $base): array {
-  $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name FROM detections WHERE Com_Name = :name');
+  $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name
+                        FROM detections
+                        WHERE Com_Name = :name');
   ensure_db_ok($stmt);
   $stmt->bindValue(':name', $species, SQLITE3_TEXT);
   $res = $stmt->execute();
 
-  $count = 0;
-  $files = [];
-  $dirs  = [];
-  $sci   = null;
+  $count = 0; $files = []; $dirs = []; $sci = null;
 
   while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
     $count++;
@@ -75,7 +72,7 @@ function collect_species_targets(SQLite3 $db, string $species, string $home, $ba
     $dir = str_replace([' ', "'"], ['_', ''], $row['Com_Name']);
 
     $candidates = [
-      join_path($home, 'BirdSongs/Extracted/By_Date',        $row['Date'], $dir, $row['File_Name']),
+      join_path($home, 'BirdSongs/Extracted/By_Date',         $row['Date'], $dir, $row['File_Name']),
       join_path($home, 'BirdSongs/Extracted/By_Date/shifted', $row['Date'], $dir, $row['File_Name']),
     ];
 
@@ -104,16 +101,11 @@ function collect_species_targets(SQLite3 $db, string $species, string $home, $ba
 if (isset($_GET['toggle'], $_GET['species'], $_GET['action'])) {
   $list    = $_GET['toggle'];
   $species = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
-  
-  if ($list === 'exclude') {
-    $file = $exclude_file;
-  } elseif ($list === 'whitelist') {
-    $file = $whitelist_file;
-  } elseif ($list === 'confirmed') {
-    $file = $confirm_file;
-  } else {
-    header('Content-Type: text/plain'); echo 'Invalid list type'; exit;
-  }
+
+  if     ($list === 'exclude')   { $file = $exclude_file; }
+  elseif ($list === 'whitelist') { $file = $whitelist_file; }
+  elseif ($list === 'confirmed') { $file = $confirm_file; }
+  else { header('Content-Type: text/plain'); echo 'Invalid list type'; exit; }
 
   $lines = file_exists($file) ? file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
   if ($_GET['action'] === 'add') {
@@ -173,16 +165,36 @@ if (isset($_GET['delete'])) {
   echo json_encode(['lines' => $lines_deleted, 'files' => $deleted]); exit;
 }
 
-/* ---------- page (unchanged semantics; minor tidy) ---------- */
-$result = fetch_species_array('alphabetical');
+/* ---------- query species aggregates ---------- */
+$sql = <<<SQL
+SELECT
+  Com_Name,
+  Sci_Name,
+  COUNT(*)        AS Count,
+  MAX(Confidence) AS MaxConfidence,
+  MAX(Date)       AS LastSeen
+FROM detections
+GROUP BY Com_Name, Sci_Name
+ORDER BY Com_Name COLLATE NOCASE;
+SQL;
+$result = $db->query($sql);
 ?>
 <style>
   .circle-icon{display:inline-block;width:12px;height:12px;border:1px solid #777;border-radius:50%;cursor:pointer;}
   .centered{max-width:1100px;margin:0 auto}
   #speciesTable th{cursor:pointer}
+  .toolbar{display:flex;gap:8px;align-items:center;margin:8px 0}
+  .toolbar input[type="text"]{padding:6px 8px;min-width:260px}
 </style>
 
 <div class="centered">
+  <!-- Search with persistence -->
+  <div class="toolbar">
+    <input id="q" type="text" placeholder="Filter species… (name, scientific)"
+           title="Type to filter; persists across reloads">
+    <small id="matchCount"></small>
+  </div>
+
 <table id="speciesTable">
   <thead>
     <tr>
@@ -190,10 +202,11 @@ $result = fetch_species_array('alphabetical');
       <th onclick="sortTable(1)">Scientific Name</th>
       <th onclick="sortTable(2)">Identifications</th>
       <th onclick="sortTable(3)">Max Confidence</th>
-      <th onclick="sortTable(4)">Threshold</th>
-      <th onclick="sortTable(5)">Confirmed</th>
-      <th onclick="sortTable(6)">Excluded</th>
-      <th onclick="sortTable(7)">Whitelisted</th>
+      <th onclick="sortTable(4)">Last Seen</th>
+      <th onclick="sortTable(5)">Probability</th>
+      <th onclick="sortTable(6)">Confirmed</th>
+      <th onclick="sortTable(7)">Excluded</th>
+      <th onclick="sortTable(8)">Whitelisted</th>
       <th>Delete</th>
     </tr>
   </thead>
@@ -205,6 +218,10 @@ $result = fetch_species_array('alphabetical');
   $max_confidence = round((float)$row['MaxConfidence'] * 100, 1);
   $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
   $identifier_sci = str_replace("'", '', $row['Sci_Name']);
+
+  $lastSeen = $row['LastSeen'] ?? '';
+  $lastSeenSort = $lastSeen ? (strtotime($lastSeen) ?: 0) : 0;
+  $lastSeenDisplay = htmlspecialchars($lastSeen, ENT_QUOTES);
 
   $common_link = "<a href='views.php?view=Recordings&species="
     . rawurlencode($row['Sci_Name']) . "'>{$common}</a>";
@@ -225,13 +242,18 @@ $result = fetch_species_array('alphabetical');
     ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','del')\">"
     : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
 
-  echo "<tr data-comname=\"{$common}\"><td>{$common_link}</td><td><i>{$scient}</i></td><td>{$count}</td>"
-     . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"
+  echo "<tr data-comname=\"{$common}\">"
+     . "<td>{$common_link}</td>"
+     . "<td><i>{$scient}</i></td>"
+     . "<td>{$count}</td>"
+     . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"   /* Max Confidence */
+     . "<td data-sort=\"{$lastSeenSort}\">{$lastSeenDisplay}</td>"   /* Last Seen */
      . "<td class='threshold' data-sort='0'>0.0000</td>"
      . "<td data-sort='".($is_confirmed?0:1)."'>".$confirm_cell."</td>"
      . "<td data-sort='".($is_excluded?0:1)."'>".$excl_cell."</td>"
      . "<td data-sort='".($is_whitelisted?0:1)."'>".$white_cell."</td>"
-     . "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\"></td></tr>";
+     . "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\"></td>"
+     . "</tr>";
 } ?>
   </tbody>
 </table>
@@ -244,6 +266,7 @@ const sfThresh = <?php echo json_encode($sf_thresh, JSON_UNESCAPED_UNICODE); ?>;
 // tiny fetch helper
 const get = (url) => fetch(url, {cache:'no-store'}).then(r => r.text());
 
+// ---------- load thresholds and colorize ----------
 function loadThresholds() {
   get(scriptsBase + 'config.php?threshold=0').then(text => {
     const lines = (text || '').split(/\r?\n/);
@@ -274,6 +297,7 @@ function loadThresholds() {
 }
 document.addEventListener('DOMContentLoaded', loadThresholds);
 
+// ---------- toggles / delete ----------
 function toggleSpecies(list, species, action) {
   get(scriptsBase + 'species_tools.php?toggle=' + list + '&species=' + encodeURIComponent(species) + '&action=' + action)
     .then(t => { if (t.trim() === 'OK') location.reload(); });
@@ -293,6 +317,7 @@ function deleteSpecies(species) {
   });
 }
 
+// ---------- Sorting with persistence ----------
 function sortTable(n) {
   const table = document.getElementById('speciesTable');
   const tbody = table.tBodies[0];
@@ -307,5 +332,46 @@ function sortTable(n) {
   });
   rows.forEach(r => tbody.appendChild(r));
   table.setAttribute('data-sort-' + n, asc ? 'asc' : 'desc');
+
+  try {
+    localStorage.setItem('speciesSortCol', String(n));
+    localStorage.setItem('speciesSortAsc', asc ? '1' : '0');
+  } catch(e){}
 }
+
+function applySavedSort() {
+  const table = document.getElementById('speciesTable');
+  const col = parseInt(localStorage.getItem('speciesSortCol') || '', 10);
+  const asc = localStorage.getItem('speciesSortAsc');
+  if (!Number.isFinite(col)) return;
+  sortTable(col);
+  const isAscNow = table.getAttribute('data-sort-' + col) === 'asc';
+  if ((asc === '1') !== isAscNow) sortTable(col);
+}
+
+// ---------- Search with persistence ----------
+const q = document.getElementById('q');
+const matchCount = document.getElementById('matchCount');
+
+function applyFilter() {
+  const needle = (q.value || '').trim().toLowerCase();
+  let shown = 0, total = 0;
+  document.querySelectorAll('#speciesTable tbody tr').forEach(tr => {
+    total++;
+    const txt = tr.innerText.toLowerCase();
+    const vis = txt.includes(needle);
+    tr.style.display = vis ? '' : 'none';
+    if (vis) shown++;
+  });
+  matchCount.textContent = total ? `${shown} / ${total}` : '';
+  try { localStorage.setItem('speciesFilter', q.value); } catch(e){}
+}
+
+q.addEventListener('input', applyFilter);
+
+document.addEventListener('DOMContentLoaded', () => {
+  try { const saved = localStorage.getItem('speciesFilter'); if (saved !== null) q.value = saved; } catch(e){}
+  applyFilter();
+  applySavedSort();
+});
 </script>
