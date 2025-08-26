@@ -50,11 +50,16 @@ function under_base(string $path, string $base): bool {
   }
   return $resolved === $baseReal || strpos($resolved, $baseReal . DIRECTORY_SEPARATOR) === 0;
 }
+function normalize_common_for_map(string $name): string {
+  // Match the bash script’s display (apostrophes removed, single-space, lowercase)
+  $s = str_replace("'", '', $name);
+  $s = strtolower(trim(preg_replace('/\s+/', ' ', $s)));
+  return $s;
+}
 
 /**
  * Collect detection count, files to delete (unique), first scientific name,
  * and dirs to try rmdir later — for a given species.
- * NOTE: Row-wise enumeration (no aggregates) so we gather every file.
  */
 function collect_species_targets(SQLite3 $db, string $species, string $home, $base): array {
   $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name
@@ -165,6 +170,27 @@ if (isset($_GET['delete'])) {
   echo json_encode(['lines' => $lines_deleted, 'files' => $deleted]); exit;
 }
 
+/* ---------- optionally run disk_species_count.sh and parse local counts ---------- */
+$show_local_col = false;
+$local_counts = []; // map: normalized common name => integer count
+if (isset($_GET['run_species_count'])) {
+  $show_local_col = true;
+  $script = $home . "/BirdNET-Pi/scripts/disk_species_count.sh";
+  $run_user = function_exists('get_user') ? get_user() : trim(shell_exec('whoami')) ?: 'www-data';
+  $cmd = "sudo -u " . escapeshellarg($run_user) . " " . escapeshellarg($script) . " 2>&1";
+  $output = shell_exec($cmd) ?? '';
+
+  // Parse lines like "1.2k : Species Name" or "123 : Species Name"
+  foreach (preg_split('/\R/u', $output) as $line) {
+    if (preg_match('/^\s*([0-9]+(?:\.[0-9])?[kK]|[0-9]+)\s*:\s*(.+)\s*$/u', $line, $m)) {
+      $countStr = $m[1];
+      $name     = $m[2];
+      $n = (stripos($countStr, 'k') !== false) ? (int)round(((float)$countStr) * 1000) : (int)$countStr;
+      $local_counts[ normalize_common_for_map($name) ] = $n;
+    }
+  }
+}
+
 /* ---------- query species aggregates ---------- */
 $sql = <<<SQL
 SELECT
@@ -185,28 +211,33 @@ $result = $db->query($sql);
   #speciesTable th{cursor:pointer}
   .toolbar{display:flex;gap:8px;align-items:center;margin:8px 0}
   .toolbar input[type="text"]{padding:6px 8px;min-width:260px}
+  .toolbar button{padding:6px 10px;cursor:pointer}
 </style>
 
 <div class="centered">
-  <!-- Search with persistence -->
+  <!-- Search with persistence + Local storage info -->
   <div class="toolbar">
     <input id="q" type="text" placeholder="Filter species… (name, scientific)"
            title="Type to filter; persists across reloads">
+    <button type="button" onclick="runLocalInfo()">Local storage info</button>
     <small id="matchCount"></small>
   </div>
 
 <table id="speciesTable">
   <thead>
     <tr>
-      <th onclick="sortTable(0)">Common Name</th>
-      <th onclick="sortTable(1)">Scientific Name</th>
-      <th onclick="sortTable(2)">Identifications</th>
-      <th onclick="sortTable(3)">Max Confidence</th>
-      <th onclick="sortTable(4)">Last Seen</th>
-      <th onclick="sortTable(5)">Probability</th>
-      <th onclick="sortTable(6)">Confirmed</th>
-      <th onclick="sortTable(7)">Excluded</th>
-      <th onclick="sortTable(8)">Whitelisted</th>
+      <th>Common Name</th>
+      <th>Scientific Name</th>
+      <th>Identifications</th>
+      <th>Max Confidence</th>
+      <th>Last Seen</th>
+      <th>Probability</th>
+      <th>Confirmed</th>
+      <th>Excluded</th>
+      <th>Whitelisted</th>
+      <?php if ($show_local_col): ?>
+      <th>Local Files</th>
+      <?php endif; ?>
       <th>Delete</th>
     </tr>
   </thead>
@@ -246,13 +277,21 @@ $result = $db->query($sql);
      . "<td>{$common_link}</td>"
      . "<td><i>{$scient}</i></td>"
      . "<td>{$count}</td>"
-     . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"   /* Max Confidence */
-     . "<td data-sort=\"{$lastSeenSort}\">{$lastSeenDisplay}</td>"   /* Last Seen */
+     . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"
+     . "<td data-sort=\"{$lastSeenSort}\">{$lastSeenDisplay}</td>"
      . "<td class='threshold' data-sort='0'>0.0000</td>"
      . "<td data-sort='".($is_confirmed?0:1)."'>".$confirm_cell."</td>"
      . "<td data-sort='".($is_excluded?0:1)."'>".$excl_cell."</td>"
-     . "<td data-sort='".($is_whitelisted?0:1)."'>".$white_cell."</td>"
-     . "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\"></td>"
+     . "<td data-sort='".($is_whitelisted?0:1)."'>".$white_cell."</td>";
+
+  if ($show_local_col) {
+    $localKey = normalize_common_for_map($row['Com_Name']);
+    $localCount = $local_counts[$localKey] ?? 0;
+    $localCountDisplay = number_format($localCount, 0, '.', ' ');
+    echo "<td data-sort='{$localCount}'>{$localCountDisplay}</td>";
+  }
+
+  echo "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\"></td>"
      . "</tr>";
 } ?>
   </tbody>
@@ -263,10 +302,17 @@ $result = $db->query($sql);
 const scriptsBase = 'scripts/';
 const sfThresh = <?php echo json_encode($sf_thresh, JSON_UNESCAPED_UNICODE); ?>;
 
-// tiny fetch helper
+// Run the disk count by reloading with the flag
+function runLocalInfo() {
+  const url = new URL(window.location.href);
+  url.searchParams.set('run_species_count', '1');
+  window.location.href = url.toString();
+}
+
+// Tiny fetch helper
 const get = (url) => fetch(url, {cache:'no-store'}).then(r => r.text());
 
-// ---------- load thresholds and colorize ----------
+// ---------- Thresholds (probability) loader & colorizer ----------
 function loadThresholds() {
   get(scriptsBase + 'config.php?threshold=0').then(text => {
     const lines = (text || '').split(/\r?\n/);
@@ -297,12 +343,11 @@ function loadThresholds() {
 }
 document.addEventListener('DOMContentLoaded', loadThresholds);
 
-// ---------- toggles / delete ----------
+// ---------- Toggles / delete ----------
 function toggleSpecies(list, species, action) {
   get(scriptsBase + 'species_tools.php?toggle=' + list + '&species=' + encodeURIComponent(species) + '&action=' + action)
     .then(t => { if (t.trim() === 'OK') location.reload(); });
 }
-
 function deleteSpecies(species) {
   get(scriptsBase + 'species_tools.php?getcounts=' + encodeURIComponent(species)).then(t => {
     let info; try { info = JSON.parse(t); } catch { alert('Could not parse count response'); return; }
@@ -317,36 +362,55 @@ function deleteSpecies(species) {
   });
 }
 
-// ---------- Sorting with persistence ----------
-function sortTable(n) {
+// ---------- Dynamic sorting (no hardcoded indexes) + persistence ----------
+function sortTable(colIdx) {
   const table = document.getElementById('speciesTable');
   const tbody = table.tBodies[0];
   const rows = Array.from(tbody.rows);
-  const asc = table.getAttribute('data-sort-' + n) !== 'asc';
+  const asc = table.getAttribute('data-sort-col') == colIdx
+            ? (table.getAttribute('data-sort-dir') !== 'asc')
+            : true;
+
   rows.sort((a, b) => {
-    let x = a.cells[n].dataset.sort ?? a.cells[n].innerText.toLowerCase();
-    let y = b.cells[n].dataset.sort ?? b.cells[n].innerText.toLowerCase();
+    const aCell = a.cells[colIdx];
+    const bCell = b.cells[colIdx];
+    let x = (aCell && (aCell.dataset.sort ?? aCell.innerText.toLowerCase())) || '';
+    let y = (bCell && (bCell.dataset.sort ?? bCell.innerText.toLowerCase())) || '';
     const nx = parseFloat(x), ny = parseFloat(y);
     if (!Number.isNaN(nx) && !Number.isNaN(ny)) { x = nx; y = ny; }
     return (x < y ? (asc ? -1 : 1) : (x > y ? (asc ? 1 : -1) : 0));
   });
   rows.forEach(r => tbody.appendChild(r));
-  table.setAttribute('data-sort-' + n, asc ? 'asc' : 'desc');
+
+  table.setAttribute('data-sort-col', String(colIdx));
+  table.setAttribute('data-sort-dir', asc ? 'asc' : 'desc');
 
   try {
-    localStorage.setItem('speciesSortCol', String(n));
-    localStorage.setItem('speciesSortAsc', asc ? '1' : '0');
+    localStorage.setItem('speciesSortCol', String(colIdx));
+    localStorage.setItem('speciesSortDir', asc ? 'asc' : 'desc');
   } catch(e){}
 }
 
 function applySavedSort() {
   const table = document.getElementById('speciesTable');
-  const col = parseInt(localStorage.getItem('speciesSortCol') || '', 10);
-  const asc = localStorage.getItem('speciesSortAsc');
-  if (!Number.isFinite(col)) return;
-  sortTable(col);
-  const isAscNow = table.getAttribute('data-sort-' + col) === 'asc';
-  if ((asc === '1') !== isAscNow) sortTable(col);
+  const ths = Array.from(table.tHead.rows[0].cells);
+  const savedCol = parseInt(localStorage.getItem('speciesSortCol') || '', 10);
+  const savedDir = localStorage.getItem('speciesSortDir') || 'asc';
+  if (Number.isFinite(savedCol) && savedCol >= 0 && savedCol < ths.length) {
+    sortTable(savedCol);
+    // If current direction differs, sort again to flip
+    const isAscNow = table.getAttribute('data-sort-dir') === 'asc';
+    if ((savedDir === 'asc') !== isAscNow) sortTable(savedCol);
+  }
+}
+
+// Attach click listeners dynamically so indexes always match columns
+function wireHeaderSorting() {
+  const table = document.getElementById('speciesTable');
+  const ths = Array.from(table.tHead.rows[0].cells);
+  ths.forEach((th, idx) => {
+    th.addEventListener('click', () => sortTable(idx));
+  });
 }
 
 // ---------- Search with persistence ----------
@@ -370,6 +434,7 @@ function applyFilter() {
 q.addEventListener('input', applyFilter);
 
 document.addEventListener('DOMContentLoaded', () => {
+  wireHeaderSorting();
   try { const saved = localStorage.getItem('speciesFilter'); if (saved !== null) q.value = saved; } catch(e){}
   applyFilter();
   applySavedSort();
