@@ -7,6 +7,27 @@ require_once __DIR__ . '/common.php';
 ensure_authenticated();
 
 $home = get_home();
+/* ---------- disk species counts ---------- */
+if (isset($_GET['diskcounts'])) {
+    header('Content-Type: application/json');
+    $script = __DIR__ . '/disk_species_count.sh';
+    $cmd    = 'HOME=' . escapeshellarg($home) . ' bash ' . escapeshellarg($script) . ' 2>&1';
+    $output = @shell_exec($cmd);
+    $counts = [];
+    if ($output !== null) {
+        foreach (preg_split('/\\r?\\n/', $output) as $line) {
+            $line = trim($line);
+            if ($line === '') continue;
+            if (preg_match('/^([0-9]+(?:\\.[0-9]+)?)(k?)\\s*:\\s*(.+)$/i', $line, $m)) {
+                $num = (float)$m[1];
+                if (strtolower($m[2]) === 'k') $num *= 1000;
+                $counts[$m[3]] = (int)round($num);
+            }
+        }
+    }
+    echo json_encode($counts, JSON_UNESCAPED_UNICODE);
+    exit;
+}
 // Open database read-only for typical operations; enable writes only for deletions
 $flags = isset($_GET['delete']) ? SQLITE3_OPEN_READWRITE : SQLITE3_OPEN_READONLY;
 $db   = new SQLite3(__DIR__ . '/birds.db', $flags);
@@ -192,6 +213,7 @@ $result = $db->query($sql);
   <div class="toolbar">
     <input id="q" type="text" placeholder="Filter species… (name, scientific)"
            title="Type to filter; persists across reloads">
+    <button id="loadDiskCounts" type="button">Disk Files</button>
     <small id="matchCount"></small>
   </div>
 
@@ -317,6 +339,33 @@ function deleteSpecies(species) {
   });
 }
 
+// ---------- disk counts column ----------
+function addDiskCounts() {
+  get(scriptsBase + 'species_tools.php?diskcounts=1').then(t => {
+    let counts; try { counts = JSON.parse(t); } catch { alert('Could not parse disk counts'); return; }
+    const table = document.getElementById('speciesTable');
+    const headerRow = table.tHead.rows[0];
+    const deleteHeader = headerRow.lastElementChild;
+    const th = document.createElement('th');
+    th.textContent = 'Files on Disk';
+    headerRow.insertBefore(th, deleteHeader);
+    const colIndex = headerRow.cells.length - 2;
+    th.addEventListener('click', () => sortTable(colIndex));
+    const decoder = document.createElement('textarea');
+    document.querySelectorAll('#speciesTable tbody tr').forEach(tr => {
+      decoder.innerHTML = tr.getAttribute('data-comname') || '';
+      const name = decoder.value;
+      const lookup = name.replace(/'/g, '');
+      const count = counts[lookup] || 0;
+      const td = document.createElement('td');
+      td.textContent = count;
+      td.dataset.sort = count;
+      tr.insertBefore(td, tr.lastElementChild);
+    });
+    document.getElementById('loadDiskCounts').disabled = true;
+  });
+}
+
 // ---------- Sorting with persistence ----------
 function sortTable(n) {
   const table = document.getElementById('speciesTable');
@@ -373,5 +422,6 @@ document.addEventListener('DOMContentLoaded', () => {
   try { const saved = localStorage.getItem('speciesFilter'); if (saved !== null) q.value = saved; } catch(e){}
   applyFilter();
   applySavedSort();
+  document.getElementById('loadDiskCounts').addEventListener('click', addDiskCounts);
 });
 </script>
