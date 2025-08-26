@@ -1,3 +1,4 @@
+
 <?php
 /* Basic input sanitation */
 $_GET  = filter_input_array(INPUT_GET, FILTER_SANITIZE_STRING)  ?: [];
@@ -53,22 +54,6 @@ function under_base(string $path, string $base): bool {
   }
   return $resolved === $baseReal || strpos($resolved, $baseReal . DIRECTORY_SEPARATOR) === 0;
 }
-/* Atomic writer for list files (prevents races) */
-function write_list_atomic(string $file, array $lines): void {
-  $dir = dirname($file);
-  if (!is_dir($dir)) mkdir($dir, 0775, true);
-  $tmp = tempnam($dir, 'tmp_');
-  $fp  = fopen($tmp, 'wb');
-  if ($fp === false) throw new RuntimeException("Cannot open temp file");
-  if (!flock($fp, LOCK_EX)) { fclose($fp); unlink($tmp); throw new RuntimeException('flock failed'); }
-  fwrite($fp, implode("\n", $lines) . (empty($lines) ? "" : "\n"));
-  fflush($fp);
-  if (function_exists('posix_fsync')) { @posix_fsync($fp); }
-  flock($fp, LOCK_UN);
-  fclose($fp);
-  rename($tmp, $file);
-  @chmod($file, 0664);
-}
 
 /**
  * Collect detection count, files to delete (unique), first scientific name,
@@ -91,7 +76,7 @@ function collect_species_targets(SQLite3 $db, string $species, string $home, $ba
     $dir = str_replace([' ', "'"], ['_', ''], $row['Com_Name']);
 
     $candidates = [
-      join_path($home, 'BirdSongs/Extracted/By_Date',         $row['Date'], $dir, $row['File_Name']),
+      join_path($home, 'BirdSongs/Extracted/By_Date',        $row['Date'], $dir, $row['File_Name']),
       join_path($home, 'BirdSongs/Extracted/By_Date/shifted', $row['Date'], $dir, $row['File_Name']),
     ];
 
@@ -120,11 +105,16 @@ function collect_species_targets(SQLite3 $db, string $species, string $home, $ba
 if (isset($_GET['toggle'], $_GET['species'], $_GET['action'])) {
   $list    = $_GET['toggle'];
   $species = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
-
-  if     ($list === 'exclude')   { $file = $exclude_file; }
-  elseif ($list === 'whitelist') { $file = $whitelist_file; }
-  elseif ($list === 'confirmed') { $file = $confirm_file; }
-  else { header('Content-Type: text/plain'); echo 'Invalid list type'; exit; }
+  
+  if ($list === 'exclude') {
+    $file = $exclude_file;
+  } elseif ($list === 'whitelist') {
+    $file = $whitelist_file;
+  } elseif ($list === 'confirmed') {
+    $file = $confirm_file;
+  } else {
+    header('Content-Type: text/plain'); echo 'Invalid list type'; exit;
+  }
 
   $lines = file_exists($file) ? file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
   if ($_GET['action'] === 'add') {
@@ -132,7 +122,7 @@ if (isset($_GET['toggle'], $_GET['species'], $_GET['action'])) {
   } else {
     $lines = array_values(array_filter($lines, fn($l) => $l !== $species));
   }
-  write_list_atomic($file, $lines);
+  file_put_contents($file, implode("\n", $lines) . (empty($lines) ? "" : "\n"));
   header('Content-Type: text/plain'); echo 'OK'; exit;
 }
 
@@ -178,13 +168,13 @@ if (isset($_GET['delete'])) {
   if ($info['sci'] !== null && file_exists($confirm_file)) {
     $identifier = str_replace("'", '', $info['sci']);
     $lines = array_values(array_filter($confirmed_species, fn($l) => $l !== $identifier));
-    write_list_atomic($confirm_file, $lines);
+    file_put_contents($confirm_file, implode("\n", $lines) . (empty($lines) ? "" : "\n"));
   }
 
   echo json_encode(['lines' => $lines_deleted, 'files' => $deleted]); exit;
 }
 
-/* ---------- page (unchanged semantics; now with Last Seen) ---------- */
+/* ---------- page (unchanged semantics; minor tidy) ---------- */
 $result = fetch_species_array('alphabetical');
 
 /* Pre-prepare a MAX(Date) statement in case fetch_species_array() doesn't include it */
@@ -213,8 +203,8 @@ ensure_db_ok($lastSeenStmt);
       <th onclick="sortTable(0)">Common Name</th>
       <th onclick="sortTable(1)">Scientific Name</th>
       <th onclick="sortTable(2)">Identifications</th>
-      <th onclick="sortTable(3)">Last Seen</th>          <!-- NEW -->
-      <th onclick="sortTable(4)">Max Confidence</th>
+      <th onclick="sortTable(3)">Max Confidence</th>
+      <th onclick="sortTable(4)">Last Seen</th>
       <th onclick="sortTable(5)">Threshold</th>
       <th onclick="sortTable(6)">Confirmed</th>
       <th onclick="sortTable(7)">Excluded</th>
@@ -285,7 +275,6 @@ const sfThresh = <?php echo json_encode($sf_thresh, JSON_UNESCAPED_UNICODE); ?>;
 // tiny fetch helper
 const get = (url) => fetch(url, {cache:'no-store'}).then(r => r.text());
 
-// ---------- load thresholds and colorize ----------
 function loadThresholds() {
   get(scriptsBase + 'config.php?threshold=0').then(text => {
     const lines = (text || '').split(/\r?\n/);
@@ -316,7 +305,6 @@ function loadThresholds() {
 }
 document.addEventListener('DOMContentLoaded', loadThresholds);
 
-// ---------- toggles / delete ----------
 function toggleSpecies(list, species, action) {
   get(scriptsBase + 'species_tools.php?toggle=' + list + '&species=' + encodeURIComponent(species) + '&action=' + action)
     .then(t => { if (t.trim() === 'OK') location.reload(); });
@@ -336,7 +324,6 @@ function deleteSpecies(species) {
   });
 }
 
-// ---------- Sorting with persistence ----------
 function sortTable(n) {
   const table = document.getElementById('speciesTable');
   const tbody = table.tBodies[0];
