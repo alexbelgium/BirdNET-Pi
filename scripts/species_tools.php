@@ -7,6 +7,27 @@ require_once __DIR__ . '/common.php';
 ensure_authenticated();
 
 $home = get_home();
+/* ---------- disk species counts ---------- */
+if (isset($_GET['diskcounts'])) {
+    header('Content-Type: application/json');
+    $script = __DIR__ . '/disk_species_count.sh';
+    $cmd    = 'HOME=' . escapeshellarg($home) . ' bash ' . escapeshellarg($script) . ' 2>&1';
+    $output = @shell_exec($cmd);
+    $counts = [];
+    if ($output !== null) {
+        foreach (preg_split('/\\r?\\n/', $output) as $line) {
+            $line = trim($line);
+            if ($line === '') continue;
+            if (preg_match('/^([0-9]+(?:\\.[0-9]+)?)(k?)\\s*:\\s*(.+)$/i', $line, $m)) {
+                $num = (float)$m[1];
+                if (strtolower($m[2]) === 'k') $num *= 1000;
+                $counts[$m[3]] = (int)round($num);
+            }
+        }
+    }
+    echo json_encode($counts, JSON_UNESCAPED_UNICODE);
+    exit;
+}
 // Open database read-only for typical operations; enable writes only for deletions
 $flags = isset($_GET['delete']) ? SQLITE3_OPEN_READWRITE : SQLITE3_OPEN_READONLY;
 $db   = new SQLite3(__DIR__ . '/birds.db', $flags);
@@ -163,26 +184,6 @@ if (isset($_GET['delete'])) {
   }
 
   echo json_encode(['lines' => $lines_deleted, 'files' => $deleted]); exit;
-}
-
-/* ---------- disk species counts ---------- */
-if (isset($_GET['diskcounts'])) {
-  header('Content-Type: application/json');
-  $script = __DIR__ . '/disk_species_count.sh';
-  $output = @shell_exec('bash ' . escapeshellarg($script) . ' 2>&1');
-  $counts = [];
-  if ($output !== null) {
-    foreach (preg_split('/\r?\n/', $output) as $line) {
-      $line = trim($line);
-      if ($line === '') continue;
-      if (preg_match('/^([0-9]+(?:\.[0-9]+)?)(k?)\s*:\s*(.+)$/i', $line, $m)) {
-        $num = (float)$m[1];
-        if (strtolower($m[2]) === 'k') $num *= 1000;
-        $counts[$m[3]] = (int)round($num);
-      }
-    }
-  }
-  echo json_encode($counts, JSON_UNESCAPED_UNICODE); exit;
 }
 
 /* ---------- query species aggregates ---------- */
@@ -354,7 +355,8 @@ function addDiskCounts() {
     document.querySelectorAll('#speciesTable tbody tr').forEach(tr => {
       decoder.innerHTML = tr.getAttribute('data-comname') || '';
       const name = decoder.value;
-      const count = counts[name] || 0;
+      const lookup = name.replace(/'/g, '');
+      const count = counts[lookup] || 0;
       const td = document.createElement('td');
       td.textContent = count;
       td.dataset.sort = count;
