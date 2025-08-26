@@ -53,6 +53,22 @@ function under_base(string $path, string $base): bool {
   }
   return $resolved === $baseReal || strpos($resolved, $baseReal . DIRECTORY_SEPARATOR) === 0;
 }
+/* Atomic writer for list files (prevents races) */
+function write_list_atomic(string $file, array $lines): void {
+  $dir = dirname($file);
+  if (!is_dir($dir)) mkdir($dir, 0775, true);
+  $tmp = tempnam($dir, 'tmp_');
+  $fp  = fopen($tmp, 'wb');
+  if ($fp === false) throw new RuntimeException("Cannot open temp file");
+  if (!flock($fp, LOCK_EX)) { fclose($fp); unlink($tmp); throw new RuntimeException('flock failed'); }
+  fwrite($fp, implode("\n", $lines) . (empty($lines) ? "" : "\n"));
+  fflush($fp);
+  if (function_exists('posix_fsync')) { @posix_fsync($fp); }
+  flock($fp, LOCK_UN);
+  fclose($fp);
+  rename($tmp, $file);
+  @chmod($file, 0664);
+}
 
 /**
  * Collect detection count, files to delete (unique), first scientific name,
@@ -75,7 +91,7 @@ function collect_species_targets(SQLite3 $db, string $species, string $home, $ba
     $dir = str_replace([' ', "'"], ['_', ''], $row['Com_Name']);
 
     $candidates = [
-      join_path($home, 'BirdSongs/Extracted/By_Date',        $row['Date'], $dir, $row['File_Name']),
+      join_path($home, 'BirdSongs/Extracted/By_Date',         $row['Date'], $dir, $row['File_Name']),
       join_path($home, 'BirdSongs/Extracted/By_Date/shifted', $row['Date'], $dir, $row['File_Name']),
     ];
 
@@ -104,16 +120,11 @@ function collect_species_targets(SQLite3 $db, string $species, string $home, $ba
 if (isset($_GET['toggle'], $_GET['species'], $_GET['action'])) {
   $list    = $_GET['toggle'];
   $species = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
-  
-  if ($list === 'exclude') {
-    $file = $exclude_file;
-  } elseif ($list === 'whitelist') {
-    $file = $whitelist_file;
-  } elseif ($list === 'confirmed') {
-    $file = $confirm_file;
-  } else {
-    header('Content-Type: text/plain'); echo 'Invalid list type'; exit;
-  }
+
+  if     ($list === 'exclude')   { $file = $exclude_file; }
+  elseif ($list === 'whitelist') { $file = $whitelist_file; }
+  elseif ($list === 'confirmed') { $file = $confirm_file; }
+  else { header('Content-Type: text/plain'); echo 'Invalid list type'; exit; }
 
   $lines = file_exists($file) ? file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
   if ($_GET['action'] === 'add') {
@@ -121,7 +132,7 @@ if (isset($_GET['toggle'], $_GET['species'], $_GET['action'])) {
   } else {
     $lines = array_values(array_filter($lines, fn($l) => $l !== $species));
   }
-  file_put_contents($file, implode("\n", $lines) . (empty($lines) ? "" : "\n"));
+  write_list_atomic($file, $lines);
   header('Content-Type: text/plain'); echo 'OK'; exit;
 }
 
@@ -167,33 +178,47 @@ if (isset($_GET['delete'])) {
   if ($info['sci'] !== null && file_exists($confirm_file)) {
     $identifier = str_replace("'", '', $info['sci']);
     $lines = array_values(array_filter($confirmed_species, fn($l) => $l !== $identifier));
-    file_put_contents($confirm_file, implode("\n", $lines) . (empty($lines) ? "" : "\n"));
+    write_list_atomic($confirm_file, $lines);
   }
 
   echo json_encode(['lines' => $lines_deleted, 'files' => $deleted]); exit;
 }
 
-/* ---------- page (unchanged semantics; minor tidy) ---------- */
+/* ---------- page (unchanged semantics; now with Last Seen) ---------- */
 $result = fetch_species_array('alphabetical');
+
+/* Pre-prepare a MAX(Date) statement in case fetch_species_array() doesn't include it */
+$lastSeenStmt = $db->prepare('SELECT MAX(Date) AS LastSeen FROM detections WHERE Com_Name = :name');
+ensure_db_ok($lastSeenStmt);
 ?>
 <style>
   .circle-icon{display:inline-block;width:12px;height:12px;border:1px solid #777;border-radius:50%;cursor:pointer;}
   .centered{max-width:1100px;margin:0 auto}
   #speciesTable th{cursor:pointer}
+  .toolbar{display:flex;gap:8px;align-items:center;margin:8px 0}
+  .toolbar input[type="text"]{padding:6px 8px;min-width:260px}
 </style>
 
 <div class="centered">
+  <!-- Search with persistence -->
+  <div class="toolbar">
+    <input id="q" type="text" placeholder="Filter species… (name, scientific)"
+           title="Type to filter; persists across reloads">
+    <small id="matchCount"></small>
+  </div>
+
 <table id="speciesTable">
   <thead>
     <tr>
       <th onclick="sortTable(0)">Common Name</th>
       <th onclick="sortTable(1)">Scientific Name</th>
       <th onclick="sortTable(2)">Identifications</th>
-      <th onclick="sortTable(3)">Max Confidence</th>
-      <th onclick="sortTable(4)">Threshold</th>
-      <th onclick="sortTable(5)">Confirmed</th>
-      <th onclick="sortTable(6)">Excluded</th>
-      <th onclick="sortTable(7)">Whitelisted</th>
+      <th onclick="sortTable(3)">Last Seen</th>          <!-- NEW -->
+      <th onclick="sortTable(4)">Max Confidence</th>
+      <th onclick="sortTable(5)">Threshold</th>
+      <th onclick="sortTable(6)">Confirmed</th>
+      <th onclick="sortTable(7)">Excluded</th>
+      <th onclick="sortTable(8)">Whitelisted</th>
       <th>Delete</th>
     </tr>
   </thead>
@@ -205,6 +230,17 @@ $result = fetch_species_array('alphabetical');
   $max_confidence = round((float)$row['MaxConfidence'] * 100, 1);
   $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
   $identifier_sci = str_replace("'", '', $row['Sci_Name']);
+
+  // Last seen: use provided value if available, else query MAX(Date) (read-only)
+  $lastSeen = $row['LastSeen'] ?? null;
+  if ($lastSeen === null) {
+    $lastSeenStmt->reset();
+    $lastSeenStmt->bindValue(':name', $row['Com_Name'], SQLITE3_TEXT);
+    $lr = $lastSeenStmt->execute()->fetchArray(SQLITE3_ASSOC);
+    $lastSeen = $lr['LastSeen'] ?? '';
+  }
+  $lastSeenDisplay = htmlspecialchars($lastSeen ?: '', ENT_QUOTES);
+  $lastSeenSort = $lastSeen ? (strtotime($lastSeen) ?: 0) : 0;
 
   $common_link = "<a href='views.php?view=Recordings&species="
     . rawurlencode($row['Sci_Name']) . "'>{$common}</a>";
@@ -225,13 +261,18 @@ $result = fetch_species_array('alphabetical');
     ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','del')\">"
     : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
 
-  echo "<tr data-comname=\"{$common}\"><td>{$common_link}</td><td><i>{$scient}</i></td><td>{$count}</td>"
+  echo "<tr data-comname=\"{$common}\">"
+     . "<td>{$common_link}</td>"
+     . "<td><i>{$scient}</i></td>"
+     . "<td>{$count}</td>"
+     . "<td data-sort=\"{$lastSeenSort}\">{$lastSeenDisplay}</td>"    /* NEW column */
      . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"
      . "<td class='threshold' data-sort='0'>0.0000</td>"
      . "<td data-sort='".($is_confirmed?0:1)."'>".$confirm_cell."</td>"
      . "<td data-sort='".($is_excluded?0:1)."'>".$excl_cell."</td>"
      . "<td data-sort='".($is_whitelisted?0:1)."'>".$white_cell."</td>"
-     . "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\"></td></tr>";
+     . "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\"></td>"
+     . "</tr>";
 } ?>
   </tbody>
 </table>
@@ -244,6 +285,7 @@ const sfThresh = <?php echo json_encode($sf_thresh, JSON_UNESCAPED_UNICODE); ?>;
 // tiny fetch helper
 const get = (url) => fetch(url, {cache:'no-store'}).then(r => r.text());
 
+// ---------- load thresholds and colorize ----------
 function loadThresholds() {
   get(scriptsBase + 'config.php?threshold=0').then(text => {
     const lines = (text || '').split(/\r?\n/);
@@ -274,6 +316,7 @@ function loadThresholds() {
 }
 document.addEventListener('DOMContentLoaded', loadThresholds);
 
+// ---------- toggles / delete ----------
 function toggleSpecies(list, species, action) {
   get(scriptsBase + 'species_tools.php?toggle=' + list + '&species=' + encodeURIComponent(species) + '&action=' + action)
     .then(t => { if (t.trim() === 'OK') location.reload(); });
@@ -293,6 +336,7 @@ function deleteSpecies(species) {
   });
 }
 
+// ---------- Sorting with persistence ----------
 function sortTable(n) {
   const table = document.getElementById('speciesTable');
   const tbody = table.tBodies[0];
@@ -307,5 +351,54 @@ function sortTable(n) {
   });
   rows.forEach(r => tbody.appendChild(r));
   table.setAttribute('data-sort-' + n, asc ? 'asc' : 'desc');
+
+  // persist sort state
+  try {
+    localStorage.setItem('speciesSortCol', String(n));
+    localStorage.setItem('speciesSortAsc', asc ? '1' : '0');
+  } catch(e){}
 }
+
+// Apply saved sort (call after DOM is ready and rows exist)
+function applySavedSort() {
+  const table = document.getElementById('speciesTable');
+  const col = parseInt(localStorage.getItem('speciesSortCol') || '', 10);
+  const asc = localStorage.getItem('speciesSortAsc');
+  if (!Number.isFinite(col)) return;
+  sortTable(col);
+  // if current direction differs, sort again to flip
+  const isAscNow = table.getAttribute('data-sort-' + col) === 'asc';
+  if ((asc === '1') !== isAscNow) sortTable(col);
+}
+
+// ---------- Search with persistence ----------
+const q = document.getElementById('q');
+const matchCount = document.getElementById('matchCount');
+
+function applyFilter() {
+  const needle = (q.value || '').trim().toLowerCase();
+  let shown = 0, total = 0;
+  document.querySelectorAll('#speciesTable tbody tr').forEach(tr => {
+    total++;
+    const txt = tr.innerText.toLowerCase();
+    const vis = txt.includes(needle);
+    tr.style.display = vis ? '' : 'none';
+    if (vis) shown++;
+  });
+  matchCount.textContent = total ? `${shown} / ${total}` : '';
+  try { localStorage.setItem('speciesFilter', q.value); } catch(e){}
+}
+
+q.addEventListener('input', applyFilter);
+
+document.addEventListener('DOMContentLoaded', () => {
+  // restore search
+  try {
+    const saved = localStorage.getItem('speciesFilter');
+    if (saved !== null) q.value = saved;
+  } catch(e){}
+  applyFilter();
+  // apply saved sort
+  applySavedSort();
+});
 </script>
