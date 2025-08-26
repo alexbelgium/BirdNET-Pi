@@ -205,7 +205,7 @@ ensure_db_ok($lastSeenStmt);
       <th onclick="sortTable(2)">Identifications</th>
       <th onclick="sortTable(3)">Max Confidence</th>
       <th onclick="sortTable(4)">Last Seen</th>
-      <th onclick="sortTable(5)">Threshold</th>
+      <th onclick="sortTable(5)">Probability</th>
       <th onclick="sortTable(6)">Confirmed</th>
       <th onclick="sortTable(7)">Excluded</th>
       <th onclick="sortTable(8)">Whitelisted</th>
