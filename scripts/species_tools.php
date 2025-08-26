@@ -306,7 +306,7 @@ function toggleSpecies(list, species, action) {
 function deleteSpecies(species) {
   get(scriptsBase + 'species_tools.php?getcounts=' + encodeURIComponent(species)).then(t => {
     let info; try { info = JSON.parse(t); } catch { alert('Could not parse count response'); return; }
-    if (!confirm('Delete ' + info.count + ' detections and ' + info.files + ' files for ' + species + '?')) return;
+    if (!confirm('Delete ' + info.count + ' detections and local audio and png files for ' + species + '?')) return;
     get(scriptsBase + 'species_tools.php?delete=' + encodeURIComponent(species)).then(t2 => {
       try {
         const res = JSON.parse(t2);
