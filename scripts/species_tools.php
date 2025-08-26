@@ -34,6 +34,14 @@ if (isset($_GET['diskcounts'])) {
 $flags = isset($_GET['delete']) ? SQLITE3_OPEN_READWRITE : SQLITE3_OPEN_READONLY;
 $db   = new SQLite3(__DIR__ . '/birds.db', $flags);
 $db->busyTimeout(1000);
+$db->exec("
+  PRAGMA journal_mode=WAL;       -- safe read concurrency
+  PRAGMA synchronous=NORMAL;     -- cheaper fsyncs (read-mostly)
+  PRAGMA temp_store=MEMORY;      -- temp data stays in RAM
+  PRAGMA cache_size=-80000;     -- ~80MB page cache (tune to your RAM)
+  PRAGMA mmap_size=268435456;    -- 256MB mmap (set 0 if kernel disallows)
+  PRAGMA foreign_keys=OFF;       -- if you don't need them during this read
+");
 
 /* Paths / lists */
 $base_symlink   = $home . '/BirdSongs/Extracted/By_Date';
@@ -161,15 +169,9 @@ if (isset($_GET['delete'])) {
 
 /* ---------- query species aggregates ---------- */
 $sql = <<<SQL
-SELECT
-  Com_Name,
-  Sci_Name,
-  COUNT(*)        AS Count,
-  MAX(Confidence) AS MaxConfidence,
-  MAX(Date)       AS LastSeen
+SELECT Com_Name, Sci_Name, COUNT(*) AS Count, MAX(Confidence) AS MaxConfidence, MAX(Date) AS LastSeen
 FROM detections
-GROUP BY Com_Name, Sci_Name
-ORDER BY Com_Name COLLATE NOCASE;
+GROUP BY Com_Name, Sci_Name;
 SQL;
 $result = $db->query($sql);
 ?>
