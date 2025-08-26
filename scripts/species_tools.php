@@ -213,8 +213,8 @@ $result = $db->query($sql);
   <div class="toolbar">
     <input id="q" type="text" placeholder="Filter species… (name, scientific)"
            title="Type to filter; persists across reloads">
-    <button id="loadDiskCounts" type="button">Disk Files</button>
     <small id="matchCount"></small>
+    <button id="loadDiskCounts" type="button">Local files (slow)</button>
   </div>
 
 <table id="speciesTable">
