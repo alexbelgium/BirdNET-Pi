@@ -7,7 +7,9 @@ require_once __DIR__ . '/common.php';
 ensure_authenticated();
 
 $home = get_home();
-$db   = new SQLite3(__DIR__ . '/birds.db', SQLITE3_OPEN_READWRITE);
+// Open database read-only for typical operations; enable writes only for deletions
+$flags = isset($_GET['delete']) ? SQLITE3_OPEN_READWRITE : SQLITE3_OPEN_READONLY;
+$db   = new SQLite3(__DIR__ . '/birds.db', $flags);
 $db->busyTimeout(1000);
 
 /* Paths / lists */
