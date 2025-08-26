@@ -40,7 +40,6 @@ $db->exec("
   PRAGMA temp_store=MEMORY;      -- temp data stays in RAM
   PRAGMA cache_size=-80000;     -- ~80MB page cache (tune to your RAM)
   PRAGMA mmap_size=268435456;    -- 256MB mmap (set 0 if kernel disallows)
-  PRAGMA foreign_keys=OFF;       -- if you don't need them during this read
 ");
 
 /* Paths / lists */
