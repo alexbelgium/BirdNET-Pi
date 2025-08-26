@@ -254,8 +254,8 @@ ensure_db_ok($lastSeenStmt);
      . "<td>{$common_link}</td>"
      . "<td><i>{$scient}</i></td>"
      . "<td>{$count}</td>"
-     . "<td data-sort=\"{$lastSeenSort}\">{$lastSeenDisplay}</td>"    /* NEW column */
      . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"
+     . "<td data-sort=\"{$lastSeenSort}\">{$lastSeenDisplay}</td>"
      . "<td class='threshold' data-sort='0'>0.0000</td>"
      . "<td data-sort='".($is_confirmed?0:1)."'>".$confirm_cell."</td>"
      . "<td data-sort='".($is_excluded?0:1)."'>".$excl_cell."</td>"
@@ -304,11 +304,13 @@ function loadThresholds() {
 }
 document.addEventListener('DOMContentLoaded', loadThresholds);
 
+// ---------- load thresholds and colorize ----------
 function toggleSpecies(list, species, action) {
   get(scriptsBase + 'species_tools.php?toggle=' + list + '&species=' + encodeURIComponent(species) + '&action=' + action)
     .then(t => { if (t.trim() === 'OK') location.reload(); });
 }
 
+// ---------- toggles / delete ----------
 function deleteSpecies(species) {
   get(scriptsBase + 'species_tools.php?getcounts=' + encodeURIComponent(species)).then(t => {
     let info; try { info = JSON.parse(t); } catch { alert('Could not parse count response'); return; }
@@ -323,6 +325,7 @@ function deleteSpecies(species) {
   });
 }
 
+// ---------- Sorting with persistence ----------
 function sortTable(n) {
   const table = document.getElementById('speciesTable');
   const tbody = table.tBodies[0];
@@ -379,10 +382,7 @@ q.addEventListener('input', applyFilter);
 
 document.addEventListener('DOMContentLoaded', () => {
   // restore search
-  try {
-    const saved = localStorage.getItem('speciesFilter');
-    if (saved !== null) q.value = saved;
-  } catch(e){}
+  try { const saved = localStorage.getItem('speciesFilter'); if (saved !== null) q.value = saved; } catch(e){}
   applyFilter();
   // apply saved sort
   applySavedSort();
