@@ -21,9 +21,7 @@ $exclude_file   = __DIR__ . '/exclude_species_list.txt';
 $whitelist_file = __DIR__ . '/whitelist_species_list.txt';
 
 foreach ([$confirm_file, $exclude_file, $whitelist_file] as $file) {
-    if (!file_exists($file)) {
-        touch($file);
-    }
+    if (!file_exists($file)) touch($file);
 }
 
 $confirmed_species   = file_exists($confirm_file)   ? file($confirm_file,   FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
@@ -33,12 +31,11 @@ $whitelisted_species = file_exists($whitelist_file) ? file($whitelist_file, FILE
 $config    = get_config();
 $sf_thresh = isset($config['SF_THRESH']) ? (float)$config['SF_THRESH'] : 0.0;
 
-/* ---------- helpers (tiny, single-purpose) ---------- */
+/* ---------- helpers ---------- */
 function join_path(...$parts): string {
   return preg_replace('#/+#', '/', implode('/', $parts));
 }
 function can_unlink(string $p): bool {
-  // unlink-able: symlink (even dangling) or regular file
   return is_link($p) || is_file($p);
 }
 function under_base(string $path, string $base): bool {
@@ -57,17 +54,17 @@ function under_base(string $path, string $base): bool {
 /**
  * Collect detection count, files to delete (unique), first scientific name,
  * and dirs to try rmdir later — for a given species.
+ * NOTE: Row-wise enumeration (no aggregates) so we gather every file.
  */
 function collect_species_targets(SQLite3 $db, string $species, string $home, $base): array {
-  $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name FROM detections WHERE Com_Name = :name');
+  $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name
+                        FROM detections
+                        WHERE Com_Name = :name');
   ensure_db_ok($stmt);
   $stmt->bindValue(':name', $species, SQLITE3_TEXT);
   $res = $stmt->execute();
 
-  $count = 0;
-  $files = [];
-  $dirs  = [];
-  $sci   = null;
+  $count = 0; $files = []; $dirs = []; $sci = null;
 
   while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
     $count++;
@@ -75,7 +72,7 @@ function collect_species_targets(SQLite3 $db, string $species, string $home, $ba
     $dir = str_replace([' ', "'"], ['_', ''], $row['Com_Name']);
 
     $candidates = [
-      join_path($home, 'BirdSongs/Extracted/By_Date',        $row['Date'], $dir, $row['File_Name']),
+      join_path($home, 'BirdSongs/Extracted/By_Date',         $row['Date'], $dir, $row['File_Name']),
       join_path($home, 'BirdSongs/Extracted/By_Date/shifted', $row['Date'], $dir, $row['File_Name']),
     ];
 
@@ -104,16 +101,11 @@ function collect_species_targets(SQLite3 $db, string $species, string $home, $ba
 if (isset($_GET['toggle'], $_GET['species'], $_GET['action'])) {
   $list    = $_GET['toggle'];
   $species = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
-  
-  if ($list === 'exclude') {
-    $file = $exclude_file;
-  } elseif ($list === 'whitelist') {
-    $file = $whitelist_file;
-  } elseif ($list === 'confirmed') {
-    $file = $confirm_file;
-  } else {
-    header('Content-Type: text/plain'); echo 'Invalid list type'; exit;
-  }
+
+  if     ($list === 'exclude')   { $file = $exclude_file; }
+  elseif ($list === 'whitelist') { $file = $whitelist_file; }
+  elseif ($list === 'confirmed') { $file = $confirm_file; }
+  else { header('Content-Type: text/plain'); echo 'Invalid list type'; exit; }
 
   $lines = file_exists($file) ? file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
   if ($_GET['action'] === 'add') {
@@ -173,12 +165,19 @@ if (isset($_GET['delete'])) {
   echo json_encode(['lines' => $lines_deleted, 'files' => $deleted]); exit;
 }
 
-/* ---------- page (unchanged semantics; minor tidy) ---------- */
-$result = fetch_species_array('alphabetical');
-
-/* Pre-prepare a MAX(Date) statement in case fetch_species_array() doesn't include it */
-$lastSeenStmt = $db->prepare('SELECT MAX(Date) AS LastSeen FROM detections WHERE Com_Name = :name');
-ensure_db_ok($lastSeenStmt);
+/* ---------- query species aggregates ---------- */
+$sql = <<<SQL
+SELECT
+  Com_Name,
+  Sci_Name,
+  COUNT(*)        AS Count,
+  MAX(Confidence) AS MaxConfidence,
+  MAX(Date)       AS LastSeen
+FROM detections
+GROUP BY Com_Name, Sci_Name
+ORDER BY Com_Name COLLATE NOCASE;
+SQL;
+$result = $db->query($sql);
 ?>
 <style>
   .circle-icon{display:inline-block;width:12px;height:12px;border:1px solid #777;border-radius:50%;cursor:pointer;}
@@ -220,16 +219,9 @@ ensure_db_ok($lastSeenStmt);
   $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
   $identifier_sci = str_replace("'", '', $row['Sci_Name']);
 
-  // Last seen: use provided value if available, else query MAX(Date) (read-only)
-  $lastSeen = $row['LastSeen'] ?? null;
-  if ($lastSeen === null) {
-    $lastSeenStmt->reset();
-    $lastSeenStmt->bindValue(':name', $row['Com_Name'], SQLITE3_TEXT);
-    $lr = $lastSeenStmt->execute()->fetchArray(SQLITE3_ASSOC);
-    $lastSeen = $lr['LastSeen'] ?? '';
-  }
-  $lastSeenDisplay = htmlspecialchars($lastSeen ?: '', ENT_QUOTES);
+  $lastSeen = $row['LastSeen'] ?? '';
   $lastSeenSort = $lastSeen ? (strtotime($lastSeen) ?: 0) : 0;
+  $lastSeenDisplay = htmlspecialchars($lastSeen, ENT_QUOTES);
 
   $common_link = "<a href='views.php?view=Recordings&species="
     . rawurlencode($row['Sci_Name']) . "'>{$common}</a>";
@@ -254,8 +246,8 @@ ensure_db_ok($lastSeenStmt);
      . "<td>{$common_link}</td>"
      . "<td><i>{$scient}</i></td>"
      . "<td>{$count}</td>"
-     . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"
-     . "<td data-sort=\"{$lastSeenSort}\">{$lastSeenDisplay}</td>"
+     . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"   /* Max Confidence */
+     . "<td data-sort=\"{$lastSeenSort}\">{$lastSeenDisplay}</td>"   /* Last Seen */
      . "<td class='threshold' data-sort='0'>0.0000</td>"
      . "<td data-sort='".($is_confirmed?0:1)."'>".$confirm_cell."</td>"
      . "<td data-sort='".($is_excluded?0:1)."'>".$excl_cell."</td>"
@@ -274,6 +266,7 @@ const sfThresh = <?php echo json_encode($sf_thresh, JSON_UNESCAPED_UNICODE); ?>;
 // tiny fetch helper
 const get = (url) => fetch(url, {cache:'no-store'}).then(r => r.text());
 
+// ---------- load thresholds and colorize ----------
 function loadThresholds() {
   get(scriptsBase + 'config.php?threshold=0').then(text => {
     const lines = (text || '').split(/\r?\n/);
@@ -304,13 +297,12 @@ function loadThresholds() {
 }
 document.addEventListener('DOMContentLoaded', loadThresholds);
 
-// ---------- load thresholds and colorize ----------
+// ---------- toggles / delete ----------
 function toggleSpecies(list, species, action) {
   get(scriptsBase + 'species_tools.php?toggle=' + list + '&species=' + encodeURIComponent(species) + '&action=' + action)
     .then(t => { if (t.trim() === 'OK') location.reload(); });
 }
 
-// ---------- toggles / delete ----------
 function deleteSpecies(species) {
   get(scriptsBase + 'species_tools.php?getcounts=' + encodeURIComponent(species)).then(t => {
     let info; try { info = JSON.parse(t); } catch { alert('Could not parse count response'); return; }
@@ -341,21 +333,18 @@ function sortTable(n) {
   rows.forEach(r => tbody.appendChild(r));
   table.setAttribute('data-sort-' + n, asc ? 'asc' : 'desc');
 
-  // persist sort state
   try {
     localStorage.setItem('speciesSortCol', String(n));
     localStorage.setItem('speciesSortAsc', asc ? '1' : '0');
   } catch(e){}
 }
 
-// Apply saved sort (call after DOM is ready and rows exist)
 function applySavedSort() {
   const table = document.getElementById('speciesTable');
   const col = parseInt(localStorage.getItem('speciesSortCol') || '', 10);
   const asc = localStorage.getItem('speciesSortAsc');
   if (!Number.isFinite(col)) return;
   sortTable(col);
-  // if current direction differs, sort again to flip
   const isAscNow = table.getAttribute('data-sort-' + col) === 'asc';
   if ((asc === '1') !== isAscNow) sortTable(col);
 }
@@ -381,10 +370,8 @@ function applyFilter() {
 q.addEventListener('input', applyFilter);
 
 document.addEventListener('DOMContentLoaded', () => {
-  // restore search
   try { const saved = localStorage.getItem('speciesFilter'); if (saved !== null) q.value = saved; } catch(e){}
   applyFilter();
-  // apply saved sort
   applySavedSort();
 });
 </script>
