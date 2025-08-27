@@ -10,7 +10,6 @@ $config = get_config();
 
 set_timezone();
 $myDate = date('Y-m-d');
-$chart = "Combo-$myDate.png";
 
 $db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
 $db->busyTimeout(1000);
@@ -44,12 +43,6 @@ if(isset($_GET['blacklistimage'])) {
   die("OK");
 }
 
-if(isset($_GET['fetch_chart_string']) && $_GET['fetch_chart_string'] == "true") {
-  $myDate = date('Y-m-d');
-  $chart = "Combo-$myDate.png";
-  echo $chart;
-  die();
-}
 
 if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true" && isset($_GET['previous_detection_identifier'])) {
 
@@ -465,19 +458,8 @@ function display_species($species_list, $title, $show_last_seen=false) {
 display_species($new_species, 'New Species');
 display_species($rare_species, 'Rare Species', true);
 ?>
-<div class="chart">
-<?php
-$refresh = $config['RECORDING_LENGTH'];
-$dividedrefresh = $refresh/4;
-if($dividedrefresh < 1) { 
-  $dividedrefresh = 1;
-}
-$time = time();
-if (file_exists('./Charts/'.$chart)) {
-  echo "<img id='chart' src=\"Charts/$chart?nocache=$time\">";
-} 
-?>
-</div>
+<div class="chart" id="daily-plot" data-date="<?php echo $myDate; ?>"></div>
+<script src="static/daily_plot.js"></script>
 
 <div id="most_recent_detection"></div>
 <br>
@@ -541,14 +523,10 @@ function loadCenterChart() {
   xhttp.send();
 }
 function refreshTopTen() {
-  const xhttp = new XMLHttpRequest();
-  xhttp.onload = function() {
-  if(this.responseText.length > 0 && !this.responseText.includes("Database is busy") && !this.responseText.includes("No Detections") || previous_detection_identifier == undefined) {
-    if (document.getElementById("chart")) {document.getElementById("chart").src = "Charts/"+this.responseText+"?nocache="+Date.now();}
+  const container = document.getElementById("daily-plot");
+  if (container && typeof loadDailyPlot === "function") {
+    loadDailyPlot(container.dataset.date);
   }
-  }
-  xhttp.open("GET", "overview.php?fetch_chart_string=true", true);
-  xhttp.send();
 }
 function refreshDetection() {
   if (!document.hidden) {
