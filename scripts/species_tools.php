@@ -194,13 +194,14 @@ $result = $db->query($sql);
       <tr>
         <th onclick="sortTable(0)">Common Name</th>
         <th onclick="sortTable(1)">Scientific Name</th>
-        <th onclick="sortTable(2)">Identifications</th>
-        <th onclick="sortTable(3)">Max Confidence</th>
-        <th onclick="sortTable(4)">Last Seen</th>
-        <th onclick="sortTable(5)">Probability</th>
-        <th onclick="sortTable(6)">Confirmed</th>
-        <th onclick="sortTable(7)">Excluded</th>
-        <th onclick="sortTable(8)">Whitelisted</th>
+        <th>Stats</th>
+        <th onclick="sortTable(3)">Identifications</th>
+        <th onclick="sortTable(4)">Max Confidence</th>
+        <th onclick="sortTable(5)">Last Seen</th>
+        <th onclick="sortTable(6)">Probability</th>
+        <th onclick="sortTable(7)">Confirmed</th>
+        <th onclick="sortTable(8)">Excluded</th>
+        <th onclick="sortTable(9)">Whitelisted</th>
         <th>Delete</th>
       </tr>
     </thead>
@@ -223,6 +224,9 @@ $result = $db->query($sql);
   $is_excluded    = in_array($identifier, $excluded_species, true);
   $is_whitelisted = in_array($identifier, $whitelisted_species, true);
 
+  $comnamegraph = str_replace("'", "\'", $row['Com_Name']);
+  $chart_cell = sprintf("<img style='height: 1em;cursor:pointer;float:unset;display:inline' title='View species stats' onclick=\"generateMiniGraph(this, '%s', 180)\" width=25 src='images/chart.svg'>", $comnamegraph);
+
   $confirm_cell = $is_confirmed
     ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('confirmed','".str_replace("'", '', $identifier_sci)."','del')\">"
     : "<span class='circle-icon' onclick=\"toggleSpecies('confirmed','".str_replace("'", '', $identifier_sci)."','add')\"></span>";
@@ -238,6 +242,7 @@ $result = $db->query($sql);
   echo "<tr data-comname=\"{$common}\">"
      . "<td>{$common_link}</td>"
      . "<td><i>{$scient}</i></td>"
+     . "<td>{$chart_cell}</td>"
      . "<td>{$count}</td>"
      . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"
      . "<td data-sort=\"{$lastSeenSort}\">{$lastSeenDisplay}</td>"
@@ -251,7 +256,7 @@ $result = $db->query($sql);
     </tbody>
   </table>
 </div>
-
+<script src="static/Chart.bundle.js"></script>
 <script>
 const scriptsBase = 'scripts/';
 const sfThresh = <?php echo json_encode($sf_thresh, JSON_UNESCAPED_UNICODE); ?>;
@@ -321,6 +326,124 @@ function addDiskCounts() {
     console.warn('Disk counts load failed.');
   });
 }
+
+function generateMiniGraph(elem, comname, days = 30) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/todays_detections.php?comname=' + encodeURIComponent(comname) + '&days=' + days);
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      var detections = JSON.parse(xhr.responseText);
+
+      if (typeof(window.chartWindow) !== 'undefined') {
+        document.body.removeChild(window.chartWindow);
+        window.chartWindow = undefined;
+      }
+      var chartWindow = document.createElement('div');
+      chartWindow.className = 'chartdiv';
+      document.body.appendChild(chartWindow);
+
+      var canvas = document.createElement('canvas');
+      canvas.width = chartWindow.offsetWidth;
+      canvas.height = chartWindow.offsetHeight - 40;
+      chartWindow.appendChild(canvas);
+
+      var ctx = canvas.getContext('2d');
+      var chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: detections.map(function(item){ return item.date; }),
+          datasets: [{
+            label: 'Detections',
+            data: detections.map(function(item){ return item.count; }),
+            backgroundColor: '#9fe29b',
+            borderColor: '#77c487',
+            borderWidth: 1,
+            lineTension: 0.3,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            trendlineLinear: {
+              style: 'rgba(55, 99, 64, 0.5)',
+              lineStyle: 'solid',
+              width: 1.5
+            }
+          }]
+        },
+        options: {
+          layout: { padding: { right: 10 } },
+          title: { display: true, text: 'Detections Over ' + days + 'd' },
+          legend: { display: false },
+          scales: {
+            xAxes: [{
+              display: true,
+              gridLines: { display: true },
+              ticks: {
+                autoSkip: true,
+                maxTicksLimit: 6,
+                callback: function(value) { return value.substring(5); }
+              }
+            }],
+            yAxes: [{
+              gridLines: { display: false },
+              ticks: { beginAtZero: true, precision: 0, maxTicksLimit: 5 }
+            }]
+          }
+        }
+      });
+
+      var buttonRect = elem.getBoundingClientRect();
+      var chartRect = chartWindow.getBoundingClientRect();
+      if (window.innerWidth < 700) {
+        chartWindow.style.left = 'calc(75% - ' + (chartRect.width / 2) + 'px)';
+      } else {
+        chartWindow.style.left = (buttonRect.right + 10) + 'px';
+      }
+
+      var buttonCenter = buttonRect.top + (buttonRect.height / 2);
+      var chartHeight = chartWindow.offsetHeight;
+      var chartTop = buttonCenter - (chartHeight / 2);
+      chartWindow.style.top = chartTop + 'px';
+
+      var closeButton = document.createElement('button');
+      closeButton.id = 'chartcb';
+      closeButton.innerText = 'X';
+      closeButton.style.position = 'absolute';
+      closeButton.style.top = '5px';
+      closeButton.style.right = '5px';
+      closeButton.addEventListener('click', function() {
+        document.body.removeChild(chartWindow);
+        window.chartWindow = undefined;
+      });
+      chartWindow.appendChild(closeButton);
+
+      var selector = document.createElement('select');
+      [30, 180, 360].forEach(function(opt) {
+        var option = document.createElement('option');
+        option.value = opt;
+        option.text = opt + 'd';
+        if (opt === days) option.selected = true;
+        selector.appendChild(option);
+      });
+      selector.addEventListener('change', function() {
+        generateMiniGraph(elem, comname, parseInt(this.value));
+      });
+      selector.style.position = 'absolute';
+      selector.style.bottom = '5px';
+      selector.style.left = '5px';
+      chartWindow.appendChild(selector);
+
+      window.chartWindow = chartWindow;
+    }
+  };
+  xhr.send();
+}
+
+window.addEventListener('scroll', function() {
+  var charts = document.querySelectorAll('.chartdiv');
+  charts.forEach(function(chart) {
+    chart.parentNode.removeChild(chart);
+    window.chartWindow = undefined;
+  });
+});
 
 /* ---------- toggles / delete ---------- */
 function toggleSpecies(list, species, action) {
