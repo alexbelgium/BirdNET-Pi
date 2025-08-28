@@ -53,6 +53,10 @@ DATA_MODEL_VERSION=1
 
 BIRDWEATHER_ID=
 
+#----------------------  eBird API Token  ----------------------------#
+# Token used to upload observations to eBird. Leave empty to disable.
+EBIRD_API_TOKEN=
+
 #-----------------------  Web Interface User Password  ------------------------#
 #____________________The variable below sets the 'birdnet'_____________________#
 #___________________user password for the Live Audio Stream,___________________#

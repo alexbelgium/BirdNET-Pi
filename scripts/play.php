@@ -14,6 +14,13 @@ $user = get_user();
 $db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
 $db->busyTimeout(1000);
 
+$ebird_log = $home."/BirdNET-Pi/scripts/ebirds_upload_log.txt";
+if(file_exists($ebird_log)) {
+  $ebird_uploaded = file($ebird_log, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+} else {
+  $ebird_uploaded = [];
+}
+
 if(isset($_GET['deletefile'])) {
   ensure_authenticated('You must be authenticated to delete files.');
   if (preg_match('~^.*(\.\.\/).+$~', $_GET['deletefile'])) {
@@ -255,6 +262,23 @@ function toggleShiftFreq(filename, shiftAction, elem) {
     console.log("unshifting freqs of " + filename);
     xhttp.open("GET", "play.php?shiftfile="+filename, true);  
   }
+  xhttp.send();
+  elem.setAttribute("src","images/spinner.gif");
+}
+
+function uploadEbird(filename, elem) {
+  const xhttp = new XMLHttpRequest();
+  xhttp.onload = function() {
+    if(this.responseText.trim() == "OK"){
+      elem.setAttribute("src","images/upload_ok.svg");
+      elem.setAttribute("title", "Uploaded to eBird");
+      elem.onclick = null;
+    } else {
+      alert(this.responseText);
+      elem.setAttribute("src","images/upload.svg");
+    }
+  }
+  xhttp.open("GET", "ebird_upload.php?uploadfile="+filename, true);
   xhttp.send();
   elem.setAttribute("src","images/spinner.gif");
 }
@@ -578,6 +602,18 @@ echo "<table>
       $imageelem = "<a href=\"$filename\"><img src=\"$filename_png\"></a>";
     }
 
+      if(!empty($config['EBIRD_API_TOKEN'])) {
+        if(in_array($filename_formatted, $ebird_uploaded)) {
+          $uploadicon = "images/upload_ok.svg";
+          $uploadtitle = "Uploaded to eBird";
+          $uploadaction = "";
+        } else {
+          $uploadicon = "images/upload.svg";
+          $uploadtitle = "Upload to eBird";
+          $uploadaction = "onclick=\\\"uploadEbird('$filename_formatted', this)\\\"";
+        }
+      }
+
       if(!in_array($filename_formatted, $disk_check_exclude_arr)) {
         $imageicon = "images/unlock.svg";
         $title = "This file will be deleted when disk space needs to be freed (>95% usage).";
@@ -600,11 +636,13 @@ echo "<table>
       }
 
       echo "<tr>
-  <td class=\"relative\"> 
-
-<img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Delete Detection'> 
-<img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
-<img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
+  <td class=\"relative\">";
+      if(!empty($config['EBIRD_API_TOKEN'])) {
+        echo "<img style='cursor:pointer;right:145px' src='".$uploadicon."' title='".$uploadtitle."' $uploadaction class=\"copyimage\" width=25>";
+      }
+      echo "<img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Delete Detection'>
+<img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'>
+<img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\">
 <img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\"> $date $time<br>$values<br>
 
         ".$imageelem."
@@ -670,15 +708,27 @@ echo "<table>
           $disk_check_exclude_arr = [];
         }
 
-          if(!in_array($filename_formatted, $disk_check_exclude_arr)) {
+        if(!empty($config['EBIRD_API_TOKEN'])) {
+          if(in_array($filename_formatted, $ebird_uploaded)) {
+            $uploadicon = "images/upload_ok.svg";
+            $uploadtitle = "Uploaded to eBird";
+            $uploadaction = "";
+          } else {
+            $uploadicon = "images/upload.svg";
+            $uploadtitle = "Upload to eBird";
+            $uploadaction = "onclick=\\\"uploadEbird('$filename_formatted', this)\\\"";
+          }
+        }
+
+        if(!in_array($filename_formatted, $disk_check_exclude_arr)) {
             $imageicon = "images/unlock.svg";
             $title = "This file will be deleted when disk space needs to be freed (>95% usage).";
             $type = "add";
-          } else {
+        } else {
             $imageicon = "images/lock.svg";
             $title = "This file is excluded from being purged.";
             $type = "del";
-          }
+        }
 
       if(file_exists($shifted_path.$filename_formatted)) {
         $shiftImageIcon = "images/unshift.svg";
@@ -692,11 +742,13 @@ echo "<table>
       }
 
           echo "<tr>
-      <td class=\"relative\"> 
-
-<img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'> 
-<img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
-<img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
+      <td class=\"relative\">";
+        if(!empty($config['EBIRD_API_TOKEN'])) {
+          echo "<img style='cursor:pointer;right:145px' src='".$uploadicon."' title='".$uploadtitle."' $uploadaction class=\"copyimage\" width=25>";
+        }
+        echo "<img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'>
+<img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'>
+<img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\">
 <img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\">$date $time<br>$values<br>
 
 <div class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'></div>

@@ -75,6 +75,14 @@ if(isset($_GET['submit'])) {
       $restart_livestream = True;
     }
   }
+
+  if(isset($_GET["ebird_api_token"])) {
+    $ebird_api_token = $_GET["ebird_api_token"];
+    $current = $config['EBIRD_API_TOKEN'] ?? '';
+    if(strcmp($ebird_api_token,$current) !== 0) {
+      $contents = preg_replace("/EBIRD_API_TOKEN=.*/", "EBIRD_API_TOKEN=$ebird_api_token", $contents);
+    }
+  }
   
   if(isset($_GET["overlap"])) {
     $overlap = $_GET["overlap"];
@@ -624,6 +632,12 @@ foreach($formats as $format){
             </tr>
         </table>
       <br><br>
+      <table class="settingstable"><tr><td>
+      <h2>eBird Upload</h2>
+      <label for="ebird_api_token">eBird API Token: </label>
+      <input name="ebird_api_token" type="text" size="40" value="<?php echo isset($newconfig['EBIRD_API_TOKEN']) ? $newconfig['EBIRD_API_TOKEN'] : ''; ?>" />
+      <p>Token used to upload observations to eBird.</p>
+      </td></tr></table><br>
       <input type="hidden" name="view" value="Advanced">
 <div class="float">
       <button type="submit" id="advancedformsubmit" onclick="collectrtspUrls(); if(document.getElementById('advancedform').checkValidity()){this.innerHTML = 'Updating... please wait.';this.classList.add('disabled')}" name="submit" value="advanced">
