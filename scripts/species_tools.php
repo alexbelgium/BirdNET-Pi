@@ -416,7 +416,7 @@ function generateMiniGraph(elem, comname, days = 30) {
       chartWindow.appendChild(closeButton);
 
       var selector = document.createElement('select');
-      [30, 180, 360].forEach(function(opt) {
+      [30, 180, 360, 720, 1080].forEach(function(opt) {
         var option = document.createElement('option');
         option.value = opt;
         option.text = opt + 'd';
