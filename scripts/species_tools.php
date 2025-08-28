@@ -242,11 +242,11 @@ $result = $db->query($sql);
   echo "<tr data-comname=\"{$common}\">"
      . "<td>{$common_link}</td>"
      . "<td><i>{$scient}</i></td>"
+     . "<td>{$chart_cell}</td>"
      . "<td>{$count}</td>"
      . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"
      . "<td data-sort=\"{$lastSeenSort}\">{$lastSeenDisplay}</td>"
      . "<td class='threshold' data-sort='0'>0.0000</td>"
-     . "<td>{$chart_cell}</td>"
      . "<td data-sort='".($is_confirmed?0:1)."'>".$confirm_cell."</td>"
      . "<td data-sort='".($is_excluded?0:1)."'>".$excl_cell."</td>"
      . "<td data-sort='".($is_whitelisted?0:1)."'>".$white_cell."</td>"
@@ -374,9 +374,13 @@ function generateMiniGraph(elem, comname, days = 30) {
           legend: { display: false },
           scales: {
             xAxes: [{
-              display: false,
-              gridLines: { display: false },
-              ticks: { autoSkip: true, maxTicksLimit: 2 }
+              display: true,
+              gridLines: { display: true },
+              ticks: {
+                autoSkip: true,
+                maxTicksLimit: 6,
+                callback: function(value) { return value.substring(5); }
+              }
             }],
             yAxes: [{
               gridLines: { display: false },
