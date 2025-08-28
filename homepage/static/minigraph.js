@@ -45,13 +45,17 @@ function generateMiniGraph(elem, comname, days = 30) {
           legend: { display: false },
           scales: {
             xAxes: [{
-              display: false,
-              gridLines: { display: false },
-              ticks: { autoSkip: true, maxTicksLimit: 2 }
+              display: true,
+              gridLines: { display: true },
+              ticks: {
+                autoSkip: true,
+                maxTicksLimit: 6,
+                callback: function(value) { return value.substring(5); }
+              }
             }],
             yAxes: [{
               gridLines: { display: false },
-              ticks: { beginAtZero: true, precision: 0, stepSize: 1 }
+              ticks: { beginAtZero: true, precision: 0, maxTicksLimit: 5 }
             }]
           }
         }
