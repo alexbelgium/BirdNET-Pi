@@ -384,7 +384,7 @@ function generateMiniGraph(elem, comname, days = 30) {
             }],
             yAxes: [{
               gridLines: { display: false },
-              ticks: { beginAtZero: true, precision: 0, stepSize: 1 }
+              ticks: { beginAtZero: true, precision: 0, maxTicksLimit: 5 }
             }]
           }
         }
