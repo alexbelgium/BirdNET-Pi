@@ -636,18 +636,19 @@ echo "<table>
       }
 
       echo "<tr>
-  <td class=\"relative\">";
-      if(!empty($config['EBIRD_API_TOKEN'])) {
-        echo "<img style='cursor:pointer;right:145px' src='".$uploadicon."' title='".$uploadtitle."' $uploadaction class=\"copyimage\" width=25>";
-      }
-      echo "<img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Delete Detection'>
-<img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'>
-<img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\">
-<img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\"> $date $time<br>$values<br>
+  <td class=\"relative\"> 
 
+<img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Delete Detection'> 
+<img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
+<img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
+<img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\"> $date $time<br>$values<br>
+      "; if(!empty($config['EBIRD_API_TOKEN'])) {
+        echo "<img style='cursor:pointer;right:145px' src='".$uploadicon."' title='".$uploadtitle."' $uploadaction class=\"copyimage\" width=25>";
+      }; echo "
         ".$imageelem."
         </td>
         </tr>";
+
 
   }if($iter == 0){ echo "<tr><td><b>No recordings were found.</b><br><br><span style='font-size:medium'>They may have been deleted to make space for new recordings. You can prevent this from happening in the future by clicking the <img src='images/unlock.svg' style='width:20px'> icon in the top right of a recording.<br>You can also modify this behavior globally under \"Full Disk Behavior\" <a href='views.php?view=Advanced'>here.</a></span></td></tr>";}echo "</table>";}
 
@@ -708,6 +709,16 @@ echo "<table>
           $disk_check_exclude_arr = [];
         }
 
+          if(!in_array($filename_formatted, $disk_check_exclude_arr)) {
+            $imageicon = "images/unlock.svg";
+            $title = "This file will be deleted when disk space needs to be freed (>95% usage).";
+            $type = "add";
+          } else {
+            $imageicon = "images/lock.svg";
+            $title = "This file is excluded from being purged.";
+            $type = "del";
+          }
+
         if(!empty($config['EBIRD_API_TOKEN'])) {
           if(in_array($filename_formatted, $ebird_uploaded)) {
             $uploadicon = "images/upload_ok.svg";
@@ -718,16 +729,6 @@ echo "<table>
             $uploadtitle = "Upload to eBird";
             $uploadaction = "onclick=\\\"uploadEbird('$filename_formatted', this)\\\"";
           }
-        }
-
-        if(!in_array($filename_formatted, $disk_check_exclude_arr)) {
-            $imageicon = "images/unlock.svg";
-            $title = "This file will be deleted when disk space needs to be freed (>95% usage).";
-            $type = "add";
-        } else {
-            $imageicon = "images/lock.svg";
-            $title = "This file is excluded from being purged.";
-            $type = "del";
         }
 
       if(file_exists($shifted_path.$filename_formatted)) {
@@ -742,15 +743,15 @@ echo "<table>
       }
 
           echo "<tr>
-      <td class=\"relative\">";
-        if(!empty($config['EBIRD_API_TOKEN'])) {
-          echo "<img style='cursor:pointer;right:145px' src='".$uploadicon."' title='".$uploadtitle."' $uploadaction class=\"copyimage\" width=25>";
-        }
-        echo "<img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'>
-<img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'>
-<img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\">
-<img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\">$date $time<br>$values<br>
+      <td class=\"relative\"> 
 
+<img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'> 
+<img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
+<img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
+<img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\">$date $time<br>$values<br>
+"; if(!empty($config['EBIRD_API_TOKEN'])) {
+          echo "<img style='cursor:pointer;right:145px' src='".$uploadicon."' title='".$uploadtitle."' $uploadaction class=\"copyimage\" width=25>";
+        }; echo "
 <div class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'></div>
 </td></tr>";
 
