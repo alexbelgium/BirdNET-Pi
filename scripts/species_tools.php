@@ -195,7 +195,7 @@ $result = $db->query($sql);
         <th onclick="sortTable(0)">Common Name</th>
         <th onclick="sortTable(1)">Scientific Name</th>
         <th>Stats</th>
-        <th onclick="sortTable(3)">Identifications</th>
+        <th onclick="sortTable(3)">Count</th>
         <th onclick="sortTable(4)">Max Confidence</th>
         <th onclick="sortTable(5)">Last Seen</th>
         <th onclick="sortTable(6)">Probability</th>
