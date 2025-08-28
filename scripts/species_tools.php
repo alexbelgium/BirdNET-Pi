@@ -195,10 +195,10 @@ $result = $db->query($sql);
         <th onclick="sortTable(0)">Common Name</th>
         <th onclick="sortTable(1)">Scientific Name</th>
         <th>Stats</th>
-        <th onclick="sortTable(2)">Identifications</th>
-        <th onclick="sortTable(3)">Max Confidence</th>
-        <th onclick="sortTable(4)">Last Seen</th>
-        <th onclick="sortTable(5)">Probability</th>
+        <th onclick="sortTable(3)">Identifications</th>
+        <th onclick="sortTable(4)">Max Confidence</th>
+        <th onclick="sortTable(5)">Last Seen</th>
+        <th onclick="sortTable(6)">Probability</th>
         <th onclick="sortTable(7)">Confirmed</th>
         <th onclick="sortTable(8)">Excluded</th>
         <th onclick="sortTable(9)">Whitelisted</th>
