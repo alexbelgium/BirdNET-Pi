@@ -1,5 +1,7 @@
 <?php
 
+define('__ROOT__', dirname(dirname(__FILE__)));
+
 if (session_status() !== PHP_SESSION_ACTIVE)
   session_start();
 
@@ -278,7 +280,7 @@ class ImageProvider {
 
 class Flickr extends ImageProvider {
 
-  protected $db_path = './scripts/flickr.db';
+  protected $db_path = __ROOT__ . '/scripts/flickr.db';
 
   private $flickr_api_key = null;
   private $args = "&license=2%2C3%2C4%2C5%2C6%2C9&orientation=square,portrait";
@@ -403,7 +405,7 @@ class Flickr extends ImageProvider {
 
 class Wikipedia extends ImageProvider {
 
-  protected $db_path = './scripts/wikipedia.db';
+  protected $db_path = __ROOT__ . '/scripts/wikipedia.db';
 
   protected function get_from_source($sci_name) {
     $title = str_replace(' ', '_', $sci_name);

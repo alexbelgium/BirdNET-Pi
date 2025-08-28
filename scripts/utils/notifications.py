@@ -11,7 +11,7 @@ userDir = os.path.expanduser('~')
 APPRISE_CONFIG = userDir + '/BirdNET-Pi/apprise.txt'
 DB_PATH = userDir + '/BirdNET-Pi/scripts/birds.db'
 
-flickr_images = {}
+images = {}
 species_last_notified = {}
 
 
@@ -59,6 +59,7 @@ def sendAppriseNotifications(species, confidence, confidencepct, path,
             .replace("$cutoff", cutoff) \
             .replace("$sens", sens) \
             .replace("$flickrimage", image_url if "{" in body else "") \
+            .replace("$image", image_url if "{" in body else "") \
             .replace("$overlap", overlap) \
             .replace("$reason", reason)
         return ret
@@ -102,17 +103,17 @@ def sendAppriseNotifications(species, confidence, confidencepct, path,
         friendlyurl = "[Listen here]("+listenurl+")"
         image_url = ""
 
-        if "$flickrimage" in body:
-            if comName not in flickr_images:
+        if "$flickrimage" in body or "$image" in body:
+            if comName not in images:
                 try:
                     url = f"http://localhost/api/v1/image/{sciName}"
                     resp = requests.get(url=url, timeout=10).json()
-                    flickr_images[comName] = resp['data']['image_url']
+                    images[comName] = resp['data']['image_url']
                 except Exception as e:
                     print("FLICKR API ERROR: "+str(e))
                     image_url = ""
             else:
-                image_url = flickr_images[comName]
+                image_url = images[comName]
 
         if settings_dict.get('APPRISE_NOTIFY_EACH_DETECTION') == "1":
             notify_body = render_template(body, "detection")

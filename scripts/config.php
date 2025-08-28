@@ -224,9 +224,15 @@ if(isset($_GET['sendtest']) && $_GET['sendtest'] == "true") {
   $friendlyfilename = "[Listen here](".$filename.")";
 
   $attach="";
-  $exampleimage = "https://live.staticflickr.com/7430/27545810581_8bfa8289a3_c.jpg";
-  if (strpos($body, '$flickrimage') !== false) {
-      $attach = "--attach ".$exampleimage;
+  if ($config["IMAGE_PROVIDER"] === 'FLICKR') {
+    $image_provider = new Flickr();
+  } else {
+    $image_provider = new Wikipedia();
+  }
+  $exampleimage = htmlspecialchars_decode($image_provider->get_image($sciname)['image_url'], ENT_QUOTES);
+
+  if (strpos($body, '$image') !== false) {
+      $attach = "--attach '$exampleimage'";
   }
   if (strpos($body, '{') === false) {
       $exampleimage = "";
@@ -246,7 +252,7 @@ if(isset($_GET['sendtest']) && $_GET['sendtest'] == "true") {
   $title = str_replace("\$cutoff", $cutoff, $title);
   $title = str_replace("\$sens", $sens, $title);
   $title = str_replace("\$overlap", $overlap, $title);
-  $title = str_replace("\$flickrimage", $exampleimage, $title);
+  $title = str_replace("\$image", $exampleimage, $title);
   $title = str_replace("\$reason", 'Test message', $title);
 
   $body = str_replace("\$sciname", $sciname, $body);
@@ -263,7 +269,7 @@ if(isset($_GET['sendtest']) && $_GET['sendtest'] == "true") {
   $body = str_replace("\$cutoff", $cutoff, $body);
   $body = str_replace("\$sens", $sens, $body);
   $body = str_replace("\$overlap", $overlap, $body);
-  $body = str_replace("\$flickrimage", $exampleimage, $body);
+  $body = str_replace("\$image", $exampleimage, $body);
   $body = str_replace("\$reason", 'Test message', $body);
 
   $temp = tmpfile();
@@ -522,8 +528,8 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       <dd>Sigmoid Sensitivity set in "Advanced Settings"</dd>
       <dt>$overlap</dt>
       <dd>Overlap set in "Advanced Settings"</dd>
-      <dt>$flickrimage</dt>
-      <dd>A preview image of the detected species from Flickr. Set your API key below.</dd>
+      <dt>$image</dt>
+      <dd>An image of the detected species from a photo source, see below.</dd>
       <dt>$reason</dt>
       <dd>The reason a notification was sent</dd>
       </dl>
