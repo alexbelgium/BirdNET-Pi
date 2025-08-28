@@ -725,5 +725,49 @@ Channels: ${channels}`
   });
 }
 
+function initEbirdUploadButtons() {
+  fetch('ebird_upload.php?list=1')
+    .then(r => r.text())
+    .then(text => {
+      const uploaded = new Set(text.split('\n').filter(Boolean));
+      document.querySelectorAll('td.relative').forEach(td => {
+        const player = td.querySelector('.custom-audio-player');
+        if (!player) return;
+        const audioSrc = player.dataset.audioSrc || '';
+        const rel = audioSrc.replace(/^\/By_Date\//, '');
+        const img = document.createElement('img');
+        img.className = 'copyimage';
+        img.style.cursor = 'pointer';
+        img.style.right = '145px';
+        img.width = 25;
+        if (uploaded.has(rel)) {
+          img.src = 'images/upload_ok.svg';
+          img.title = 'Uploaded to eBird';
+        } else {
+          img.src = 'images/upload.svg';
+          img.title = 'Upload to eBird';
+          img.addEventListener('click', () => {
+            fetch('ebird_upload.php?uploadfile=' + encodeURIComponent(rel))
+              .then(res => res.text())
+              .then(t => {
+                if (t.trim() === 'OK') {
+                  img.src = 'images/upload_ok.svg';
+                  img.title = 'Uploaded to eBird';
+                  img.replaceWith(img.cloneNode(true));
+                } else {
+                  alert(t);
+                }
+              })
+              .catch(err => alert(err));
+          });
+        }
+        td.appendChild(img);
+      });
+    });
+}
+
 // Initialize on DOM ready
-document.addEventListener("DOMContentLoaded", initCustomAudioPlayers);
+document.addEventListener('DOMContentLoaded', () => {
+  initCustomAudioPlayers();
+  initEbirdUploadButtons();
+});
