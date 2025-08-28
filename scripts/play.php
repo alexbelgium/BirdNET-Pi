@@ -265,7 +265,11 @@ function toggleShiftFreq(filename, shiftAction, elem) {
   elem.setAttribute("src","images/spinner.gif");
 }
 
-function uploadToEbird(filename, elem) {
+function uploadToEbird(filename, elem, evt) {
+  if (evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
+  }
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
     if(this.responseText.trim() == "OK"){
@@ -281,6 +285,7 @@ function uploadToEbird(filename, elem) {
   xhttp.open("GET", "ebird_upload.php?uploadfile="+encodeURIComponent(filename), true);
   xhttp.send();
   elem.setAttribute("src","images/spinner.gif");
+  return false;
 }
 
 function changeDetection(filename,copylink=false) {
@@ -626,7 +631,7 @@ echo "<table>
       if(isset($ebird_uploaded[$filename_formatted])) {
         $uploadImage = "<img style='right:155px' src='images/upload_ok.svg' class='copyimage' width=25 title='Uploaded to eBird'>";
       } else {
-        $uploadImage = "<img style='cursor:pointer;right:155px' src='images/upload.svg' onclick='uploadToEbird(\"".$filename_formatted."\", this)' class='copyimage' width=25 title='Upload to eBird'>";
+        $uploadImage = "<img style='cursor:pointer;right:155px' src='images/upload.svg' onclick='return uploadToEbird(\"".$filename_formatted."\", this, event)' class='copyimage' width=25 title='Upload to eBird'>";
       }
 
       echo "<tr>
@@ -724,7 +729,7 @@ echo "<table>
           if(isset($ebird_uploaded[$filename_formatted])) {
             $uploadImage = "<img style='right:155px' src='images/upload_ok.svg' class='copyimage' width=25 title='Uploaded to eBird'>";
           } else {
-            $uploadImage = "<img style='cursor:pointer;right:155px' src='images/upload.svg' onclick='uploadToEbird(\"".$filename_formatted."\", this)' class='copyimage' width=25 title='Upload to eBird'>";
+            $uploadImage = "<img style='cursor:pointer;right:155px' src='images/upload.svg' onclick='return uploadToEbird(\"".$filename_formatted."\", this, event)' class='copyimage' width=25 title='Upload to eBird'>";
           }
 
           echo "<tr>

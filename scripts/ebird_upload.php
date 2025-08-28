@@ -10,6 +10,8 @@ $home = get_home();
 $config = get_config();
 $log_file = $home . "/BirdNET-Pi/scripts/ebirds_upload_log.txt";
 
+header('Content-Type: text/plain');
+
 ensure_authenticated('You must be authenticated to upload.');
 
 // Return list of already-uploaded files
