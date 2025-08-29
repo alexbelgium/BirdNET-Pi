@@ -14,16 +14,6 @@ $user = get_user();
 $db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
 $db->busyTimeout(1000);
 
-// Check if this is an AJAX request - if so, handle it and exit
-$ajax_actions = ['deletefile', 'excludefile', 'getlabels', 'changefile', 'shiftfile'];
-$is_ajax_request = false;
-foreach ($ajax_actions as $action) {
-  if (isset($_GET[$action])) {
-    $is_ajax_request = true;
-    break;
-  }
-}
-
 if(isset($_GET['deletefile'])) {
   ensure_authenticated('You must be authenticated to delete files.');
   if (preg_match('~^.*(\.\.\/).+$~', $_GET['deletefile'])) {
@@ -134,9 +124,6 @@ if(isset($_GET['shiftfile'])) {
     echo "OK";
     die();
 }
-
-// Only render HTML if this is not an AJAX request
-if (!$is_ajax_request) {
 
 if(isset($_GET['bydate'])){
   $statement = $db->prepare('SELECT DISTINCT(Date) FROM detections GROUP BY Date ORDER BY Date DESC');
@@ -720,5 +707,3 @@ echo "<table>
 if (get_included_files()[0] === __FILE__) {
   echo '</html>';
 }
-
-} // End of HTML rendering conditional (!$is_ajax_request)
