@@ -208,7 +208,11 @@ $result = $db->query($sql);
     <tbody>
 <?php while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
   $common = htmlspecialchars($row['Com_Name'], ENT_QUOTES);
-  $scient = htmlspecialchars($row['Sci_Name'], ENT_QUOTES);
+  $sciname = $row['Sci_Name'];
+  $scient = htmlspecialchars($sciname, ENT_QUOTES);
+  $info_url = get_info_url($sciname);
+  $url = htmlspecialchars($info_url['URL'], ENT_QUOTES);
+  $url_title = htmlspecialchars($info_url['TITLE'], ENT_QUOTES);
   $count  = (int)$row['Count'];
   $max_confidence = round((float)$row['MaxConfidence'] * 100, 1);
   $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
@@ -241,7 +245,7 @@ $result = $db->query($sql);
 
   echo "<tr data-comname=\"{$common}\">"
      . "<td>{$common_link}</td>"
-     . "<td><i>{$scient}</i></td>"
+     . "<td><i>{$scient}</i> <a href=\"{$url}\" target=\"_blank\"><img title=\"{$url_title}\" src=\"images/info.png\" width=\"20\"></a></td>"
      . "<td>{$chart_cell}</td>"
      . "<td>{$count}</td>"
      . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"
