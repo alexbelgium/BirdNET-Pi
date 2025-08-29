@@ -129,7 +129,11 @@ $ebird_log = $home . "/BirdNET-Pi/scripts/ebirds_upload_log.txt";
 if(!file_exists($ebird_log)) {
   touch($ebird_log);
 }
-$ebird_uploaded = array_flip(file($ebird_log, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+$ebird_uploaded = [];
+foreach(file($ebird_log, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+  [$file, $url] = array_pad(explode('|', $line, 2), 2, '');
+  $ebird_uploaded[$file] = $url;
+}
 
 if(isset($_GET['bydate'])){
   $statement = $db->prepare('SELECT DISTINCT(Date) FROM detections GROUP BY Date ORDER BY Date DESC');
@@ -272,13 +276,14 @@ function uploadToEbird(filename, elem, evt) {
   }
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
-    if(this.responseText.trim() == "OK"){
+    const resp = this.responseText.trim();
+    if(resp.startsWith("http")){
       elem.setAttribute("src","images/upload_ok.svg");
-      elem.setAttribute("title", "Uploaded to eBird");
-      elem.onclick = null;
-      elem.style.cursor = "default";
+      elem.setAttribute("title", "View on eBird");
+      elem.onclick = function(){ window.open(resp, '_blank'); };
+      elem.style.cursor = "pointer";
     } else {
-      alert(this.responseText);
+      alert(resp);
       elem.setAttribute("src","images/upload.svg");
     }
   }
@@ -629,7 +634,8 @@ echo "<table>
       }
 
       if(isset($ebird_uploaded[$filename_formatted])) {
-        $uploadImage = "<img style='right:155px' src='images/upload_ok.svg' class='copyimage' width=25 title='Uploaded to eBird'>";
+        $url = htmlspecialchars($ebird_uploaded[$filename_formatted], ENT_QUOTES);
+        $uploadImage = "<img style='cursor:pointer;right:155px' src='images/upload_ok.svg' onclick='window.open(\"".$url."\", \"_blank\")' class='copyimage' width=25 title='View on eBird'>";
       } else {
         $uploadImage = "<img style='cursor:pointer;right:155px' src='images/upload.svg' onclick='return uploadToEbird(\"".$filename_formatted."\", this, event)' class='copyimage' width=25 title='Upload to eBird'>";
       }
@@ -727,7 +733,8 @@ echo "<table>
       }
 
           if(isset($ebird_uploaded[$filename_formatted])) {
-            $uploadImage = "<img style='right:155px' src='images/upload_ok.svg' class='copyimage' width=25 title='Uploaded to eBird'>";
+            $url = htmlspecialchars($ebird_uploaded[$filename_formatted], ENT_QUOTES);
+            $uploadImage = "<img style='cursor:pointer;right:155px' src='images/upload_ok.svg' onclick='window.open(\"".$url."\", \"_blank\")' class='copyimage' width=25 title='View on eBird'>";
           } else {
             $uploadImage = "<img style='cursor:pointer;right:155px' src='images/upload.svg' onclick='return uploadToEbird(\"".$filename_formatted."\", this, event)' class='copyimage' width=25 title='Upload to eBird'>";
           }

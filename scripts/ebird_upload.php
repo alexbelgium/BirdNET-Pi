@@ -6,6 +6,7 @@ $_POST  = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
 error_reporting(E_ERROR);
 ini_set('display_errors',1);
 require_once __DIR__ . '/common.php';
+require_once __DIR__ . '/ebird.php';
 $home = get_home();
 $config = get_config();
 $log_file = $home . "/BirdNET-Pi/scripts/ebirds_upload_log.txt";
@@ -38,15 +39,19 @@ if(!file_exists($full_path)) {
 if(!file_exists($log_file)) {
     touch($log_file);
 }
-$uploaded = file($log_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-if(in_array($relative, $uploaded)) {
+$uploaded = [];
+foreach(file($log_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+    $parts = explode('|', $line, 2);
+    $uploaded[$parts[0]] = $parts[1] ?? '';
+}
+if(array_key_exists($relative, $uploaded)) {
     echo 'Already uploaded';
     exit;
 }
 
 $db = new SQLite3(__DIR__ . '/birds.db', SQLITE3_OPEN_READONLY);
 $db->busyTimeout(1000);
-$statement = $db->prepare('SELECT Sci_Name, Date, Time FROM detections WHERE File_Name = :file_name LIMIT 1');
+$statement = $db->prepare('SELECT Sci_Name, Date, Time, Lat, Lon FROM detections WHERE File_Name = :file_name LIMIT 1');
 ensure_db_ok($statement);
 $statement->bindValue(':file_name', basename($relative));
 $result = $statement->execute();
@@ -58,6 +63,8 @@ if(!$row) {
 $sciname = $row['Sci_Name'];
 $date = $row['Date'];
 $time = $row['Time'];
+$lat = $row['Lat'];
+$lon = $row['Lon'];
 $db->close();
 
 $token = $config['EBIRD_API_TOKEN'] ?? '';
@@ -69,9 +76,13 @@ if($token == '') {
 $ch = curl_init('https://ebird.org/media/upload');
 $ext = pathinfo($full_path, PATHINFO_EXTENSION);
 $mime = $ext === 'wav' ? 'audio/wav' : 'application/octet-stream';
+$species_code = $ebirds[$sciname] ?? '';
 $post = [
     'species' => $sciname,
+    'speciesCode' => $species_code,
     'obsDt' => $date . ' ' . $time,
+    'lat' => $lat,
+    'lng' => $lon,
     'media' => new CURLFile($full_path, $mime, basename($full_path))
 ];
 curl_setopt($ch, CURLOPT_POST, true);
@@ -88,6 +99,18 @@ if($response === false || $code >= 400) {
 }
 curl_close($ch);
 
-file_put_contents($log_file, $relative . "\n", FILE_APPEND);
-echo 'OK';
+$obsUrl = '';
+$data = json_decode($response, true);
+if(is_array($data) && isset($data['url'])) {
+    $obsUrl = $data['url'];
+} elseif(preg_match('~https://ebird.org/[^"\s]+~', $response, $m)) {
+    $obsUrl = $m[0];
+}
+if($obsUrl === '') {
+    echo 'Upload failed: unexpected response';
+    exit;
+}
+
+file_put_contents($log_file, $relative . '|' . $obsUrl . "\n", FILE_APPEND);
+echo $obsUrl;
 ?>
