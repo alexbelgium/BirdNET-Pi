@@ -38,7 +38,7 @@ $db->exec("
   PRAGMA journal_mode=WAL;       -- safe read concurrency
   PRAGMA synchronous=NORMAL;     -- cheaper fsyncs (read-mostly)
   PRAGMA temp_store=MEMORY;      -- temp data stays in RAM
-  PRAGMA cache_size=-80000;     -- ~80MB page cache (tune to your RAM)
+  PRAGMA cache_size=-80000;      -- ~80MB page cache (tune to your RAM)
   PRAGMA mmap_size=268435456;    -- 256MB mmap (set 0 if kernel disallows)
 ");
 
@@ -194,14 +194,15 @@ $result = $db->query($sql);
       <tr>
         <th onclick="sortTable(0)">Common Name</th>
         <th onclick="sortTable(1)">Scientific Name</th>
+        <th>Info</th>
         <th>Stats</th>
-        <th onclick="sortTable(3)">Count</th>
-        <th onclick="sortTable(4)">Max Confidence</th>
-        <th onclick="sortTable(5)">Last Seen</th>
-        <th onclick="sortTable(6)">Probability</th>
-        <th onclick="sortTable(7)">Confirmed</th>
-        <th onclick="sortTable(8)">Excluded</th>
-        <th onclick="sortTable(9)">Whitelisted</th>
+        <th onclick="sortTable(4)">Count</th>
+        <th onclick="sortTable(5)">Max Confidence</th>
+        <th onclick="sortTable(6)">Last Seen</th>
+        <th onclick="sortTable(7)">Probability</th>
+        <th onclick="sortTable(8)">Confirmed</th>
+        <th onclick="sortTable(9)">Excluded</th>
+        <th onclick="sortTable(10)">Whitelisted</th>
         <th>Delete</th>
       </tr>
     </thead>
@@ -209,18 +210,21 @@ $result = $db->query($sql);
 <?php while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
   $common = htmlspecialchars($row['Com_Name'], ENT_QUOTES);
   $sciname = $row['Sci_Name'];
-  $scient = htmlspecialchars($sciname, ENT_QUOTES);
-  $info_url = get_info_url($sciname);
-  $url = htmlspecialchars($info_url['URL'], ENT_QUOTES);
+  $scient  = htmlspecialchars($sciname, ENT_QUOTES);
+
+  $info_url  = get_info_url($sciname);
+  $url       = htmlspecialchars($info_url['URL'], ENT_QUOTES);
   $url_title = htmlspecialchars($info_url['TITLE'], ENT_QUOTES);
+
   $count  = (int)$row['Count'];
   $max_confidence = round((float)$row['MaxConfidence'] * 100, 1);
-  $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
+
+  $identifier     = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
   $identifier_sci = str_replace("'", '', $row['Sci_Name']);
 
-  $lastSeen = $row['LastSeen'] ?? '';
-  $lastSeenSort = $lastSeen ? (strtotime($lastSeen) ?: 0) : 0;
-  $lastSeenDisplay = htmlspecialchars($lastSeen, ENT_QUOTES);
+  $lastSeen       = $row['LastSeen'] ?? '';
+  $lastSeenSort   = $lastSeen ? (strtotime($lastSeen) ?: 0) : 0;
+  $lastSeenDisplay= htmlspecialchars($lastSeen, ENT_QUOTES);
 
   $common_link = "<a href='views.php?view=Recordings&species=" . rawurlencode($row['Sci_Name']) . "'>{$common}</a>";
 
@@ -243,9 +247,14 @@ $result = $db->query($sql);
     ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','del')\">"
     : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
 
+  $info_cell = "<a href=\"{$url}\" target=\"_blank\" rel=\"noopener\">
+                  <img title=\"{$url_title}\" alt=\"Info\" src=\"images/info.png\" width=\"20\">
+                </a>";
+
   echo "<tr data-comname=\"{$common}\">"
      . "<td>{$common_link}</td>"
-     . "<td><i>{$scient}</i> <a href=\"{$url}\" target=\"_blank\"><img title=\"{$url_title}\" src=\"images/info.png\" width=\"10\"></a></td>"
+     . "<td><i>{$scient}</i></td>"
+     . "<td>{$info_cell}</td>"
      . "<td>{$chart_cell}</td>"
      . "<td>{$count}</td>"
      . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"
