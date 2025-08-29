@@ -180,6 +180,12 @@ $result = $db->query($sql);
   #speciesTable th{cursor:pointer}
   .toolbar{display:flex;gap:8px;align-items:center;margin:8px 0}
   .toolbar input[type="text"]{padding:6px 8px;min-width:260px}
+  #speciesTable a,
+  #speciesTable a:visited,
+  #speciesTable a:active {
+    color: black;
+    text-decoration: none;
+  }
 </style>
 
 <div class="centered">
@@ -239,9 +245,19 @@ $result = $db->query($sql);
     ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','del')\">"
     : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
 
+  $sciname_raw = $row['Sci_Name'];
+    $info_url = get_info_url($sciname_raw);
+    if (!empty($info_url)) {
+        $url = $info_url['URL'] ?? $info_url;
+        $url_esc = htmlspecialchars($url, ENT_QUOTES);
+        $scient_link = "<a href=\"{$url_esc}\" target=\"_blank\"><i>{$scient}</i></a>";
+    } else {
+        $scient_link = "<i>{$scient}</i>";
+    }
+    
   echo "<tr data-comname=\"{$common}\">"
      . "<td>{$common_link}</td>"
-     . "<td><i>{$scient}</i></td>"
+     . "<td>{$scient_link}</td>"
      . "<td>{$chart_cell}</td>"
      . "<td>{$count}</td>"
      . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"
