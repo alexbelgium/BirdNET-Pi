@@ -239,19 +239,15 @@ $result = $db->query($sql);
     ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','del')\">"
     : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
 
-  // Scientific name: external info link + info icon
   $sciname_raw = $row['Sci_Name'];
-  $info_url = get_info_url($sciname_raw);
-  if (!empty($info_url)) {
-    $url = $info_url['URL'] ?? $info_url;
-    $url_esc = htmlspecialchars($url, ENT_QUOTES);
-    $host = parse_url($url, PHP_URL_HOST);
-    $url_title = htmlspecialchars($host ?: 'Info', ENT_QUOTES);
-    $scient_link = "<a href=\"{$url_esc}\" target=\"_blank\"><i>{$scient}</i></a> "
-                 . "<a href=\"{$url_esc}\" target=\"_blank\"><img title=\"{$url_title}\" src=\"images/info.png\" width=\"20\"></a>";
-  } else {
-    $scient_link = "<i>{$scient}</i>";
-  }
+    $info_url = get_info_url($sciname_raw);
+    if (!empty($info_url)) {
+        $url = $info_url['URL'] ?? $info_url;
+        $url_esc = htmlspecialchars($url, ENT_QUOTES);
+        $scient_link = "<a href=\"{$url_esc}\" target=\"_blank\"><i>{$scient}</i></a>";
+    } else {
+        $scient_link = "<i>{$scient}</i>";
+    }
     
   echo "<tr data-comname=\"{$common}\">"
      . "<td>{$common_link}</td>"
