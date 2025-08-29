@@ -88,6 +88,10 @@ if ! grep -E '^RTSP_STREAM_TO_LIVESTREAM=' /etc/birdnet/birdnet.conf &>/dev/null
   echo "RTSP_STREAM_TO_LIVESTREAM=\"0\"" >> /etc/birdnet/birdnet.conf
 fi
 
+if ! grep -E '^EBIRD_API_TOKEN=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo "EBIRD_API_TOKEN=" >> /etc/birdnet/birdnet.conf
+fi
+
 SRC='^APPRISE_NOTIFICATION_BODY="A \$comname \(\$sciname\)  was just detected with a confidence of \$confidence"$'
 DST='APPRISE_NOTIFICATION_BODY="A \$comname (\$sciname)  was just detected with a confidence of \$confidence (\$reason)"'
 sed -i --follow-symlinks -E "s/$SRC/$DST/" /etc/birdnet/birdnet.conf
