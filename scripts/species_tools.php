@@ -245,7 +245,7 @@ $result = $db->query($sql);
 
   echo "<tr data-comname=\"{$common}\">"
      . "<td>{$common_link}</td>"
-     . "<td><i>{$scient}</i> <a href=\"{$url}\" target=\"_blank\"><img title=\"{$url_title}\" src=\"images/info.png\" width=\"20\"></a></td>"
+     . "<td><i>{$scient}</i> <a href=\"{$url}\" target=\"_blank\"><img title=\"{$url_title}\" src=\"images/info.png\" width=\"10\"></a></td>"
      . "<td>{$chart_cell}</td>"
      . "<td>{$count}</td>"
      . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"
