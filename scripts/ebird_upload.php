@@ -91,8 +91,10 @@ curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
 curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-eBirdApiToken: ' . $token]);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 $response = curl_exec($ch);
 $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$final = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
 if($response === false || $code >= 400) {
     $error = curl_error($ch);
     curl_close($ch);
@@ -103,11 +105,15 @@ curl_close($ch);
 
 $obsUrl = '';
 $obsId = '';
-$data = json_decode($response, true);
-if(is_array($data) && isset($data['url'])) {
-    $obsUrl = $data['url'];
-} elseif(preg_match('~https://ebird.org/[^"\s]+~', $response, $m)) {
-    $obsUrl = $m[0];
+if($final && preg_match('~https://ebird.org/[^\s]+~', $final, $m)) {
+    $obsUrl = $final;
+} else {
+    $data = json_decode($response, true);
+    if(is_array($data) && isset($data['url'])) {
+        $obsUrl = $data['url'];
+    } elseif(preg_match('~https://ebird.org/[^"\s]+~', $response, $m)) {
+        $obsUrl = $m[0];
+    }
 }
 if($obsUrl === '') {
     echo 'Upload failed: unexpected response';
