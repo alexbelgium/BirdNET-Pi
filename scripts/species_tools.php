@@ -180,6 +180,12 @@ $result = $db->query($sql);
   #speciesTable th{cursor:pointer}
   .toolbar{display:flex;gap:8px;align-items:center;margin:8px 0}
   .toolbar input[type="text"]{padding:6px 8px;min-width:260px}
+  #speciesTable a,
+  #speciesTable a:visited,
+  #speciesTable a:active {
+    color: black;
+    text-decoration: none;
+  }
 </style>
 
 <div class="centered">
