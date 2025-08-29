@@ -218,22 +218,7 @@ $result = $db->query($sql);
   $lastSeenSort = $lastSeen ? (strtotime($lastSeen) ?: 0) : 0;
   $lastSeenDisplay = htmlspecialchars($lastSeen, ENT_QUOTES);
 
-  // Same pattern as common_link (internal link to recordings by scientific name)
   $common_link = "<a href='views.php?view=Recordings&species=" . rawurlencode($row['Sci_Name']) . "'>{$common}</a>";
-
-  // NEW: scientific name external info link (plus info icon), following play.php style
-  $sciname_raw = $row['Sci_Name'];
-  $info_url = get_info_url($sciname_raw);
-  if (!empty($info_url)) {
-    $info_url_esc = htmlspecialchars($info_url, ENT_QUOTES);
-    $host = parse_url($info_url, PHP_URL_HOST);
-    $url_title = htmlspecialchars($host ?: 'Info', ENT_QUOTES);
-    $scient_link = "<a href='{$info_url_esc}' target='_blank'><i>{$scient}</i></a> "
-                 . "<a href=\"{$info_url_esc}\" target=\"_blank\"><img title=\"{$url_title}\" src=\"images/info.png\" width=\"20\"></a>";
-  } else {
-    // Fallback if no URL could be resolved
-    $scient_link = "<i>{$scient}</i>";
-  }
 
   $is_confirmed   = in_array($identifier_sci, $confirmed_species, true);
   $is_excluded    = in_array($identifier, $excluded_species, true);
@@ -254,6 +239,20 @@ $result = $db->query($sql);
     ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','del')\">"
     : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
 
+  // Scientific name: external info link + info icon
+  $sciname_raw = $row['Sci_Name'];
+  $info_url = get_info_url($sciname_raw);
+  if (!empty($info_url)) {
+    $url = $info_url['URL'] ?? $info_url;
+    $url_esc = htmlspecialchars($url, ENT_QUOTES);
+    $host = parse_url($url, PHP_URL_HOST);
+    $url_title = htmlspecialchars($host ?: 'Info', ENT_QUOTES);
+    $scient_link = "<a href=\"{$url_esc}\" target=\"_blank\"><i>{$scient}</i></a> "
+                 . "<a href=\"{$url_esc}\" target=\"_blank\"><img title=\"{$url_title}\" src=\"images/info.png\" width=\"20\"></a>";
+  } else {
+    $scient_link = "<i>{$scient}</i>";
+  }
+    
   echo "<tr data-comname=\"{$common}\">"
      . "<td>{$common_link}</td>"
      . "<td>{$scient_link}</td>"
