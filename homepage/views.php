@@ -176,7 +176,7 @@ if(isset($_GET['view'])){
       </form>
       </div>";
   }
-  if($_GET['view'] == "Recordings"){include('play.php');}
+  if($_GET['view'] == "Recordings"){include('scripts/play.php');}
   if($_GET['view'] == "Settings"){include('scripts/config.php');} 
   if($_GET['view'] == "Advanced"){include('scripts/advanced.php');}
   if($_GET['view'] == "Included"){

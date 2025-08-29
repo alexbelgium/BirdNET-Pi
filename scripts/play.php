@@ -125,6 +125,18 @@ if(isset($_GET['shiftfile'])) {
     die();
 }
 
+$ebird_log = $home . "/BirdNET-Pi/scripts/ebirds_upload_log.txt";
+if(!file_exists($ebird_log)) {
+  touch($ebird_log);
+}
+$ebird_uploaded = [];
+foreach(file($ebird_log, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+  [$file, $site, $id] = array_pad(explode('|', $line, 3), 3, '');
+  if($site === 'ebird' && $id !== '') {
+    $ebird_uploaded[$file] = 'https://ebird.org/checklist/' . $id;
+  }
+}
+
 if(isset($_GET['bydate'])){
   $statement = $db->prepare('SELECT DISTINCT(Date) FROM detections GROUP BY Date ORDER BY Date DESC');
   ensure_db_ok($statement);
@@ -257,6 +269,30 @@ function toggleShiftFreq(filename, shiftAction, elem) {
   }
   xhttp.send();
   elem.setAttribute("src","images/spinner.gif");
+}
+
+function uploadToEbird(filename, elem, evt) {
+  if (evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
+  }
+  const xhttp = new XMLHttpRequest();
+  xhttp.onload = function() {
+    const resp = this.responseText.trim();
+    if(resp.startsWith("http")){
+      elem.setAttribute("src","images/upload_ok.svg");
+      elem.setAttribute("title", "View on eBird");
+      elem.onclick = function(){ window.open(resp, '_blank'); };
+      elem.style.cursor = "pointer";
+    } else {
+      alert(resp);
+      elem.setAttribute("src","images/upload.svg");
+    }
+  }
+  xhttp.open("GET", "scripts/ebird_upload.php?uploadfile="+encodeURIComponent(filename), true);
+  xhttp.send();
+  elem.setAttribute("src","images/spinner.gif");
+  return false;
 }
 
 function changeDetection(filename,copylink=false) {
@@ -590,7 +626,7 @@ echo "<table>
 
       if(file_exists($shifted_path.$filename_formatted)) {
         $shiftImageIcon = "images/unshift.svg";
-        $shiftTitle = "This file has been shifted down in frequency."; 
+        $shiftTitle = "This file has been shifted down in frequency.";
         $shiftAction = "unshift";
   $filename = $filename_shifted;
       } else {
@@ -599,12 +635,19 @@ echo "<table>
         $shiftAction = "shift";
       }
 
-      echo "<tr>
-  <td class=\"relative\"> 
+      if(isset($ebird_uploaded[$filename_formatted])) {
+        $url = htmlspecialchars($ebird_uploaded[$filename_formatted], ENT_QUOTES);
+        $uploadImage = "<img style='cursor:pointer;right:155px' src='images/upload_ok.svg' onclick='window.open(\"".$url."\", \"_blank\")' class='copyimage' width=25 title='View on eBird'>";
+      } else {
+        $uploadImage = "<img style='cursor:pointer;right:155px' src='images/upload.svg' onclick='return uploadToEbird(\"".$filename_formatted."\", this, event)' class='copyimage' width=25 title='Upload to eBird'>";
+      }
 
-<img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Delete Detection'> 
-<img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
-<img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
+      echo "<tr>
+  <td class=\"relative\">
+".$uploadImage."
+<img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Delete Detection'>
+<img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'>
+<img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\">
 <img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\"> $date $time<br>$values<br>
 
         ".$imageelem."
@@ -691,12 +734,19 @@ echo "<table>
         $shiftAction = "shift";
       }
 
-          echo "<tr>
-      <td class=\"relative\"> 
+          if(isset($ebird_uploaded[$filename_formatted])) {
+            $url = htmlspecialchars($ebird_uploaded[$filename_formatted], ENT_QUOTES);
+            $uploadImage = "<img style='cursor:pointer;right:155px' src='images/upload_ok.svg' onclick='window.open(\"".$url."\", \"_blank\")' class='copyimage' width=25 title='View on eBird'>";
+          } else {
+            $uploadImage = "<img style='cursor:pointer;right:155px' src='images/upload.svg' onclick='return uploadToEbird(\"".$filename_formatted."\", this, event)' class='copyimage' width=25 title='Upload to eBird'>";
+          }
 
-<img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'> 
-<img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
-<img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
+          echo "<tr>
+      <td class=\"relative\">
+".$uploadImage."
+<img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'>
+<img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'>
+<img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\">
 <img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\">$date $time<br>$values<br>
 
 <div class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'></div>
