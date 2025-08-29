@@ -142,7 +142,7 @@ button:hover {
   top: 0%;
   left: 50%;
   width: calc(40% - 2px);
-  height: calc(25% - 2px);
+  height: calc(35% - 2px);
   background-color: #2b2b2b;
   z-index: 9999;
   overflow: auto;
