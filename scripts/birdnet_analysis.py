@@ -13,7 +13,7 @@ from inotify.constants import IN_CLOSE_WRITE
 
 from server import load_global_model, run_analysis
 from utils.helpers import get_settings, ParseFileName, get_wav_files, ANALYZING_NOW
-from utils.reporting import extract_detection, summary, write_to_file, write_to_db, apprise, bird_weather, heartbeat, \
+from utils.reporting import extract_detection, summary, write_to_file, write_to_db, bird_weather, heartbeat, \
     update_json_file, compute_snr, compute_recording_quality
 
 shutdown = False
@@ -118,7 +118,6 @@ def handle_reporting_queue(queue):
                          os.path.basename(detection.file_name_extr))
                 write_to_file(file, detection)
                 write_to_db(file, detection)
-            apprise(file, detections)
             bird_weather(file, detections)
             heartbeat()
             os.remove(file.file_name)

@@ -29,7 +29,6 @@ Changes include:
  - Backup & Restore
  - Web ui is much more responsive
  - Daily charts now include all species, not just top/bottom 10
- - Bump apprise version, so more notification type are possible
  - Swipe events on Daily Charts (by @croisez)
  - Support for 'Species range model V2.4 - V2'
  - Bookworm support
@@ -103,7 +102,6 @@ Currently listening in these countries . . . that I know of . . .
 * SQLite3 Database
 * [Adminer](https://www.adminer.org/) database maintenance
 * [phpSysInfo](https://github.com/phpsysinfo/phpsysinfo)
-* [Apprise Notifications](https://github.com/caronc/apprise) supporting 90+ notification platforms
 * Localization supported
 
 ## Requirements
