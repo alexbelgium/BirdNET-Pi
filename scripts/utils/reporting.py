@@ -9,6 +9,7 @@ import io
 import soundfile
 import numpy as np
 import librosa
+import librosa.display as librosa_display
 from time import sleep
 
 import requests
@@ -157,7 +158,7 @@ def compute_recording_quality(audio_path, plot_debug=False):
 
     if plot_debug:
         import matplotlib.pyplot as plt  # pragma: no cover
-        import librosa.display  # pragma: no cover
+        librosa_display.specshow(S_db, sr=sr, hop_length=hop_length, x_axis='time', y_axis='Hz', cmap='magma')
         duration = len(y) / sr
         fig, ax = plt.subplots(2, 1, figsize=(10, 6))
         t = np.linspace(0, duration, len(y))
