@@ -227,12 +227,8 @@ def write_to_db(file: ParseFileName, detection: Detection):
         try:
             con = sqlite3.connect(DB_PATH)
             cur = con.cursor()
-            try:
-                cur.execute("ALTER TABLE detections ADD COLUMN snr REAL")
-            except sqlite3.OperationalError:
-                pass
             cur.execute(
-                "INSERT INTO detections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO detections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     detection.date,
                     detection.time,
@@ -246,12 +242,11 @@ def write_to_db(file: ParseFileName, detection: Detection):
                     conf['SENSITIVITY'],
                     conf['OVERLAP'],
                     os.path.basename(detection.file_name_extr),
-                    detection.snr,
                 ),
             )
             # (Date, Time, Sci_Name, Com_Name, Confidence,
             #  Lat, Lon, Cutoff, Week, Sens,
-            #  Overlap, File_Name, SNR)
+            #  Overlap, File_Name)
 
             con.commit()
             con.close()
