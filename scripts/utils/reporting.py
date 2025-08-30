@@ -12,6 +12,7 @@ from time import sleep
 import requests
 import numpy as np
 import librosa
+import librosa.display
 from PIL import Image, ImageDraw, ImageFont
 
 from .helpers import get_settings, ParseFileName, Detection, get_font, DB_PATH
@@ -149,7 +150,6 @@ def compute_recording_quality(audio_path, plot_debug=False):
     if plot_debug:
         try:
             import matplotlib.pyplot as plt
-            import librosa.display  # noqa: F401
             fig, ax = plt.subplots(2, 1, figsize=(10, 6))
             t = np.linspace(0, duration, len(y))
             ax[0].plot(t, y, label="Waveform")
@@ -228,7 +228,7 @@ def write_to_db(file: ParseFileName, detection: Detection):
             con = sqlite3.connect(DB_PATH)
             cur = con.cursor()
             cur.execute(
-                "INSERT INTO detections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO detections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     detection.date,
                     detection.time,
@@ -242,11 +242,12 @@ def write_to_db(file: ParseFileName, detection: Detection):
                     conf['SENSITIVITY'],
                     conf['OVERLAP'],
                     os.path.basename(detection.file_name_extr),
+                    detection.snr_quality,
                 ),
             )
             # (Date, Time, Sci_Name, Com_Name, Confidence,
             #  Lat, Lon, Cutoff, Week, Sens,
-            #  Overlap, File_Name)
+            #  Overlap, File_Name, SNR)
 
             con.commit()
             con.close()
