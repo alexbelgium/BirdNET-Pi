@@ -69,10 +69,12 @@ def compute_snr(audio_file):
 
 def compute_recording_quality(audio_path, plot_debug=False):
     try:
-        y, sr = librosa.load(audio_path, sr=None, mono=True)
+        y, sr = soundfile.read(audio_path)
     except Exception as e:
         log.error("Error reading %s: %s", audio_path, e)
         return None
+    if y.ndim > 1:
+        y = np.mean(y, axis=1)
     if y.size == 0:
         return None
     duration = len(y) / sr
@@ -225,8 +227,12 @@ def write_to_db(file: ParseFileName, detection: Detection):
         try:
             con = sqlite3.connect(DB_PATH)
             cur = con.cursor()
+            try:
+                cur.execute("ALTER TABLE detections ADD COLUMN snr REAL")
+            except sqlite3.OperationalError:
+                pass
             cur.execute(
-                "INSERT INTO detections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO detections VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     detection.date,
                     detection.time,
@@ -240,11 +246,12 @@ def write_to_db(file: ParseFileName, detection: Detection):
                     conf['SENSITIVITY'],
                     conf['OVERLAP'],
                     os.path.basename(detection.file_name_extr),
+                    detection.snr,
                 ),
             )
-            # (Date, Time, Sci_Name, Com_Name, str(score),
+            # (Date, Time, Sci_Name, Com_Name, Confidence,
             #  Lat, Lon, Cutoff, Week, Sens,
-            #  Overlap, File_Name)
+            #  Overlap, File_Name, SNR)
 
             con.commit()
             con.close()
