@@ -73,6 +73,8 @@ class Detection:
         self.common_name = species.split('_')[1]
         self.common_name_safe = self.common_name.replace("'", "").replace(" ", "_")
         self.file_name_extr = None
+        self.snr_quality = None
+        self.snr_simple = None
 
 
 class ParseFileName:
