@@ -108,7 +108,8 @@ def sendAppriseNotifications(species, confidence, confidencepct, path,
                 try:
                     url = f"http://localhost/api/v1/image/{sciName}"
                     resp = requests.get(url=url, timeout=10).json()
-                    images[comName] = resp['data']['image_url']
+                    image_url = resp['data']['image_url']
+                    images[comName] = image_url
                 except Exception as e:
                     print("FLICKR API ERROR: "+str(e))
                     image_url = ""

@@ -35,8 +35,16 @@ def create_test_db(db_file):
 
 @pytest.fixture(autouse=True)
 def clean_up_after_each_test():
+    config_dir = os.path.expanduser("~/BirdNET-Pi")
+    os.makedirs(config_dir, exist_ok=True)
+    config_file = os.path.join(config_dir, "apprise.txt")
+    with open(config_file, "w") as fp:
+        fp.write("test")
     yield
-    os.remove("test.db")
+    if os.path.exists("test.db"):
+        os.remove("test.db")
+    if os.path.exists(config_file):
+        os.remove(config_file)
 
 
 def test_notifications(mocker):
@@ -44,10 +52,11 @@ def test_notifications(mocker):
     create_test_db("test.db")
     settings_dict = {
         "APPRISE_NOTIFICATION_TITLE": "New backyard bird!",
-        "APPRISE_NOTIFICATION_BODY": "A $comname ($sciname) was just detected with a confidence of $confidence",
+        "APPRISE_NOTIFICATION_BODY": "A $comname ($sciname) was just detected with a confidence of $confidencepct ($reason)",
         "APPRISE_NOTIFY_EACH_DETECTION": "0",
         "APPRISE_NOTIFY_NEW_SPECIES": "0",
-        "APPRISE_NOTIFY_NEW_SPECIES_EACH_DAY": "0"
+        "APPRISE_NOTIFY_NEW_SPECIES_EACH_DAY": "0",
+        "APPRISE_MINIMUM_SECONDS_BETWEEN_NOTIFICATIONS_PER_SPECIES": "0",
     }
     sendAppriseNotifications("Myiarchus crinitus_Great Crested Flycatcher",
                              "0.91",
@@ -113,8 +122,7 @@ def test_notifications(mocker):
         notify_call.call_args_list[0][0][0] == "A Great Crested Flycatcher (Myiarchus crinitus) was just detected with a confidence of 91 (first time today)"
     )
     assert (
-        notify_call.call_args_list[1][0][0] == "A Great Crested Flycatcher (Myiarchus crinitus) was just detected with a confidence \
-            of 91 (only seen 1 times in last 7d)"
+        notify_call.call_args_list[1][0][0] == "A Great Crested Flycatcher (Myiarchus crinitus) was just detected with a confidence of 91 (only seen 1 times in last 7d)"
     )
 
     # Add each species notification.
@@ -136,3 +144,42 @@ def test_notifications(mocker):
                              "test.db")
 
     assert (notify_call.call_count == 3)
+
+
+def test_image_attached_on_first_notification(mocker):
+    notify_call = mocker.patch('scripts.utils.notifications.notify')
+    mock_resp = mocker.Mock()
+    mock_resp.json.return_value = {'data': {'image_url': 'http://example.com/image.jpg'}}
+    mocker.patch('scripts.utils.notifications.requests.get', return_value=mock_resp)
+
+    create_test_db("test.db")
+    settings_dict = {
+        "APPRISE_NOTIFICATION_TITLE": "New backyard bird!",
+        "APPRISE_NOTIFICATION_BODY": "A $comname was just detected $image",
+        "APPRISE_NOTIFY_EACH_DETECTION": "1",
+        "APPRISE_NOTIFY_NEW_SPECIES": "0",
+        "APPRISE_NOTIFY_NEW_SPECIES_EACH_DAY": "0",
+        "APPRISE_MINIMUM_SECONDS_BETWEEN_NOTIFICATIONS_PER_SPECIES": "0",
+    }
+
+    from scripts.utils import notifications as notif
+    notif.images.clear()
+    notif.species_last_notified.clear()
+
+    sendAppriseNotifications("Myiarchus crinitus_Great Crested Flycatcher",
+                             "0.91",
+                             "91",
+                             "filename",
+                             "1666-06-06",
+                             "06:06:06",
+                             "06",
+                             "-1",
+                             "-1",
+                             "0.7",
+                             "1.25",
+                             "0.0",
+                             settings_dict,
+                             "test.db")
+
+    notify_call.assert_called_once()
+    assert notify_call.call_args[0][2] == 'http://example.com/image.jpg'
