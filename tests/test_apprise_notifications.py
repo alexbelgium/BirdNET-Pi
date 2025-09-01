@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import base64
 import pytest
 from scripts.utils.notifications import sendAppriseNotifications
 from datetime import datetime
@@ -36,18 +37,34 @@ def create_test_db(db_file):
 @pytest.fixture(autouse=True)
 def clean_up_after_each_test():
     yield
-    os.remove("test.db")
+    if os.path.exists("test.db"):
+        os.remove("test.db")
+    apprise_dir = os.path.expanduser('~') + '/BirdNET-Pi'
+    apprise_file = apprise_dir + '/apprise.txt'
+    if os.path.exists(apprise_file):
+        os.remove(apprise_file)
+    if os.path.exists(apprise_dir):
+        try:
+            os.rmdir(apprise_dir)
+        except OSError:
+            pass
 
 
 def test_notifications(mocker):
     notify_call = mocker.patch('scripts.utils.notifications.notify')
     create_test_db("test.db")
+    apprise_dir = os.path.expanduser('~') + '/BirdNET-Pi'
+    os.makedirs(apprise_dir, exist_ok=True)
+    with open(apprise_dir + '/apprise.txt', 'w') as f:
+        f.write('mailto://example@example.com')
+    body_template = "A $comname ($sciname) was just detected with a confidence of $confidencepct ($reason)"
     settings_dict = {
         "APPRISE_NOTIFICATION_TITLE": "New backyard bird!",
-        "APPRISE_NOTIFICATION_BODY": "A $comname ($sciname) was just detected with a confidence of $confidence",
+        "APPRISE_NOTIFICATION_BODY": base64.b64encode(body_template.encode("utf-8")).decode("utf-8"),
         "APPRISE_NOTIFY_EACH_DETECTION": "0",
         "APPRISE_NOTIFY_NEW_SPECIES": "0",
-        "APPRISE_NOTIFY_NEW_SPECIES_EACH_DAY": "0"
+        "APPRISE_NOTIFY_NEW_SPECIES_EACH_DAY": "0",
+        "APPRISE_MINIMUM_SECONDS_BETWEEN_NOTIFICATIONS_PER_SPECIES": "0",
     }
     sendAppriseNotifications("Myiarchus crinitus_Great Crested Flycatcher",
                              "0.91",
@@ -113,8 +130,7 @@ def test_notifications(mocker):
         notify_call.call_args_list[0][0][0] == "A Great Crested Flycatcher (Myiarchus crinitus) was just detected with a confidence of 91 (first time today)"
     )
     assert (
-        notify_call.call_args_list[1][0][0] == "A Great Crested Flycatcher (Myiarchus crinitus) was just detected with a confidence \
-            of 91 (only seen 1 times in last 7d)"
+        notify_call.call_args_list[1][0][0] == "A Great Crested Flycatcher (Myiarchus crinitus) was just detected with a confidence of 91 (only seen 1 times in last 7d)"
     )
 
     # Add each species notification.
@@ -136,3 +152,4 @@ def test_notifications(mocker):
                              "test.db")
 
     assert (notify_call.call_count == 3)
+

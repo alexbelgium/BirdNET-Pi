@@ -6,6 +6,7 @@ from datetime import datetime
 import requests
 import html
 import time as timeim
+import base64
 
 userDir = os.path.expanduser('~')
 APPRISE_CONFIG = userDir + '/BirdNET-Pi/apprise.txt'
@@ -68,7 +69,12 @@ def sendAppriseNotifications(species, confidence, confidencepct, path,
     if os.path.exists(APPRISE_CONFIG) and os.path.getsize(APPRISE_CONFIG) > 0:
 
         title = html.unescape(settings_dict.get('APPRISE_NOTIFICATION_TITLE'))
-        body = html.unescape(settings_dict.get('APPRISE_NOTIFICATION_BODY'))
+        body_raw = settings_dict.get('APPRISE_NOTIFICATION_BODY')
+        body_raw = html.unescape(body_raw) if body_raw else ""
+        try:
+            body = base64.b64decode(body_raw).decode('utf-8')
+        except Exception:
+            body = body_raw
         sciName, comName = species.split("_")
 
         APPRISE_ONLY_NOTIFY_SPECIES_NAMES = settings_dict.get('APPRISE_ONLY_NOTIFY_SPECIES_NAMES')
