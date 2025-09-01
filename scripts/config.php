@@ -57,7 +57,8 @@ if(isset($_GET["latitude"])){
   $birdweather_id = $_GET["birdweather_id"];
   $apprise_input = $_GET['apprise_input'];
   $apprise_notification_title = $_GET['apprise_notification_title'];
-  $apprise_notification_body = $_GET['apprise_notification_body'];
+  $apprise_notification_body = str_replace('%0A', "\n", $_GET['apprise_notification_body']);
+  $apprise_notification_body = base64_encode($apprise_notification_body);
   $minimum_time_limit = $_GET['minimum_time_limit'];
   $image_provider = $_GET["image_provider"];
   $flickr_api_key = $_GET['flickr_api_key'];
@@ -213,7 +214,8 @@ if(isset($_GET['sendtest']) && $_GET['sendtest'] == "true") {
   }
 
   $title = $_GET['apprise_notification_title'];
-  $body = $_GET['apprise_notification_body'];
+  $body = base64_decode($_GET['apprise_notification_body']);
+  $body = str_replace('%0A', "\n", $body);
 
   if($config["BIRDNETPI_URL"] != "") {
     $filename = $config["BIRDNETPI_URL"]."?filename=".$filename;
@@ -307,8 +309,9 @@ function sendTestNotification(e) {
   document.getElementById("testsuccessmsg").innerHTML = "";
   e.classList.add("disabled");
 
-  var apprise_notification_title = document.getElementsByName("apprise_notification_title")[0].value;
+  var apprise_notification_title = encodeURIComponent(document.getElementsByName("apprise_notification_title")[0].value);
   var apprise_notification_body = document.getElementsByName("apprise_notification_body")[0].value;
+  apprise_notification_body = encodeURIComponent(btoa(unescape(encodeURIComponent(apprise_notification_body))));
   var apprise_config = encodeURIComponent(document.getElementsByName("apprise_input")[0].value);
 
   var xmlHttp = new XMLHttpRequest();
@@ -318,7 +321,7 @@ function sendTestNotification(e) {
             e.classList.remove("disabled");
         }
     }
-    xmlHttp.open("GET", "scripts/config.php?sendtest=true&apprise_notification_title="+apprise_notification_title+"&apprise_notification_body="+apprise_notification_body+"&apprise_config="+apprise_config, true); // true for asynchronous 
+    xmlHttp.open("GET", "scripts/config.php?sendtest=true&apprise_notification_title="+apprise_notification_title+"&apprise_notification_body="+apprise_notification_body+"&apprise_config="+apprise_config, true); // true for asynchronous
     xmlHttp.send(null);
 }
 </script>
@@ -536,8 +539,14 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       <p>Use the variables defined above to customize your notification title and body.</p>
       <label for="apprise_notification_title">Notification Title: </label>
       <input name="apprise_notification_title" style="width: 100%" type="text" value="<?php print($config['APPRISE_NOTIFICATION_TITLE']);?>" /><br>
+      <?php
+      $apprise_body_decoded = base64_decode($config['APPRISE_NOTIFICATION_BODY'], true);
+      if($apprise_body_decoded === false) {
+        $apprise_body_decoded = $config['APPRISE_NOTIFICATION_BODY'];
+      }
+      ?>
       <label for="apprise_notification_body">Notification Body: </label>
-      <input name="apprise_notification_body" style="width: 100%" type="text" value='<?php print($config['APPRISE_NOTIFICATION_BODY']);?>' /><br>
+      <input name="apprise_notification_body" style="width: 100%" type="text" value='<?php print($apprise_body_decoded);?>' /><br>
       <input type="checkbox" name="apprise_notify_new_species" <?php if($config['APPRISE_NOTIFY_NEW_SPECIES'] == 1 && filesize($home."/BirdNET-Pi/apprise.txt") != 0) { echo "checked"; };?> >
       <label for="apprise_notify_new_species">Notify each new infrequent species detection (<5 visits per week)</label><br>
       <input type="checkbox" name="apprise_notify_new_species_each_day" <?php if($config['APPRISE_NOTIFY_NEW_SPECIES_EACH_DAY'] == 1 && filesize($home."/BirdNET-Pi/apprise.txt") != 0) { echo "checked"; };?> >
