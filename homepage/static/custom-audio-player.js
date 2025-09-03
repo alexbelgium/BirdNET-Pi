@@ -573,8 +573,8 @@ Channels: ${channels}`
       return container;
     };
 
-    const gainOptions = ["Off", "6", "12", "18", "24", "32"];
-    const gainValues = { Off: 1, "6": 2, "12": 4, "18": 8, "24": 16, "30": 32 };
+    const gainOptions = ["Off", "6", "12", "18", "24"];
+    const gainValues = { Off: 1, "6": 2, "12": 4, "18": 8, "24": 16 };
     let activeGain = gainOptions.includes(savedGain) ? savedGain : "Off";
     const gainContainer = createOptionSection("Gain (dB):");
     const gainButtons = gainOptions.map((opt) =>
@@ -586,7 +586,7 @@ Channels: ${channels}`
       })
     );
 
-    const highpassOptions = ["Off", "250", "500", "1000", "1500"];
+    const highpassOptions = ["Off", "250", "500", "1000"];
     let activeHighpassOption = highpassOptions.includes(savedHighpass) ? savedHighpass : "Off";
     const highpassContainer = createOptionSection("HighPass (Hz):");
     const highpassButtons = highpassOptions.map((opt) =>
@@ -727,4 +727,3 @@ Channels: ${channels}`
 
 // Initialize on DOM ready
 document.addEventListener("DOMContentLoaded", initCustomAudioPlayers);
-
