@@ -11,8 +11,9 @@ userDir = os.path.expanduser('~')
 APPRISE_CONFIG = userDir + '/BirdNET-Pi/apprise.txt'
 DB_PATH = userDir + '/BirdNET-Pi/scripts/birds.db'
 
-flickr_images = {}
+images = {}
 species_last_notified = {}
+
 
 asset = apprise.AppriseAsset(
     plugin_paths=[
@@ -58,6 +59,7 @@ def sendAppriseNotifications(species, confidence, confidencepct, path,
             .replace("$cutoff", cutoff) \
             .replace("$sens", sens) \
             .replace("$flickrimage", image_url if "{" in body else "") \
+            .replace("$image", image_url if "{" in body else "") \
             .replace("$overlap", overlap) \
             .replace("$reason", reason)
         return ret
@@ -101,25 +103,17 @@ def sendAppriseNotifications(species, confidence, confidencepct, path,
         friendlyurl = "[Listen here]("+listenurl+")"
         image_url = ""
 
-        if len(settings_dict.get('FLICKR_API_KEY')) > 0 and "$flickrimage" in body:
-            if comName not in flickr_images:
+        if "$flickrimage" in body or "$image" in body:
+            if comName not in images:
                 try:
-                    # TODO: Make this work with non-english comnames. Implement the "// convert sci name to English name" logic from overview.php here
-                    headers = {'User-Agent': 'Python_Flickr/1.0'}
-                    url = ('https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=' + str(settings_dict.get('FLICKR_API_KEY')) +
-                           '&text=' + str(comName) + ' bird&sort=relevance&per_page=5&media=photos&format=json&license=2%2C3%2C4%2C5%2C6%2C9&nojsoncallback=1')
-                    resp = requests.get(url=url, headers=headers, timeout=10)
-
-                    resp.encoding = "utf-8"
-                    data = resp.json()["photos"]["photo"][0]
-
-                    image_url = 'https://farm'+str(data["farm"])+'.static.flickr.com/'+str(data["server"])+'/'+str(data["id"])+'_'+str(data["secret"])+'_n.jpg'
-                    flickr_images[comName] = image_url
+                    url = f"http://localhost/api/v1/image/{sciName}"
+                    resp = requests.get(url=url, timeout=10).json()
+                    images[comName] = resp['data']['image_url']
                 except Exception as e:
                     print("FLICKR API ERROR: "+str(e))
                     image_url = ""
             else:
-                image_url = flickr_images[comName]
+                image_url = images[comName]
 
         if settings_dict.get('APPRISE_NOTIFY_EACH_DETECTION') == "1":
             notify_body = render_template(body, "detection")
@@ -135,7 +129,7 @@ def sendAppriseNotifications(species, confidence, confidencepct, path,
                 today = datetime.now().strftime("%Y-%m-%d")
                 cur.execute(f"SELECT DISTINCT(Com_Name), COUNT(Com_Name) FROM detections WHERE Date = DATE('{today}') GROUP BY Com_Name")
                 known_species = cur.fetchall()
-                detections = [d[1] for d in known_species if d[0] == comName.replace("'", "")]
+                detections = [d[1] for d in known_species if d[0] == comName]
                 numberDetections = 0
                 if len(detections):
                     numberDetections = detections[0]
@@ -158,7 +152,7 @@ def sendAppriseNotifications(species, confidence, confidencepct, path,
                 today = datetime.now().strftime("%Y-%m-%d")
                 cur.execute(f"SELECT DISTINCT(Com_Name), COUNT(Com_Name) FROM detections WHERE Date >= DATE('{today}', '-7 day') GROUP BY Com_Name")
                 known_species = cur.fetchall()
-                detections = [d[1] for d in known_species if d[0] == comName.replace("'", "")]
+                detections = [d[1] for d in known_species if d[0] == comName]
                 numberDetections = 0
                 if len(detections):
                     numberDetections = detections[0]

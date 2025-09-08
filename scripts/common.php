@@ -1,5 +1,7 @@
 <?php
 
+define('__ROOT__', dirname(dirname(__FILE__)));
+
 if (session_status() !== PHP_SESSION_ACTIVE)
   session_start();
 
@@ -117,30 +119,178 @@ function get_sci_name($com_name) {
   return $sciname;
 }
 
-define('DB', './scripts/flickr.db');
+function get_label($record, $sort_by, $date=null) {
+  $name = $record["Com_Name"];
+  if ($sort_by == "confidence") {
+    $ret = $name . ' (' . round($record['MaxConfidence'] * 100) . '%)';
+  } elseif ($sort_by == "occurrences") {
+    $valuescount = $record['Count'];
+    if ($valuescount >= 1000) {
+      $ret = $name . ' (' . round($valuescount / 1000, 1) . 'k)';
+    } else {
+      $ret = $name . ' (' . $valuescount . ')';
+    }
+  } elseif (($sort_by == "date") && !isset($date)) {
+    $ret = $name . ' (' . $record['Date'] . ')';
+  } elseif (($sort_by == "date") && isset($date)) {
+    $ret = $name . ' (' . $record['Time'] . ')';
+  } else {
+    $ret = $name;
+  }
+  return $ret;
+}
 
-class Flickr {
+function fetch_species_array($sort_by, $date=null) {
+  if (!isset($_db)) {
+    $_db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
+    $_db->busyTimeout(1000);
+  }
+  $where = (isset($date)) ? "WHERE Date == \"$date\"" : "";
+  if ($sort_by === "occurrences") {
+    $statement = $_db->prepare("SELECT Date, Time, File_Name, Com_Name, Sci_Name, COUNT(*) as Count, MAX(Confidence) as MaxConfidence FROM detections $where GROUP BY Sci_Name ORDER BY COUNT(*) DESC");
+  } elseif ($sort_by === "confidence") {
+    $statement = $_db->prepare("SELECT Date, Time, File_Name, Com_Name, Sci_Name, COUNT(*) as Count, MAX(Confidence) as MaxConfidence FROM detections $where GROUP BY Sci_Name ORDER BY MAX(Confidence) DESC");
+  } elseif ($sort_by === "date") {
+    $statement = $_db->prepare("SELECT Date, Time, File_Name, Com_Name, Sci_Name, COUNT(*) as Count, MAX(Confidence) as MaxConfidence FROM detections $where GROUP BY Sci_Name ORDER BY MIN(Date) DESC, Time DESC");
+  } else {
+    $statement = $_db->prepare("SELECT Date, Time, File_Name, Com_Name, Sci_Name, COUNT(*) as Count, MAX(Confidence) as MaxConfidence FROM detections $where GROUP BY Sci_Name ORDER BY Com_Name ASC");
+  }
+  ensure_db_ok($statement);
+  $result = $statement->execute();
+  return $result;
+}
+
+function fetch_best_detection($com_name) {
+  if (!isset($_db)) {
+    $_db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
+    $_db->busyTimeout(1000);
+  }
+  $statement = $_db->prepare("SELECT Com_Name, Sci_Name, COUNT(*), MAX(Confidence), File_Name, Date, Time from detections WHERE Com_Name = \"$com_name\"");
+  ensure_db_ok($statement);
+  $result = $statement->execute();
+  return $result;
+}
+
+function fetch_all_detections($sci_name, $sort_by, $date=null) {
+  if (!isset($_db)) {
+    $_db = new SQLite3('./scripts/birds.db', SQLITE3_OPEN_READONLY);
+    $_db->busyTimeout(1000);
+  }
+  $filter = (isset($date)) ? "AND Date == \"$date\"" : "";
+  if ($sort_by === "occurrences") {
+    $statement = $_db->prepare("SELECT * FROM detections WHERE Sci_Name == \"$sci_name\" $filter ORDER BY COUNT(*) DESC");
+  } elseif ($sort_by === "confidence") {
+    $statement = $_db->prepare("SELECT * FROM detections WHERE Sci_Name == \"$sci_name\" $filter ORDER BY Confidence DESC");
+  } else {
+    $order = (isset($date)) ? "Time DESC" : "Date DESC, Time DESC";
+    $statement = $_db->prepare("SELECT * FROM detections where Sci_Name == \"$sci_name\" $filter ORDER BY $order");
+  }
+  ensure_db_ok($statement);
+  $result = $statement->execute();
+  return $result;
+}
+
+
+class ImageProvider {
+
+  protected $db = null;
+  protected $db_path = null;
+  protected $db_reset = false;
+  protected $context = null;
+
+  public function __construct() {
+    $this->set_db();
+    $opts = ['http' => ['header' => "User-Agent: BirdNET-Pi"]];
+    $this->context = stream_context_create($opts);
+  }
+
+  public function get_image($sci_name) {
+    $image = $this->get_image_from_db($sci_name);
+    if ($image !== false) {
+      $now = new DateTime();
+      $datetime = DateTime::createFromFormat("Y-m-d", $image['date_created']);
+      $interval = $now->diff($datetime);
+      $expire_days = rand(15, 25);
+      if ($interval->days > $expire_days) {
+        $image = false;
+      }
+    }
+    if ($image === false) {
+      $this->get_from_source($sci_name);
+      $image = $this->get_image_from_db($sci_name);
+    }
+    return $image;
+  }
+
+  public function is_reset() {
+    return $this->db_reset;
+  }
+
+  protected function get_json($url) {
+    return json_decode(file_get_contents($url, false, $this->context), true);
+  }
+
+  protected function set_db() {
+    try {
+      if ($this->db === null) {
+        $db = new SQLite3($this->db_path, SQLITE3_OPEN_READWRITE);
+        $this->db = $db;
+      }
+    } catch (Exception $ex) {
+      $this->create_tables();
+    }
+    $this->db->busyTimeout(1000);
+  }
+
+  protected function create_tables() {
+    $tbl_def = "CREATE TABLE images (sci_name VARCHAR(63) NOT NULL PRIMARY KEY, com_en_name VARCHAR(63) NOT NULL, image_url TEXT NOT NULL, title TEXT NOT NULL, id TEXT NOT NULL UNIQUE, author_url TEXT NOT NULL, license_url TEXT NOT NULL, date_created DATE)";
+    $db = new SQLite3($this->db_path);
+    $db->exec($tbl_def);
+    $db->exec('CREATE TABLE source (ID INTEGER PRIMARY KEY, email VARCHAR(63), uid VARCHAR(63), date_created DATE)');
+    $this->db_reset = true;
+    $this->db = $db;
+  }
+
+  protected function delete_image_from_db($sci_name) {
+    $statement0 = $this->db->prepare('DELETE FROM images WHERE sci_name == :sci_name');
+    $statement0->bindValue(':sci_name', $sci_name);
+    $statement0->execute();
+  }
+
+  protected function get_image_from_db($sci_name) {
+    $statement0 = $this->db->prepare('SELECT sci_name, com_en_name, image_url, title, id, author_url, license_url, date_created FROM images WHERE sci_name == :sci_name');
+    $statement0->bindValue(':sci_name', $sci_name);
+    $result = $statement0->execute();
+    $row = $result->fetchArray(SQLITE3_ASSOC);
+    return $row;
+  }
+
+  protected function set_image_in_db($sci_name, $com_en_name, $image_url, $title, $id, $author_url, $license_url) {
+    $statement0 = $this->db->prepare("INSERT OR REPLACE INTO images VALUES (:sci_name, :com_en_name, :image_url, :title, :id, :author_url, :license_url, DATE(\"now\"))");
+    $statement0->bindValue(':sci_name', $sci_name);
+    $statement0->bindValue(':com_en_name', $com_en_name);
+    $statement0->bindValue(':image_url', $image_url);
+    $statement0->bindValue(':title', $title);
+    $statement0->bindValue(':id', $id);
+    $statement0->bindValue(':author_url', $author_url);
+    $statement0->bindValue(':license_url', $license_url);
+    $statement0->execute();
+  }
+}
+
+class Flickr extends ImageProvider {
+
+  protected $db_path = __ROOT__ . '/scripts/flickr.db';
 
   private $flickr_api_key = null;
   private $args = "&license=2%2C3%2C4%2C5%2C6%2C9&orientation=square,portrait";
   private $blacklisted_ids = [];
-  private $db = null;
   private $licenses_urls = [];
-  private $labels_flickr = null;
   private $flickr_email = null;
   private $comnameprefix = "%20bird";
 
   public function __construct() {
-    $tbl_def = "CREATE TABLE images (sci_name VARCHAR(63) NOT NULL PRIMARY KEY, com_en_name VARCHAR(63) NOT NULL, image_url VARCHAR(63) NOT NULL, title VARCHAR(31) NOT NULL, id VARCHAR(31) NOT NULL UNIQUE, author_url VARCHAR(63) NOT NULL, license_url VARCHAR(63) NOT NULL, date_created DATE)";
-    try {
-      $db = new SQLite3(DB, SQLITE3_OPEN_READWRITE);
-    } catch (Exception $ex) {
-      $db = new SQLite3(DB);
-      $db->exec($tbl_def);
-      $db->exec('CREATE TABLE source (ID INTEGER PRIMARY KEY, email VARCHAR(63), uid VARCHAR(63), date_created DATE)');
-    }
-    $db->busyTimeout(1000);
-    $this->db = $db;
+    $this->set_db();
 
     $blacklisted = get_home() . "/BirdNET-Pi/scripts/blacklisted_images.txt";
     if (file_exists($blacklisted)) {
@@ -154,7 +304,8 @@ class Flickr {
     $source = $this->get_uid_from_db();
     if ($source['email'] !== $this->flickr_email) {
       // reset the DB
-      $this->db->exec("DROP TABLE images; " . $tbl_def);
+      $this->db->exec("DROP TABLE images;");
+      $this->create_tables();
       if (!empty($this->flickr_email)) {
         $source = $this->get_uid_from_db();
         if ($source['email'] !== $this->flickr_email) {
@@ -172,57 +323,24 @@ class Flickr {
   }
 
   public function get_image($sci_name) {
-    $image = $this->get_image_from_db($sci_name);
+    $image = parent::get_image_from_db($sci_name);
     if ($image !== false && in_array($image['id'], $this->blacklisted_ids)) {
       $image = false;
       $this->delete_image_from_db($sci_name);
     }
-    if ($image !== false) {
-      $now = new DateTime();
-      $datetime = DateTime::createFromFormat("Y-m-d", $image['date_created']);
-      $interval = $now->diff($datetime);
-      // use the last digit of the id as a semi random number, so not all entries expire at the same time
-      $expire_days = 15 + intval($image['id'][-1]);
-      if ($interval->days > $expire_days) {
-        $image = false;
-      }
-    }
     if ($image === false) {
-      $this->get_from_flickr($sci_name);
+      $this->get_from_source($sci_name);
       $image = $this->get_image_from_db($sci_name);
     }
-    $photos_url = str_replace('/people/', '/photos/', $image['author_url'].'/'.$image['id']);
+    if ($image === false)
+      return false;
+    // external link to photo
+    $photos_url = str_replace('/people/', '/photos/', $image['author_url'] . '/' . $image['id']);
     $image['photos_url'] = $photos_url;
     return $image;
   }
 
-  private function delete_image_from_db($sci_name) {
-    $statement0 = $this->db->prepare('DELETE FROM images WHERE sci_name == :sci_name');
-    $statement0->bindValue(':sci_name', $sci_name);
-    $statement0->execute();
-  }
-
-  private function get_image_from_db($sci_name) {
-    $statement0 = $this->db->prepare('SELECT sci_name, com_en_name, image_url, title, id, author_url, license_url, date_created FROM images WHERE sci_name == :sci_name');
-    $statement0->bindValue(':sci_name', $sci_name);
-    $result = $statement0->execute();
-    $row = $result->fetchArray(SQLITE3_ASSOC);
-    return $row;
-  }
-
-  private function set_image_in_db($sci_name, $com_en_name, $image_url, $title, $id, $author_url, $license_url) {
-    $statement0 = $this->db->prepare("INSERT OR REPLACE INTO images VALUES (:sci_name, :com_en_name, :image_url, :title, :id, :author_url, :license_url, DATE(\"now\"))");
-    $statement0->bindValue(':sci_name', $sci_name);
-    $statement0->bindValue(':com_en_name', $com_en_name);
-    $statement0->bindValue(':image_url', $image_url);
-    $statement0->bindValue(':title', $title);
-    $statement0->bindValue(':id', $id);
-    $statement0->bindValue(':author_url', $author_url);
-    $statement0->bindValue(':license_url', $license_url);
-    $statement0->execute();
-  }
-
-  private function get_from_flickr($sci_name) {
+  private function get_from_source($sci_name) {
     $engname = get_com_en_name($sci_name);
 
     $flickrjson = json_decode(file_get_contents("https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=" . $this->flickr_api_key . "&text=" . str_replace(" ", "%20", $engname) . $this->comnameprefix . "&sort=relevance" . $this->args . "&per_page=5&media=photos&format=json&nojsoncallback=1"), true)["photos"]["photo"];
@@ -236,11 +354,11 @@ class Flickr {
       }
     }
 
-    if ($photo === null) return;
+    if ($photo === null)
+      return;
 
-    $license_url = "https://api.flickr.com/services/rest/?method=flickr.photos.getInfo&api_key=" . $this->flickr_api_key . "&photo_id=" . $photo["id"] . "&format=json&nojsoncallback=1";
-    $license_response = file_get_contents($license_url);
-    $license_id = json_decode($license_response, true)["photo"]["license"];
+    $license_response = $this->get_json("https://api.flickr.com/services/rest/?method=flickr.photos.getInfo&api_key=" . $this->flickr_api_key . "&photo_id=" . $photo["id"] . "&format=json&nojsoncallback=1");
+    $license_id = $license_response["photo"]["license"];
     $license_url = $this->get_license_url($license_id);
 
     $authorlink = "https://flickr.com/people/" . $photo["owner"];
@@ -252,8 +370,8 @@ class Flickr {
   private function get_license_url($id) {
     if (empty($this->licenses_urls)) {
       $licenses_url = "https://api.flickr.com/services/rest/?method=flickr.photos.licenses.getInfo&api_key=" . $this->flickr_api_key . "&format=json&nojsoncallback=1";
-      $licenses_response = file_get_contents($licenses_url);
-      $licenses_data = json_decode($licenses_response, true)["licenses"]["license"];
+      $licenses_response = $this->get_json($licenses_url);
+      $licenses_data = $licenses_response["licenses"]["license"];
       foreach ($licenses_data as $license) {
         $license_id = $license["id"];
         $license_url = $license["url"];
@@ -283,7 +401,54 @@ class Flickr {
     $uid = json_decode(file_get_contents("https://www.flickr.com/services/rest/?method=flickr.people.findByEmail&api_key=" . $this->flickr_api_key . "&find_email=" . $this->flickr_email . "&format=json&nojsoncallback=1"), true)["user"]["nsid"];
     $this->set_uid_in_db($uid);
   }
+}
 
+class Wikipedia extends ImageProvider {
+
+  protected $db_path = __ROOT__ . '/scripts/wikipedia.db';
+
+  protected function get_from_source($sci_name) {
+    $title = str_replace(' ', '_', $sci_name);
+    $data = $this->get_json("https://en.wikipedia.org/api/rest_v1/page/summary/$title");
+    if ($data == false or !isset($data['originalimage']))
+      return;
+
+    $image_name = substr($data['originalimage']['source'], strrpos($data['originalimage']['source'], '/') + 1);
+    $metadata = $this->get_json("https://commons.wikimedia.org/w/api.php?action=query&titles=Image:$image_name&prop=imageinfo&iiprop=extmetadata&format=json");
+    if ($metadata == false or !isset($metadata['query']['pages']))
+      return;
+
+    foreach ($metadata['query']['pages'] as $page) {
+      $details = $page['imageinfo']['0']['extmetadata'];
+      $author = $details['Artist']['value'];
+      $matches = [];
+      if (preg_match('/href="(http\S*)"/', $author, $matches)) {
+        $author_url = $matches[1];
+      } else {
+        $author_url = "https://en.wikipedia.org/wiki/File:$image_name";
+      }
+
+      $license_url = $details['LicenseUrl']['value'];
+    }
+
+    $engname = get_com_en_name($sci_name);
+    $image_url = $data['originalimage']['source'];
+    $title = $data['title'];
+
+    //                     $sci_name, $com_en_name, $image_url, $title, $id, $author_url, $license_url
+    $this->set_image_in_db($sci_name, $engname, $image_url, $title, $sci_name, $author_url, $license_url);
+  }
+
+  public function get_image($sci_name) {
+    $image = parent::get_image($sci_name);
+    if ($image === false)
+      return false;
+    $image_name = substr($image['image_url'], strrpos($image['image_url'], '/') + 1);
+    // external link to photo
+    $photos_url = "https://en.wikipedia.org/wiki/File:$image_name";
+    $image['photos_url'] = $photos_url;
+    return $image;
+  }
 }
 
 function get_info_url($sciname){

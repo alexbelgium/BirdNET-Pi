@@ -59,6 +59,7 @@ if(isset($_GET["latitude"])){
   $apprise_notification_title = $_GET['apprise_notification_title'];
   $apprise_notification_body = $_GET['apprise_notification_body'];
   $minimum_time_limit = $_GET['minimum_time_limit'];
+  $image_provider = $_GET["image_provider"];
   $flickr_api_key = $_GET['flickr_api_key'];
   $flickr_filter_email = $_GET["flickr_filter_email"];
   $language = $_GET["language"];
@@ -142,8 +143,11 @@ if(isset($_GET["latitude"])){
   $contents = preg_replace("/APPRISE_NOTIFY_NEW_SPECIES=.*/", "APPRISE_NOTIFY_NEW_SPECIES=$apprise_notify_new_species", $contents);
   $contents = preg_replace("/APPRISE_NOTIFY_NEW_SPECIES_EACH_DAY=.*/", "APPRISE_NOTIFY_NEW_SPECIES_EACH_DAY=$apprise_notify_new_species_each_day", $contents);
   $contents = preg_replace("/APPRISE_WEEKLY_REPORT=.*/", "APPRISE_WEEKLY_REPORT=$apprise_weekly_report", $contents);
+  $contents = preg_replace("/IMAGE_PROVIDER=.*/", "IMAGE_PROVIDER=$image_provider", $contents);
   $contents = preg_replace("/FLICKR_API_KEY=.*/", "FLICKR_API_KEY=$flickr_api_key", $contents);
-  $contents = preg_replace("/DATABASE_LANG=.*/", "DATABASE_LANG=$language", $contents);
+  if(strlen($language) == 2){
+    $contents = preg_replace("/DATABASE_LANG=.*/", "DATABASE_LANG=$language", $contents);
+  }
   $contents = preg_replace("/INFO_SITE=.*/", "INFO_SITE=$info_site", $contents);
   $contents = preg_replace("/COLOR_SCHEME=.*/", "COLOR_SCHEME=$color_scheme", $contents);  
   $contents = preg_replace("/FLICKR_FILTER_EMAIL=.*/", "FLICKR_FILTER_EMAIL=$flickr_filter_email", $contents);
@@ -220,9 +224,15 @@ if(isset($_GET['sendtest']) && $_GET['sendtest'] == "true") {
   $friendlyfilename = "[Listen here](".$filename.")";
 
   $attach="";
-  $exampleimage = "https://live.staticflickr.com/7430/27545810581_8bfa8289a3_c.jpg";
-  if (strpos($body, '$flickrimage') !== false) {
-      $attach = "--attach ".$exampleimage;
+  if ($config["IMAGE_PROVIDER"] === 'FLICKR') {
+    $image_provider = new Flickr();
+  } else {
+    $image_provider = new Wikipedia();
+  }
+  $exampleimage = htmlspecialchars_decode($image_provider->get_image($sciname)['image_url'], ENT_QUOTES);
+
+  if (strpos($body, '$image') !== false) {
+      $attach = "--attach '$exampleimage'";
   }
   if (strpos($body, '{') === false) {
       $exampleimage = "";
@@ -242,7 +252,7 @@ if(isset($_GET['sendtest']) && $_GET['sendtest'] == "true") {
   $title = str_replace("\$cutoff", $cutoff, $title);
   $title = str_replace("\$sens", $sens, $title);
   $title = str_replace("\$overlap", $overlap, $title);
-  $title = str_replace("\$flickrimage", $exampleimage, $title);
+  $title = str_replace("\$image", $exampleimage, $title);
   $title = str_replace("\$reason", 'Test message', $title);
 
   $body = str_replace("\$sciname", $sciname, $body);
@@ -259,7 +269,7 @@ if(isset($_GET['sendtest']) && $_GET['sendtest'] == "true") {
   $body = str_replace("\$cutoff", $cutoff, $body);
   $body = str_replace("\$sens", $sens, $body);
   $body = str_replace("\$overlap", $overlap, $body);
-  $body = str_replace("\$flickrimage", $exampleimage, $body);
+  $body = str_replace("\$image", $exampleimage, $body);
   $body = str_replace("\$reason", 'Test message', $body);
 
   $temp = tmpfile();
@@ -518,8 +528,8 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       <dd>Sigmoid Sensitivity set in "Advanced Settings"</dd>
       <dt>$overlap</dt>
       <dd>Overlap set in "Advanced Settings"</dd>
-      <dt>$flickrimage</dt>
-      <dd>A preview image of the detected species from Flickr. Set your API key below.</dd>
+      <dt>$image</dt>
+      <dd>An image of the detected species from a photo source, see below.</dd>
       <dt>$reason</dt>
       <dd>The reason a notification was sent</dd>
       </dl>
@@ -551,12 +561,19 @@ https://discordapp.com/api/webhooks/{WebhookID}/{WebhookToken}
       <span id="testsuccessmsg"></span>
       </td></tr></table><br>
       <table class="settingstable"><tr><td>
-      <h2>Bird Photos from Flickr</h2>
+      <h2>Bird Photo Source</h2>
+      <label for="image_provider">Image Provider: </label>
+      <select name="image_provider" class="testbtn">
+        <option value="" <?php if(empty($config['IMAGE_PROVIDER'])) { echo 'selected'; } ?>>None</option>
+        <option value="WIKIPEDIA" <?php if($config['IMAGE_PROVIDER'] == 'WIKIPEDIA') { echo 'selected'; } ?>>Wikipedia</option>
+        <option value="FLICKR" <?php if(empty($config['FLICKR_API_KEY'])) { echo 'disabled'; } else if($config['IMAGE_PROVIDER'] == 'FLICKR') { echo 'selected'; } ?>>Flickr</option>
+      </select>
+      <hr>
+      <p>Set your Flickr API key to enable the display of bird images next to detections. <a target="_blank" href="https://www.flickr.com/services/api/misc.api_keys.html">Get your key here.</a></p>
       <label for="flickr_api_key">Flickr API Key: </label>
       <input name="flickr_api_key" type="text" size="32" value="<?php print($config['FLICKR_API_KEY']);?>"/><br>
       <label for="flickr_filter_email">Only search photos from this Flickr user: </label>
       <input name="flickr_filter_email" type="email" size="24" placeholder="myflickraccount@gmail.com" value="<?php print($config['FLICKR_FILTER_EMAIL']);?>"/><br>
-      <p>Set your Flickr API key to enable the display of bird images next to detections. <a target="_blank" href="https://www.flickr.com/services/api/misc.api_keys.html">Get your free key here.</a></p>
       </td></tr></table><br>
       <table class="settingstable"><tr><td>
       <h2>Localization</h2>
