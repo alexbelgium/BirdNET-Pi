@@ -16,7 +16,7 @@ if [ "${used//%}" -ge "$purge_threshold" ]; then
             ./disk_species_clean.sh "$max_files_species"
             max_files_species=$((max_files_species * 9 / 10))
             if [ "$max_files_species" -lt "$safe_files_species" ]; then
-              echo "ERROR : safeguard initiated at $safe_file_species files remaining to make sure that we do not delete too many files. Is there an issue with the path of $EXTRACTED? Stopping core services."
+              echo "ERROR : safeguard initiated at $safe_files_species files remaining to make sure that we do not delete too many files. Is there an issue with the path of $EXTRACTED? Stopping core services."
               /usr/local/bin/stop_core_services.sh
               break
             fi
@@ -24,6 +24,9 @@ if [ "${used//%}" -ge "$purge_threshold" ]; then
         done;;
 
     keep) echo "Stopping Core Services"
-       /usr/local/bin/stop_core_services.sh;;
+        /usr/local/bin/stop_core_services.sh;;
+
+    *) echo "Unknown FULL_DISK value: $FULL_DISK"
+        exit 1;;
   esac
 fi
