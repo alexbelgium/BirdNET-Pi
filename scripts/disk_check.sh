@@ -10,7 +10,7 @@ if [ "${used//%}" -ge "$purge_threshold" ]; then
   case $FULL_DISK in
     purge) echo "Removing data to stay below threshold"
         max_files_species="1000"
-        safe_files_species="50"
+        safe_files_species="30"
         safe_purge_threshold="$((95 * 9 / 10))"
         while [ "$(df -h "${EXTRACTED}" | tail -n1 | awk '{print $5}' | tr -d '%')" -ge "$safe_purge_threshold" ]; do
             ./disk_species_clean.sh "$max_files_species"
