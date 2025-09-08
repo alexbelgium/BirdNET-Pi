@@ -13,13 +13,13 @@ if [ "${used//%}" -ge "$purge_threshold" ]; then
         safe_files_species="30"
         safe_purge_threshold="$((95 * 9 / 10))"
         while [ "$(df -h "${EXTRACTED}" | tail -n1 | awk '{print $5}' | tr -d '%')" -ge "$safe_purge_threshold" ]; do
-            ./disk_species_clean.sh "$max_files_species"
             max_files_species=$((max_files_species * 9 / 10))
             if [ "$max_files_species" -lt "$safe_files_species" ]; then
               echo "ERROR : safeguard initiated at $safe_files_species files remaining to make sure that we do not delete too many files. Is there an issue with the path of $EXTRACTED? Stopping core services."
               /usr/local/bin/stop_core_services.sh
               break
             fi
+            ./disk_species_clean.sh "$max_files_species"
             sleep 5
         done;;
 
