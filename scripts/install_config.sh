@@ -53,6 +53,12 @@ DATA_MODEL_VERSION=1
 
 BIRDWEATHER_ID=
 
+#------------------  Observation.org manual upload  ------------------#
+## Enable a button on detection listings to prefill an
+## observation.org submission. Audio will be downloaded for
+## manual attachment. Set to 1 to enable.
+UPLOAD_TO_OBSERVATION=0
+
 #-----------------------  Web Interface User Password  ------------------------#
 #____________________The variable below sets the 'birdnet'_____________________#
 #___________________user password for the Live Audio Stream,___________________#
