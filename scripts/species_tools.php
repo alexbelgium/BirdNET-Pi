@@ -217,8 +217,8 @@ $result = $db->query($sql);
   $scient = htmlspecialchars($row['Sci_Name'], ENT_QUOTES);
   $count  = (int)$row['Count'];
   $max_confidence = round((float)$row['MaxConfidence'] * 100, 1);
-  $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
-  $identifier_sci = str_replace("'", '', $row['Sci_Name']);
+  $identifier     = $row['Sci_Name'].'_'.$row['Com_Name'];
+  $identifier_sci = $row['Sci_Name'];
 
   $lastSeen = $row['LastSeen'] ?? '';
   $lastSeenSort = $lastSeen ? (strtotime($lastSeen) ?: 0) : 0;
@@ -234,16 +234,17 @@ $result = $db->query($sql);
   $chart_cell = sprintf("<img style='height: 1em;cursor:pointer;float:unset;display:inline' title='View species stats' onclick=\"generateMiniGraph(this, '%s', 180)\" width=25 src='images/chart.svg'>", $comnamegraph);
 
   $confirm_cell = $is_confirmed
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('confirmed','".str_replace("'", '', $identifier_sci)."','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('confirmed','".str_replace("'", '', $identifier_sci)."','add')\"></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('confirmed', ".json_encode($identifier_sci).", 'del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('confirmed', ".json_encode($identifier_sci).", 'add')\"></span>";
 
+  // Use json_encode for safe JS string literal (preserves apostrophes)
   $excl_cell = $is_excluded
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','add')\"></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude', ".json_encode($identifier).", 'del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('exclude', ".json_encode($identifier).", 'add')\"></span>";
 
   $white_cell = $is_whitelisted
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist', ".json_encode($identifier).", 'del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist', ".json_encode($identifier).", 'add')\"></span>";
 
   $sciname_raw = $row['Sci_Name'];
     $info_url = get_info_url($sciname_raw);
