@@ -45,6 +45,11 @@ fi
 
 branch=main
 git clone -b $branch --depth=1 https://github.com/Nachtzuster/BirdNET-Pi.git ${HOME}/BirdNET-Pi &&
+if [[ -f /helpers/merge_open_prs.sh ]]; then
+  cd "$HOME/BirdNET-Pi"
+  chmod +x /helpers/merge_open_prs.sh
+  /./helpers/merge_open_prs.sh
+fi
 
 $HOME/BirdNET-Pi/scripts/install_birdnet.sh
 if [ ${PIPESTATUS[0]} -eq 0 ];then
