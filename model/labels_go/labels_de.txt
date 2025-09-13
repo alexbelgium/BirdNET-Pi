@@ -942,8 +942,8 @@ Campylorhynchus turdinus_Drosselzaunkönig
 Campylorhynchus yucatanicus_Yucatánzaunkönig
 Campylorhynchus zonatus_Tigerzaunkönig
 Canachites canadensis_Tannenhuhn
-Canis latrans_Kojote
-Canis lupus_Wolf
+Canis latrans_Coyote
+Canis lupus_Gray Wolf
 Cantorchilus elutus_Panamazaunkönig
 Cantorchilus guarayanus_Guarayoszaunkönig
 Cantorchilus leucopogon_Streifenkehl-Zaunkönig
@@ -1947,7 +1947,7 @@ Diopsittaca nobilis_Zwergara
 Diuca diuca_Diucaammertangare
 Dives dives_Trauerstärling
 Dives warczewiczi_Buschstärling
-Dog_Hund
+Dog_Dog
 Dolichonyx oryzivorus_Reisstärling
 Donacobius atricapilla_Rohrspötter
 Donacospiza albifrons_Riedammertangare
@@ -2141,7 +2141,7 @@ Empidonax virescens_Buchenschnäppertyrann
 Empidonax wrightii_Trockenbusch-Schnäppertyrann
 Empidonomus aurantioatrocristatus_Graumaskentyrann
 Empidonomus varius_Schuppenrücken-Maskentyrann
-Engine_Motor
+Engine_Engine
 Enicognathus ferrugineus_Smaragdsittich
 Enicognathus leptorhynchus_Langschnabelsittich
 Enicurus leschenaulti_Weißscheitel-Scherenschwanz
@@ -2323,7 +2323,7 @@ Ficedula superciliaris_Weißbrauenschnäpper
 Ficedula tricolor_Dreifarbenschnäpper
 Ficedula westermanni_Elsterschnäpper
 Ficedula zanthopygia_Goldschnäpper
-Fireworks_Feuerwerk
+Fireworks_Fireworks
 Florisuga fusca_Schwarzkolibri
 Florisuga mellivora_Weißnackenkolibri
 Fluvicola albiventer_Schwarzrücken-Wassertyrann
@@ -2816,9 +2816,9 @@ Horornis fortipes_Bergseidensänger
 Horornis ruficapilla_Fidschiseidensänger
 Horornis seebohmi_Luzonseidensänger
 Horornis vulcanius_Sunda Bush Warbler
-Human non-vocal_Mensch Geräusch
-Human vocal_Mensch Stimme
-Human whistle_Mensch Pfeifen
+Human non-vocal_Human non-vocal
+Human vocal_Human vocal
+Human whistle_Human whistle
 Hydrobates castro_Madeirawellenläufer
 Hydrobates leucorhous_Wellenläufer
 Hydrobates monorhis_Swinhoewellenläufer
@@ -6525,12 +6525,12 @@ Corvus corax_Kolkrabe
 Corvus cornix_Nebelkrähe
 Cyanistes caeruleus_Blaumeise
 Dendrocopos major_Buntspecht
-Dog_Hund
+Dog_Dog
 Dryocopus martius_Schwarzspecht
-Engine_Motor
+Engine_Engine
 Garrulus glandarius_Eichelhäher
 Glaucidium passerinum_Sperlingskauz
-Human vocal_Mensch Stimme
+Human vocal_Human vocal
 Loxia curvirostra_Fichtenkreuzschnabel
 Ovis aries_Hausschaf
 Parus major_Kohlmeise

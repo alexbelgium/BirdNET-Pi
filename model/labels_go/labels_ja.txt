@@ -6525,14 +6525,14 @@ Corvus corax_ワタリガラス
 Corvus cornix_ズキンガラス
 Cyanistes caeruleus_アオガラ
 Dendrocopos major_アカゲラ
-Dog_Dog
+Dog_犬
 Dryocopus martius_クマゲラ
 Engine_Engine
 Garrulus glandarius_カケス
 Glaucidium passerinum_スズメフクロウ
 Human vocal_Human vocal
 Loxia curvirostra_イスカ
-Ovis aries_Sheep
+Ovis aries_羊
 Parus major_ヨーロッパシジュウカラ
 Picus canus_ヤマゲラ
 Pyrrhula pyrrhula_ウソ

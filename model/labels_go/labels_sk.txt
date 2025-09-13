@@ -6532,7 +6532,7 @@ Garrulus glandarius_sojka obyčajná
 Glaucidium passerinum_kuvičok vrabčí
 Human vocal_Human vocal
 Loxia curvirostra_krivonos smrekový
-Ovis aries_Sheep
+Ovis aries_ovčí
 Parus major_sýkorka veľká
 Picus canus_žlna sivá
 Pyrrhula pyrrhula_hýľ obyčajný
