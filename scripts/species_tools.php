@@ -34,17 +34,10 @@ if (isset($_GET['diskcounts'])) {
 $flags = isset($_GET['delete']) ? SQLITE3_OPEN_READWRITE : SQLITE3_OPEN_READONLY;
 $db   = new SQLite3(__DIR__ . '/birds.db', $flags);
 $db->busyTimeout(1000);
-$db->exec("
-  PRAGMA journal_mode=WAL;       -- safe read concurrency
-  PRAGMA synchronous=NORMAL;     -- cheaper fsyncs (read-mostly)
-  PRAGMA temp_store=MEMORY;      -- temp data stays in RAM
-  PRAGMA cache_size=-80000;     -- ~80MB page cache (tune to your RAM)
-  PRAGMA mmap_size=268435456;    -- 256MB mmap (set 0 if kernel disallows)
-");
 
 /* Paths / lists */
 $base_symlink   = $home . '/BirdSongs/Extracted/By_Date';
-$base           = realpath($base_symlink); // safety checks
+$base           = realpath($base_symlink);
 
 $confirm_file   = __DIR__ . '/confirmed_species_list.txt';
 $exclude_file   = __DIR__ . '/exclude_species_list.txt';
@@ -86,6 +79,7 @@ function collect_species_targets(SQLite3 $db, string $species, string $home, $ba
   $count = 0; $files = []; $dirs = []; $sci = null;
   while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
     $count++; if ($sci === null) $sci = $row['Sci_Name'];
+    // Directory names on disk still use sanitized form (spaces -> _, apostrophes removed) for legacy paths
     $dir = str_replace([' ', "'"], ['_', ''], $row['Com_Name']);
     $candidates = [
       join_path($home, 'BirdSongs/Extracted/By_Date',         $row['Date'], $dir, $row['File_Name']),
@@ -106,6 +100,7 @@ function collect_species_targets(SQLite3 $db, string $species, string $home, $ba
 /* ---------- toggle exclude/whitelist/confirmed ---------- */
 if (isset($_GET['toggle'], $_GET['species'], $_GET['action'])) {
   $list    = $_GET['toggle'];
+  // DECODE any HTML entities back to literal characters, including apostrophes
   $species = htmlspecialchars_decode($_GET['species'], ENT_QUOTES);
 
   if     ($list === 'exclude')   { $file = $exclude_file; }
@@ -157,8 +152,9 @@ if (isset($_GET['delete'])) {
   $del->execute();
   $lines_deleted = $db->changes();
 
+  // Also remove from confirmed list if its SCI name entry exists (KEEP apostrophes)
   if ($info['sci'] !== null && file_exists($confirm_file)) {
-    $identifier = str_replace("'", '', $info['sci']);
+    $identifier = $info['sci'];
     $lines = array_values(array_filter($confirmed_species, fn($l) => $l !== $identifier));
     file_put_contents($confirm_file, implode("\n", $lines) . (empty($lines) ? "" : "\n"));
   }
@@ -217,8 +213,9 @@ $result = $db->query($sql);
   $scient = htmlspecialchars($row['Sci_Name'], ENT_QUOTES);
   $count  = (int)$row['Count'];
   $max_confidence = round((float)$row['MaxConfidence'] * 100, 1);
-  $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
-  $identifier_sci = str_replace("'", '', $row['Sci_Name']);
+
+  $identifier     = $row['Sci_Name'].'_'.$row['Com_Name'];
+  $identifier_sci = $row['Sci_Name'];
 
   $lastSeen = $row['LastSeen'] ?? '';
   $lastSeenSort = $lastSeen ? (strtotime($lastSeen) ?: 0) : 0;
@@ -230,31 +227,39 @@ $result = $db->query($sql);
   $is_excluded    = in_array($identifier, $excluded_species, true);
   $is_whitelisted = in_array($identifier, $whitelisted_species, true);
 
-  $comnamegraph = str_replace("'", "\'", $row['Com_Name']);
-  $chart_cell = sprintf("<img style='height: 1em;cursor:pointer;float:unset;display:inline' title='View species stats' onclick=\"generateMiniGraph(this, '%s', 180)\" width=25 src='images/chart.svg'>", $comnamegraph);
+  $comnamegraph = str_replace("'", "\'", $row['Com_Name']); // fine for small chart param
+
+  // Safely embed species strings (with apostrophes) into JS using json_encode (a JS string literal)
+  $js_identifier_sci = json_encode($identifier_sci, JSON_UNESCAPED_UNICODE);
+  $js_identifier     = json_encode($identifier,     JSON_UNESCAPED_UNICODE);
+
+  $chart_cell = sprintf(
+      "<img style='height: 1em;cursor:pointer;float:unset;display:inline' title='View species stats' onclick=\"generateMiniGraph(this, '%s', 180)\" width=25 src='images/chart.svg'>",
+      $comnamegraph
+  );
 
   $confirm_cell = $is_confirmed
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('confirmed','".str_replace("'", '', $identifier_sci)."','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('confirmed','".str_replace("'", '', $identifier_sci)."','add')\"></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('confirmed', $js_identifier_sci, 'del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('confirmed', $js_identifier_sci, 'add')\"></span>";
 
   $excl_cell = $is_excluded
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','add')\"></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude', $js_identifier, 'del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('exclude', $js_identifier, 'add')\"></span>";
 
   $white_cell = $is_whitelisted
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist', $js_identifier, 'del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist', $js_identifier, 'add')\"></span>";
 
   $sciname_raw = $row['Sci_Name'];
-    $info_url = get_info_url($sciname_raw);
-    if (!empty($info_url)) {
-        $url = $info_url['URL'] ?? $info_url;
-        $url_esc = htmlspecialchars($url, ENT_QUOTES);
-        $scient_link = "<a href=\"{$url_esc}\" target=\"_blank\"><i>{$scient}</i></a>";
-    } else {
-        $scient_link = "<i>{$scient}</i>";
-    }
-    
+  $info_url = get_info_url($sciname_raw);
+  if (!empty($info_url)) {
+      $url = $info_url['URL'] ?? $info_url;
+      $url_esc = htmlspecialchars($url, ENT_QUOTES);
+      $scient_link = "<a href=\"{$url_esc}\" target=\"_blank\"><i>{$scient}</i></a>";
+  } else {
+      $scient_link = "<i>{$scient}</i>";
+  }
+
   echo "<tr data-comname=\"{$common}\">"
      . "<td>{$common_link}</td>"
      . "<td>{$scient_link}</td>"
@@ -463,7 +468,9 @@ window.addEventListener('scroll', function() {
 
 /* ---------- toggles / delete ---------- */
 function toggleSpecies(list, species, action) {
-  get(scriptsBase + 'species_tools.php?toggle=' + list + '&species=' + encodeURIComponent(species) + '&action=' + action)
+  // Encode for transport; server will htmlspecialchars_decode(…, ENT_QUOTES)
+  const encoded = encodeURIComponent(species);
+  get(scriptsBase + 'species_tools.php?toggle=' + list + '&species=' + encoded + '&action=' + action)
     .then(t => { if (t.trim() === 'OK') location.reload(); });
 }
 function deleteSpecies(species) {
