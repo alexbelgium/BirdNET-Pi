@@ -34,17 +34,10 @@ if (isset($_GET['diskcounts'])) {
 $flags = isset($_GET['delete']) ? SQLITE3_OPEN_READWRITE : SQLITE3_OPEN_READONLY;
 $db   = new SQLite3(__DIR__ . '/birds.db', $flags);
 $db->busyTimeout(1000);
-$db->exec("
-  PRAGMA journal_mode=WAL;       -- safe read concurrency
-  PRAGMA synchronous=NORMAL;     -- cheaper fsyncs (read-mostly)
-  PRAGMA temp_store=MEMORY;      -- temp data stays in RAM
-  PRAGMA cache_size=-80000;     -- ~80MB page cache (tune to your RAM)
-  PRAGMA mmap_size=268435456;    -- 256MB mmap (set 0 if kernel disallows)
-");
 
 /* Paths / lists */
 $base_symlink   = $home . '/BirdSongs/Extracted/By_Date';
-$base           = realpath($base_symlink); // safety checks
+$base           = realpath($base_symlink);
 
 $confirm_file   = __DIR__ . '/confirmed_species_list.txt';
 $exclude_file   = __DIR__ . '/exclude_species_list.txt';
