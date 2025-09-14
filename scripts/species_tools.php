@@ -151,7 +151,7 @@ if (isset($_GET['delete'])) {
   $lines_deleted = $db->changes();
 
   if ($info['sci'] !== null && file_exists($confirm_file)) {
-    $identifier = str_replace("'", '', $info['sci']);
+    $identifier = $info['sci'];
     $lines = array_values(array_filter($confirmed_species, fn($l) => $l !== $identifier));
     file_put_contents($confirm_file, implode("\n", $lines) . (empty($lines) ? "" : "\n"));
   }
@@ -210,8 +210,8 @@ $result = $db->query($sql);
   $scient = htmlspecialchars($row['Sci_Name'], ENT_QUOTES);
   $count  = (int)$row['Count'];
   $max_confidence = round((float)$row['MaxConfidence'] * 100, 1);
-  $identifier = str_replace("'", '', $row['Sci_Name'].'_'.$row['Com_Name']);
-  $identifier_sci = str_replace("'", '', $row['Sci_Name']);
+  $identifier = $row['Sci_Name'].'_'.$row['Com_Name'];
+  $identifier_sci = $row['Sci_Name'];
 
   $lastSeen = $row['LastSeen'] ?? '';
   $lastSeenSort = $lastSeen ? (strtotime($lastSeen) ?: 0) : 0;
@@ -226,17 +226,20 @@ $result = $db->query($sql);
   $comnamegraph = str_replace("'", "\'", $row['Com_Name']);
   $chart_cell = sprintf("<img style='height: 1em;cursor:pointer;float:unset;display:inline' title='View species stats' onclick=\"generateMiniGraph(this, '%s', 180)\" width=25 src='images/chart.svg'>", $comnamegraph);
 
+  $identifier_js = addslashes($identifier);
+  $identifier_sci_js = addslashes($identifier_sci);
+
   $confirm_cell = $is_confirmed
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('confirmed','".str_replace("'", '', $identifier_sci)."','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('confirmed','".str_replace("'", '', $identifier_sci)."','add')\"></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('confirmed','{$identifier_sci_js}','del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('confirmed','{$identifier_sci_js}','add')\"></span>";
 
   $excl_cell = $is_excluded
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','".str_replace("'", '', $identifier)."','add')\"></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','{$identifier_js}','del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','{$identifier_js}','add')\"></span>";
 
   $white_cell = $is_whitelisted
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','".str_replace("'", '', $identifier)."','add')\"></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','{$identifier_js}','del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','{$identifier_js}','add')\"></span>";
 
   $sciname_raw = $row['Sci_Name'];
     $info_url = get_info_url($sciname_raw);
@@ -317,7 +320,7 @@ function addDiskCounts() {
     th.textContent = 'Files on Disk';
     headerRow.insertBefore(th, deleteHeader);
 
-    const colIndex = headerRow.cells.length - 2; // new column index
+    const colIndex = headerRow.cells.length - 2;
     th.addEventListener('click', () => sortTable(colIndex));
 
     const decoder = document.createElement('textarea');
@@ -329,7 +332,7 @@ function addDiskCounts() {
       const td = document.createElement('td');
       td.textContent = count;
       td.dataset.sort = count;
-      tr.insertBefore(td, tr.lastElementChild); // before Delete cell
+      tr.insertBefore(td, tr.lastElementChild);
     });
   }).catch(() => {
     console.warn('Disk counts load failed.');
