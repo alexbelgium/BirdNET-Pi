@@ -3,8 +3,7 @@
 # KEEP ONLY THE NUMBER OF FILES PER SPECIES DEFINED IN THE OPTIONS
 
 source /etc/birdnet/birdnet.conf
-base_dir="$HOME/BirdSongs/Extracted/By_Date"
-base_dir="$(realpath -e "$base_dir")"
+base_dir="$(realpath -e "$HOME/BirdSongs/Extracted/By_Date")"
 max_files_species="${MAX_FILES_SPECIES:-1000}"
 cd "$base_dir" || true
 
