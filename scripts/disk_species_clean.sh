@@ -4,6 +4,7 @@
 
 source /etc/birdnet/birdnet.conf
 base_dir="$HOME/BirdSongs/Extracted/By_Date"
+base_dir="$(realpath -e "$base_dir")"
 max_files_species="${MAX_FILES_SPECIES:-1000}"
 cd "$base_dir" || true
 
