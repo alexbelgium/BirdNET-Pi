@@ -51,7 +51,7 @@ def spectrogram(in_file, title, comment, raw=0):
     args = ['sox', '-V1', f'{in_file}', '-n', 'remix', '1', 'rate', '24k', 'spectrogram',
             '-t', '', '-c', '', '-o', tmp_file]
     args += ['-r'] if int(raw) else []
-    
+
     result = subprocess.run(args, check=True, capture_output=True)
     ret = result.stdout.decode('utf-8')
     err = result.stderr.decode('utf-8')
