@@ -189,6 +189,27 @@ function deleteDetection(filename,copylink=false) {
   }
 }
 
+function uploadObservation(file, comname, sciname, date, time, lat, lon) {
+  const params = new URLSearchParams({
+    species: sciname,
+    date: date,
+    time: time,
+    lat: lat,
+    lon: lon,
+    method: 'heard'
+  });
+  const url = 'https://observation.org/observation/new?' + params.toString();
+
+  const link = document.createElement('a');
+  link.href = file;
+  link.download = file.split('/').pop();
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  window.open(url, '_blank');
+}
+
 function toggleLock(filename, type, elem) {
   const xhttp = new XMLHttpRequest();
   xhttp.onload = function() {
@@ -599,17 +620,25 @@ echo "<table>
         $shiftAction = "shift";
       }
 
-      echo "<tr>
-  <td class=\"relative\"> 
+      echo "<tr><td class=\"relative\">";
+      if($config['UPLOAD_TO_OBSERVATION'] == 1){
+        echo "<img style='cursor:pointer;right:160px' src='images/upload.svg' onclick='uploadObservation(" .
+          json_encode($filename) . ", " .
+          json_encode($results['Com_Name']) . ", " .
+          json_encode($sci_name) . ", " .
+          json_encode($date) . ", " .
+          json_encode($time) . ", " .
+          json_encode($results['Lat']) . ", " .
+          json_encode($results['Lon']) .
+        ")' class=\"copyimage\" width=25 title='Upload to observation.org'>";
+      }
+      echo "<img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\\\"".$filename_formatted."\\\")' class=\"copyimage\" width=25 title='Delete Detection'>";
+      echo "<img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\\\"".$filename_formatted."\\\")' class=\"copyimage\" width=25 title='Change Detection'>";
+      echo "<img style='cursor:pointer;right:45px' onclick='toggleLock(\\\"".$filename_formatted."\\\",\\\"".$type."\\\", this)' class=\"copyimage\" width=25 title=\\\"".$title."\\\" src=\\\"".$imageicon."\\\">";
+      echo "<img style='cursor:pointer' onclick='toggleShiftFreq(\\\"".$filename_formatted."\\\",\\\"".$shiftAction."\\\", this)' class=\"copyimage\" width=25 title=\\\"".$shiftTitle."\\\" src=\\\"".$shiftImageIcon."\\\"> $date $time<br>$values<br>";
 
-<img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Delete Detection'> 
-<img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
-<img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
-<img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\"> $date $time<br>$values<br>
-
-        ".$imageelem."
-        </td>
-        </tr>";
+        echo $imageelem;
+        echo "</td></tr>";
 
   }if($iter == 0){ echo "<tr><td><b>No recordings were found.</b><br><br><span style='font-size:medium'>They may have been deleted to make space for new recordings. You can prevent this from happening in the future by clicking the <img src='images/unlock.svg' style='width:20px'> icon in the top right of a recording.<br>You can also modify this behavior globally under \"Full Disk Behavior\" <a href='views.php?view=Advanced'>here.</a></span></td></tr>";}echo "</table>";}
 
@@ -691,16 +720,25 @@ echo "<table>
         $shiftAction = "shift";
       }
 
-          echo "<tr>
-      <td class=\"relative\"> 
+            echo "<tr><td class=\"relative\">";
+            if($config['UPLOAD_TO_OBSERVATION'] == 1){
+              echo "<img style='cursor:pointer;right:160px' src='images/upload.svg' onclick='uploadObservation(" .
+                json_encode($filename) . ", " .
+                json_encode($results['Com_Name']) . ", " .
+                json_encode($sci_name) . ", " .
+                json_encode($date) . ", " .
+                json_encode($time) . ", " .
+                json_encode($results['Lat']) . ", " .
+                json_encode($results['Lon']) .
+              ")' class=\"copyimage\" width=25 title='Upload to observation.org'>";
+            }
+            echo "<img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\\\"".$filename_formatted."\\\", true)' class=\"copyimage\" width=25 title='Delete Detection'>";
+            echo "<img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\\\"".$filename_formatted."\\\")' class=\"copyimage\" width=25 title='Change Detection'>";
+            echo "<img style='cursor:pointer;right:45px' onclick='toggleLock(\\\"".$filename_formatted."\\\",\\\"".$type."\\\", this)' class=\"copyimage\" width=25 title=\\\"".$title."\\\" src=\\\"".$imageicon."\\\">";
+            echo "<img style='cursor:pointer' onclick='toggleShiftFreq(\\\"".$filename_formatted."\\\",\\\"".$shiftAction."\\\", this)' class=\"copyimage\" width=25 title=\\\"".$shiftTitle."\\\" src=\\\"".$shiftImageIcon."\\\">$date $time<br>$values<br>";
 
-<img style='cursor:pointer;right:120px' src='images/delete.svg' onclick='deleteDetection(\"".$filename_formatted."\", true)' class=\"copyimage\" width=25 title='Delete Detection'> 
-<img style='cursor:pointer;right:85px' src='images/bird.svg' onclick='changeDetection(\"".$filename_formatted."\")' class=\"copyimage\" width=25 title='Change Detection'> 
-<img style='cursor:pointer;right:45px' onclick='toggleLock(\"".$filename_formatted."\",\"".$type."\", this)' class=\"copyimage\" width=25 title=\"".$title."\" src=\"".$imageicon."\"> 
-<img style='cursor:pointer' onclick='toggleShiftFreq(\"".$filename_formatted."\",\"".$shiftAction."\", this)' class=\"copyimage\" width=25 title=\"".$shiftTitle."\" src=\"".$shiftImageIcon."\">$date $time<br>$values<br>
-
-<div class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'></div>
-</td></tr>";
+            echo "<div class='custom-audio-player' data-audio-src='$filename' data-image-src='$filename_png'></div>";
+            echo "</td></tr>";
 
       }echo "</table>";}
       echo "</div>";
