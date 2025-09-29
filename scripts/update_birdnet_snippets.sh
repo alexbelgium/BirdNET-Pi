@@ -92,6 +92,12 @@ SRC='^APPRISE_NOTIFICATION_BODY="A \$comname \(\$sciname\)  was just detected wi
 DST='APPRISE_NOTIFICATION_BODY="A \$comname (\$sciname)  was just detected with a confidence of \$confidence (\$reason)"'
 sed -i --follow-symlinks -E "s/$SRC/$DST/" /etc/birdnet/birdnet.conf
 
+if ! [ -f $HOME/BirdNET-Pi/body.txt ];then
+  grep -E '^APPRISE_NOTIFICATION_BODY=".*"' /etc/birdnet/birdnet.conf | cut -d '"' -f 2 | sudo_with_user tee "$HOME/BirdNET-Pi/body.txt"
+  chmod g+w "$HOME/BirdNET-Pi/body.txt"
+  sed -i --follow-symlinks -E 's/^APPRISE_NOTIFICATION_BODY=/#APPRISE_NOTIFICATION_BODY=/' /etc/birdnet/birdnet.conf
+fi
+
 if ! grep -E '^INFO_SITE=' /etc/birdnet/birdnet.conf &>/dev/null;then
   echo "INFO_SITE=\"ALLABOUTBIRDS\"" >> /etc/birdnet/birdnet.conf
 fi
@@ -112,6 +118,10 @@ if ! grep -E '^CONFIRM_SPECIES=' /etc/birdnet/birdnet.conf &>/dev/null;then
   echo "## CONFIRM_SPECIES adds an icon next to species in the Recordings tab to keep track which species are manually confirmed" >> /etc/birdnet/birdnet.conf
   echo "## It generates a confirmed_species_list.txt file, and allows to better visualize species that could be false positives" >> /etc/birdnet/birdnet.conf
   echo "CONFIRM_SPECIES=0" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^AUTOMATIC_UPDATE=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo "AUTOMATIC_UPDATE=0" >> /etc/birdnet/birdnet.conf
 fi
 
 if ! grep -E '^RARE_SPECIES_THRESHOLD=' /etc/birdnet/birdnet.conf &>/dev/null;then
@@ -173,7 +183,7 @@ if ! grep 'daemon' $HOME/BirdNET-Pi/templates/chart_viewer.service &>/dev/null;t
   systemctl daemon-reload && restart_services.sh
 fi
 
-if grep -q 'birdnet_server.service' "$HOME/BirdNET-Pi/templates/birdnet_analysis.service"&>/dev/null; then
+if grep -q 'birdnet_server.service' "$HOME/BirdNET-Pi/templates/birdnet_analysis.service" &>/dev/null; then
     sed -i '/After=.*/d' "$HOME/BirdNET-Pi/templates/birdnet_analysis.service"
     sed -i '/Requires=.*/d' "$HOME/BirdNET-Pi/templates/birdnet_analysis.service"
     sed -i '/RuntimeMaxSec=.*/d' "$HOME/BirdNET-Pi/templates/birdnet_analysis.service"
@@ -187,18 +197,37 @@ if ! [ -f "$HOME/BirdNET-Pi/templates/$TMP_MOUNT" ]; then
    chown $USER:$USER "$HOME/BirdNET-Pi/templates/$TMP_MOUNT"
 fi
 
-if grep -q -e '-P log' $HOME/BirdNET-Pi/templates/birdnet_log.service ;then
+if grep -q -e '-P log' $HOME/BirdNET-Pi/templates/birdnet_log.service ; then
   sed -i "s/-P log/--path log/" ~/BirdNET-Pi/templates/birdnet_log.service
   systemctl daemon-reload && restart_services.sh
 fi
 
-if grep -q -e '-P terminal' $HOME/BirdNET-Pi/templates/web_terminal.service ;then
+if grep -q -e '-P terminal' $HOME/BirdNET-Pi/templates/web_terminal.service ; then
   sed -i "s/-P terminal/--path terminal/" ~/BirdNET-Pi/templates/web_terminal.service
+  systemctl daemon-reload && restart_services.sh
+fi
+
+if grep -q -e 'Environment=XDG_RUNTIME_DIR=/run/user/' $HOME/BirdNET-Pi/templates/birdnet_recording.service; then
+  sed -i '/^Environment=XDG_RUNTIME_DIR=\/run\/user\/[0-9]\+/d' $HOME/BirdNET-Pi/templates/birdnet_recording.service
+  systemctl daemon-reload && restart_services.sh
+fi
+
+if grep -q -e 'Environment=XDG_RUNTIME_DIR=/run/user/' $HOME/BirdNET-Pi/templates/custom_recording.service; then
+  sed -i '/^Environment=XDG_RUNTIME_DIR=\/run\/user\/[0-9]\+/d' $HOME/BirdNET-Pi/templates/custom_recording.service
+  systemctl daemon-reload && restart_services.sh
+fi
+
+if grep -q -e 'Environment=XDG_RUNTIME_DIR=/run/user/' $HOME/BirdNET-Pi/templates/livestream.service; then
+  sed -i '/^Environment=XDG_RUNTIME_DIR=\/run\/user\/[0-9]\+/d' $HOME/BirdNET-Pi/templates/livestream.service
   systemctl daemon-reload && restart_services.sh
 fi
 
 if grep -q 'php7.4-' /etc/caddy/Caddyfile &>/dev/null; then
   sed -i 's/php7.4-/php-/' /etc/caddy/Caddyfile
+fi
+
+if grep -q '^HIDE_MOUNTS.*\/run\/user' $HOME/BirdNET-Pi/templates/phpsysinfo.ini; then
+  sed -i 's#/run/user/[0-9]\+#/run/user/[0-9]+#g' $HOME/BirdNET-Pi/templates/phpsysinfo.ini
 fi
 
 if ! [ -L /etc/avahi/services/http.service ];then
@@ -216,10 +245,11 @@ if [ -L /usr/local/bin/birdnet_analysis.sh ];then
 fi
 
 # Clean state and update cron if all scripts are not installed
-if [ "$(grep -o "#birdnet" /etc/crontab | wc -l)" -lt 5 ]; then
+if [ "$(grep -o "#birdnet" /etc/crontab | wc -l)" -lt 6 ]; then
   sudo sed -i '/birdnet/,+1d' /etc/crontab
   sed "s/\$USER/$USER/g" "$HOME"/BirdNET-Pi/templates/cleanup.cron >> /etc/crontab
   sed "s/\$USER/$USER/g" "$HOME"/BirdNET-Pi/templates/weekly_report.cron >> /etc/crontab
+  sed "s/\$USER/$USER/g" "$HOME"/BirdNET-Pi/templates/automatic_update.cron >> /etc/crontab
 fi
 
 set +x

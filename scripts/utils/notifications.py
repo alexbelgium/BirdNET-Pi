@@ -9,25 +9,28 @@ import time as timeim
 
 userDir = os.path.expanduser('~')
 APPRISE_CONFIG = userDir + '/BirdNET-Pi/apprise.txt'
+APPRISE_BODY = userDir + '/BirdNET-Pi/body.txt'
 DB_PATH = userDir + '/BirdNET-Pi/scripts/birds.db'
 
-flickr_images = {}
+apobj = None
+images = {}
 species_last_notified = {}
 
 
-asset = apprise.AppriseAsset(
-    plugin_paths=[
-        userDir + "/.apprise/plugins",
-        userDir + "/.config/apprise/plugins",
-    ]
-)
-apobj = apprise.Apprise(asset=asset)
-config = apprise.AppriseConfig()
-config.add(APPRISE_CONFIG)
-apobj.add(config)
-
-
 def notify(body, title, attached=""):
+    global apobj
+    if apobj is None:
+        asset = apprise.AppriseAsset(
+            plugin_paths=[
+                userDir + "/.apprise/plugins",
+                userDir + "/.config/apprise/plugins",
+            ]
+        )
+        apobj = apprise.Apprise(asset=asset)
+        config = apprise.AppriseConfig()
+        config.add(APPRISE_CONFIG)
+        apobj.add(config)
+
     if attached != "":
         apobj.notify(
             body=body,
@@ -47,19 +50,20 @@ def sendAppriseNotifications(species, confidence, confidencepct, path,
     def render_template(template, reason=""):
         ret = template.replace("$sciname", sciName) \
             .replace("$comname", comName) \
-            .replace("$confidencepct", confidencepct) \
-            .replace("$confidence", confidence) \
+            .replace("$confidencepct", str(confidencepct)) \
+            .replace("$confidence", str(confidence)) \
             .replace("$listenurl", listenurl) \
             .replace("$friendlyurl", friendlyurl) \
-            .replace("$date", date) \
-            .replace("$time", time) \
-            .replace("$week", week) \
-            .replace("$latitude", latitude) \
-            .replace("$longitude", longitude) \
-            .replace("$cutoff", cutoff) \
-            .replace("$sens", sens) \
+            .replace("$date", str(date)) \
+            .replace("$time", str(time)) \
+            .replace("$week", str(week)) \
+            .replace("$latitude", str(latitude)) \
+            .replace("$longitude", str(longitude)) \
+            .replace("$cutoff", str(cutoff)) \
+            .replace("$sens", str(sens)) \
             .replace("$flickrimage", image_url if "{" in body else "") \
-            .replace("$overlap", overlap) \
+            .replace("$image", image_url if "{" in body else "") \
+            .replace("$overlap", str(overlap)) \
             .replace("$reason", reason)
         return ret
     # print(sendAppriseNotifications)
@@ -67,7 +71,9 @@ def sendAppriseNotifications(species, confidence, confidencepct, path,
     if os.path.exists(APPRISE_CONFIG) and os.path.getsize(APPRISE_CONFIG) > 0:
 
         title = html.unescape(settings_dict.get('APPRISE_NOTIFICATION_TITLE'))
-        body = html.unescape(settings_dict.get('APPRISE_NOTIFICATION_BODY'))
+        f = open(APPRISE_BODY, 'r')
+        body = f.read()
+
         sciName, comName = species.split("_")
 
         APPRISE_ONLY_NOTIFY_SPECIES_NAMES = settings_dict.get('APPRISE_ONLY_NOTIFY_SPECIES_NAMES')
@@ -102,17 +108,15 @@ def sendAppriseNotifications(species, confidence, confidencepct, path,
         friendlyurl = "[Listen here]("+listenurl+")"
         image_url = ""
 
-        if "$flickrimage" in body:
-            if comName not in flickr_images:
+        if "$flickrimage" in body or "$image" in body:
+            if comName not in images:
                 try:
                     url = f"http://localhost/api/v1/image/{sciName}"
                     resp = requests.get(url=url, timeout=10).json()
-                    flickr_images[comName] = resp['data']['image_url']
+                    images[comName] = resp['data']['image_url']
                 except Exception as e:
-                    print("FLICKR API ERROR: "+str(e))
-                    image_url = ""
-            else:
-                image_url = flickr_images[comName]
+                    print("IMAGE API ERROR: "+str(e))
+            image_url = images.get(comName, "")
 
         if settings_dict.get('APPRISE_NOTIFY_EACH_DETECTION') == "1":
             notify_body = render_template(body, "detection")

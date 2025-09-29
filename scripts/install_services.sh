@@ -120,7 +120,6 @@ install_recording_service() {
 [Unit]
 Description=BirdNET Recording
 [Service]
-Environment=XDG_RUNTIME_DIR=/run/user/1000
 Restart=always
 Type=simple
 RestartSec=3
@@ -139,7 +138,6 @@ install_custom_recording_service() {
 [Unit]
 Description=BirdNET Custom Recording
 [Service]
-Environment=XDG_RUNTIME_DIR=/run/user/1000
 Restart=always
 Type=simple
 RestartSec=3
@@ -366,7 +364,6 @@ Description=BirdNET-Pi Live Stream
 After=network-online.target
 Requires=network-online.target
 [Service]
-Environment=XDG_RUNTIME_DIR=/run/user/1000
 Restart=always
 Type=simple
 RestartSec=3
@@ -385,6 +382,10 @@ install_cleanup_cron() {
 
 install_weekly_cron() {
   sed "s/\$USER/$USER/g" $my_dir/templates/weekly_report.cron >> /etc/crontab
+}
+
+install_automatic_update_cron() {
+  sed "s/\$USER/$USER/g" $my_dir/templates/automatic_update.cron >> /etc/crontab
 }
 
 chown_things() {
@@ -422,6 +423,7 @@ install_services() {
   install_birdnet_mount
   install_cleanup_cron
   install_weekly_cron
+  install_automatic_update_cron
   increase_caddy_timeout
 
   create_necessary_dirs
