@@ -48,8 +48,8 @@ foreach ([$confirm_file, $exclude_file, $whitelist_file] as $file) {
 }
 
 $confirmed_species   = file_exists($confirm_file)   ? file($confirm_file,   FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
-$excluded_species    = file_exists($exclude_file)   ? file($exclude_file,   FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
-$whitelisted_species = file_exists($whitelist_file) ? file($whitelist_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+$excluded_species = file_exists($exclude_file) ? array_map(fn($l) => explode('_', trim($l), 2)[0], file($exclude_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)) : [];
+$whitelisted_species = file_exists($whitelist_file) ? array_map(fn($l) => explode('_', trim($l), 2)[0], file($whitelist_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)) : [];
 
 $config    = get_config();
 $sf_thresh = isset($config['SF_THRESH']) ? (float)$config['SF_THRESH'] : 0.0;
@@ -220,8 +220,8 @@ $result = $db->query($sql);
   $common_link = "<a href='views.php?view=Recordings&species=" . rawurlencode($row['Sci_Name']) . "'>{$common}</a>";
 
   $is_confirmed   = in_array($identifier_sci, $confirmed_species, true);
-  $is_excluded    = in_array($identifier, $excluded_species, true);
-  $is_whitelisted = in_array($identifier, $whitelisted_species, true);
+  $is_excluded    = in_array($identifier_sci, $excluded_species, true);
+  $is_whitelisted = in_array($identifier_sci, $whitelisted_species, true);
 
   $comnamegraph = str_replace("'", "\'", $row['Com_Name']);
   $chart_cell = sprintf("<img style='height: 1em;cursor:pointer;float:unset;display:inline' title='View species stats' onclick=\"generateMiniGraph(this, '%s', 180)\" width=25 src='images/chart.svg'>", $comnamegraph);
@@ -234,12 +234,12 @@ $result = $db->query($sql);
     : "<span class='circle-icon' onclick=\"toggleSpecies('confirmed','{$identifier_sci_js}','add')\"></span>";
 
   $excl_cell = $is_excluded
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','{$identifier_js}','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','{$identifier_js}','add')\"></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','{$identifier_sci_js}','del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','{$identifier_sci_js}','add')\"></span>";
 
   $white_cell = $is_whitelisted
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','{$identifier_js}','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','{$identifier_js}','add')\"></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','{$identifier_sci_js}','del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','{$identifier_sci_js}','add')\"></span>";
 
   $sciname_raw = $row['Sci_Name'];
     $info_url = get_info_url($sciname_raw);
