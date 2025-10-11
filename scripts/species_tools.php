@@ -71,7 +71,7 @@ function under_base(string $path, string $base): bool {
 
 /* Collect files/dirs for a species */
 function collect_species_targets(SQLite3 $db, string $species, string $home, $base): array {
-  $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name FROM detections WHERE Com_Name = :name');
+  $stmt = $db->prepare('SELECT Date, Com_Name, Sci_Name, File_Name FROM detections WHERE Sci_Name = :name');
   ensure_db_ok($stmt);
   $stmt->bindValue(':name', $species, SQLITE3_TEXT);
   $res = $stmt->execute();
@@ -144,7 +144,7 @@ if (isset($_GET['delete'])) {
   }
   foreach ($info['dirs'] as $dir) { if (under_base($dir, $base)) @rmdir($dir); }
 
-  $del = $db->prepare('DELETE FROM detections WHERE Com_Name = :name');
+  $del = $db->prepare('DELETE FROM detections WHERE Sci_Name = :name');
   ensure_db_ok($del);
   $del->bindValue(':name', $species, SQLITE3_TEXT);
   $del->execute();
@@ -163,7 +163,7 @@ if (isset($_GET['delete'])) {
 $sql = <<<SQL
 SELECT Com_Name, Sci_Name, COUNT(*) AS Count, MAX(Confidence) AS MaxConfidence, MAX(Date) AS LastSeen
 FROM detections
-GROUP BY Com_Name, Sci_Name;
+GROUP BY Sci_Name;
 SQL;
 $result = $db->query($sql);
 ?>
@@ -262,7 +262,7 @@ $result = $db->query($sql);
      . "<td data-sort='".($is_confirmed?0:1)."'>".$confirm_cell."</td>"
      . "<td data-sort='".($is_excluded?0:1)."'>".$excl_cell."</td>"
      . "<td data-sort='".($is_whitelisted?0:1)."'>".$white_cell."</td>"
-     . "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Com_Name'])."')\"></td>"
+     . "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Sci_Name'])."')\"></td>"
      . "</tr>";
 } ?>
     </tbody>
