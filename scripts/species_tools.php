@@ -326,7 +326,7 @@ function addDiskCounts() {
 
     const decoder = document.createElement('textarea');
     document.querySelectorAll('#speciesTable tbody tr').forEach(tr => {
-      decoder.innerHTML = tr.getAttribute('data-comname') || '';
+      decoder.innerHTML = tr.getAttribute('data-sciname') || '';
       const name = decoder.value;
       const lookup = name.replace(/'/g, '');
       const count = counts[lookup] || 0;
