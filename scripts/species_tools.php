@@ -266,7 +266,7 @@ $result = $db->query($sql);
      . "<td data-sort='".($is_confirmed?0:1)."'>".$confirm_cell."</td>"
      . "<td data-sort='".($is_excluded?0:1)."'>".$excl_cell."</td>"
      . "<td data-sort='".($is_whitelisted?0:1)."'>".$white_cell."</td>"
-     . "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Sci_Name'])."')\"></td>"
+     . "<td><img style='cursor:pointer;max-width:20px' src='images/delete.svg' onclick=\"deleteSpecies('".addslashes($row['Sci_Name'])."+".addslashes($row['Com_Name']"')\"></td>"
      . "</tr>";
 } ?>
     </tbody>
@@ -358,11 +358,12 @@ function toggleSpecies(list, species, action) {
     .then(t => { if (t.trim() === 'OK') location.reload(); });
 }
 function deleteSpecies(species) {
-  get(scriptsBase + 'species_tools.php?getcounts=' + encodeURIComponent(species)).then(t => {
+  let parts = species.split(' + '); let sci_species = parts[0]; let com_species = parts[1];
+  get(scriptsBase + 'species_tools.php?getcounts=' + encodeURIComponent(sci_species)).then(t => {
     let info; try { info = JSON.parse(t); } catch { alert('Could not parse count response'); return; }
-    if (!confirm('Delete ' + info.count + ' detections and local audio and png files for ' + species + '?')) return;
-    get(scriptsBase + 'species_tools.php?delete=' + encodeURIComponent(species)).then(t2 => {
-      try { const res = JSON.parse(t2); alert('Deleted ' + res.lines + ' detections and ' + res.files + ' files for ' + species); }
+    if (!confirm('Delete ' + info.count + ' detections and local audio and png files for ' + com_species + '?')) return;
+    get(scriptsBase + 'species_tools.php?delete=' + encodeURIComponent(sci_species)).then(t2 => {
+      try { const res = JSON.parse(t2); alert('Deleted ' + res.lines + ' detections and ' + res.files + ' files for ' + com_species); }
       catch { alert('Deletion complete'); }
       location.reload();
     });
