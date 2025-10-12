@@ -234,12 +234,12 @@ $result = $db->query($sql);
     : "<span class='circle-icon' onclick=\"toggleSpecies('confirmed','{$identifier_sci_js}','add')\"></span>";
 
   $excl_cell = $is_excluded
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','{$identifier_sci_js}','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','{$identifier_sci_js}','add')\"></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('exclude','{$identifier_js}','del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('exclude','{$identifier_js}','add')\"></span>";
 
   $white_cell = $is_whitelisted
-    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','{$identifier_sci_js}','del')\">"
-    : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','{$identifier_sci_js}','add')\"></span>";
+    ? "<img style='cursor:pointer;max-width:12px;max-height:12px' src='images/check.svg' onclick=\"toggleSpecies('whitelist','{$identifier_js}','del')\">"
+    : "<span class='circle-icon' onclick=\"toggleSpecies('whitelist','{$identifier_js}','add')\"></span>";
 
   $sciname_raw = $row['Sci_Name'];
     $info_url = get_info_url($sciname_raw);
