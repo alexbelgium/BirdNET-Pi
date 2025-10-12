@@ -3,6 +3,7 @@
 define('__ROOT__', dirname(dirname(__FILE__)));
 require_once(__ROOT__ . '/scripts/common.php');
 
+$config = get_config();
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $requestMethod = $_SERVER['REQUEST_METHOD'];
 
@@ -17,7 +18,6 @@ if (preg_match('#^/api/v1/image/(\S+)$#', $requestUri, $matches)) {
     $image_provider = new Wikipedia();
   }
   $sci_name = urldecode($matches[1]);
-  debug_log($sci_name);
   $result = $image_provider->get_image($sci_name);
 
   if ($result == false) {
