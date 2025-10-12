@@ -135,15 +135,19 @@ if (isset($_GET['delete'])) {
   $deleted = 0;
   foreach ($info['files'] as $fp) {
     if (!under_base($fp, $base)) continue;
-    if (can_unlink($fp) && @unlink($fp)) {
-      $deleted++;
-      foreach ([$fp . '.png', preg_replace('/\.[^.]+$/', '.png', $fp)] as $png) {
-        if (can_unlink($png)) @unlink($png);
-      }
+    if (exec("sudo rm $fp 2>&1 && sudo rm $fp.png 2>&1", $output)) {
+      echo "Error - file deletion failed : " . implode(", ", $output) . "<br>";
+	  exit;
+    }
+    $deleted++;
+  }
+  foreach ($info['dirs'] as $dir) {
+    if (!under_base($dir, $base)) continue;
+    if (exec("sudo rm -r $dir 2>&1", $output)) {
+      echo "Error - directory deletion failed : " . implode(", ", $output) . "<br>";
+	  exit;
     }
   }
-  foreach ($info['dirs'] as $dir) { if (under_base($dir, $base)) @rmdir($dir); }
-
   $del = $db->prepare('DELETE FROM detections WHERE Sci_Name = :name');
   ensure_db_ok($del);
   $del->bindValue(':name', $species, SQLITE3_TEXT);
