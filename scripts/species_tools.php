@@ -251,7 +251,7 @@ $result = $db->query($sql);
         $scient_link = "<i>{$scient}</i>";
     }
     
-  echo "<tr data-comname=\"{$common}\">"
+  echo "<tr data-comname=\"{$common}\" data-sciname=\"{$scient}\">"
      . "<td>{$common_link}</td>"
      . "<td>{$scient_link}</td>"
      . "<td>{$chart_cell}</td>"
@@ -287,15 +287,15 @@ function loadThresholds() {
       const val  = parseFloat(m[2]);
       if (Number.isNaN(val)) continue;
       const u = left.lastIndexOf('_');
-      const common = u >= 0 ? left.slice(u + 1) : left;
-      map[common] = val; map[left] = val;
+      const sci = u >= 0 ? left.slice(0, u) : left;
+      map[sci] = val; map[left] = val;
     }
     const decoder = document.createElement('textarea');
     document.querySelectorAll('#speciesTable tbody tr').forEach(row => {
-      decoder.innerHTML = row.getAttribute('data-comname') || '';
-      const commonName = decoder.value;
-      if (Object.prototype.hasOwnProperty.call(map, commonName)) {
-        const v = map[commonName];
+      decoder.innerHTML = row.getAttribute('data-sciname') || '';
+      const sciName = decoder.value;
+      if (Object.prototype.hasOwnProperty.call(map, sciName)) {
+        const v = map[sciName];
         const cell = row.querySelector('td.threshold');
         cell.textContent = v.toFixed(4);
         cell.style.color = v >= sfThresh ? 'green' : 'red';
