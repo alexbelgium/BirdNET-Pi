@@ -131,20 +131,11 @@ if (isset($_GET['delete'])) {
   if ($base === false) { http_response_code(500); exit(json_encode(['error' => 'Base directory not found'])); }
   $species = htmlspecialchars_decode($_GET['delete'], ENT_QUOTES);
   $info = collect_species_targets($db, $species, $home, $base);
-
-  $deleted = 0;
-  foreach ($info['files'] as $fp) {
-    if (!under_base($fp, $base)) continue;
-    if (exec("sudo rm $fp 2>&1 && sudo rm $fp.png 2>&1", $output)) {
-      echo "Error - file deletion failed : " . implode(", ", $output) . "<br>";
-	  exit;
-    }
-    $deleted++;
-  }
+  $deleted = count($info['files']);
   foreach ($info['dirs'] as $dir) {
     if (!under_base($dir, $base)) continue;
     if (exec("sudo rm -r $dir 2>&1", $output)) {
-      echo "Error - directory deletion failed : " . implode(", ", $output) . "<br>";
+      echo "Error - files deletion failed : " . implode(", ", $output) . "<br>";
 	  exit;
     }
   }
