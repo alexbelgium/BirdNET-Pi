@@ -201,8 +201,8 @@ $result = $db->query($sql);
     </thead>
     <tbody>
 <?php while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
-  $common = htmlspecialchars($row['Com_Name'], ENT_QUOTES);
-  $scient = htmlspecialchars($row['Sci_Name'], ENT_QUOTES);
+  $common = $row['Com_Name'];
+  $scient = $row['Sci_Name'];
   $count  = (int)$row['Count'];
   $max_confidence = round((float)$row['MaxConfidence'] * 100, 1);
   $identifier = $row['Sci_Name'].'_'.$row['Com_Name'];
@@ -210,7 +210,6 @@ $result = $db->query($sql);
 
   $lastSeen = $row['LastSeen'] ?? '';
   $lastSeenSort = $lastSeen ? (strtotime($lastSeen) ?: 0) : 0;
-  $lastSeenDisplay = htmlspecialchars($lastSeen, ENT_QUOTES);
 
   $common_link = "<a href='views.php?view=Recordings&species=" . rawurlencode($row['Sci_Name']) . "'>{$common}</a>";
 
@@ -240,8 +239,7 @@ $result = $db->query($sql);
     $info_url = get_info_url($sciname_raw);
     if (!empty($info_url)) {
         $url = $info_url['URL'] ?? $info_url;
-        $url_esc = htmlspecialchars($url, ENT_QUOTES);
-        $scient_link = "<a href=\"{$url_esc}\" target=\"_blank\"><i>{$scient}</i></a>";
+        $scient_link = "<a href=\"{$url}\" target=\"_blank\"><i>{$scient}</i></a>";
     } else {
         $scient_link = "<i>{$scient}</i>";
     }
@@ -252,7 +250,7 @@ $result = $db->query($sql);
      . "<td>{$chart_cell}</td>"
      . "<td>{$count}</td>"
      . "<td data-sort='{$max_confidence}'>{$max_confidence}%</td>"
-     . "<td data-sort=\"{$lastSeenSort}\">{$lastSeenDisplay}</td>"
+     . "<td data-sort=\"{$lastSeenSort}\">{$lastSeen}</td>"
      . "<td class='threshold' data-sort='0'>0.0000</td>"
      . "<td data-sort='".($is_confirmed?0:1)."'>".$confirm_cell."</td>"
      . "<td data-sort='".($is_excluded?0:1)."'>".$excl_cell."</td>"
