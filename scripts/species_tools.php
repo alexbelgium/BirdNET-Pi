@@ -85,7 +85,7 @@ function collect_species_targets(SQLite3 $db, string $species, string $home, $ba
       join_path($home, 'BirdSongs/Extracted/By_Date/shifted', $row['Date'], $dir, $row['File_Name']),
     ];
     foreach ($candidates as $c) {
-      if (can_unlink($c) && under_base($c, $base)) { $files[$c] = true; $dirs[] = dirname($c); continue; }
+      if (can_unlink($c)) { $files[$c] = true; $dirs[] = dirname($c); continue; }
       $d = realpath(dirname($c));
       if ($d !== false) {
         $alt = $d . DIRECTORY_SEPARATOR . basename($c);
