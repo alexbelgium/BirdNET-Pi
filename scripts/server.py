@@ -260,12 +260,25 @@ def analyzeAudioData(chunks, lat, lon, week, sens, overlap,):
 def filter_humans(detections):
     conf = get_settings()
     priv_thresh = conf.getfloat('PRIVACY_THRESHOLD')
-    human_cutoff = max(10, int(len(detections[0]) * priv_thresh / 100.0))
-    log.debug("DATABASE SIZE: %d", len(detections[0]))
+    if not detections:
+        log.warning('No detections available to filter; returning empty result.')
+        return []
+
+    sample_detection = next((d for d in detections if d), None)
+    if sample_detection is None:
+        log.warning('Detections contain only empty prediction results; returning empty result.')
+        return []
+
+    human_cutoff = max(10, int(len(sample_detection) * priv_thresh / 100.0))
+    log.debug("DATABASE SIZE: %d", len(sample_detection))
     log.debug("HUMAN-CUTOFF AT: %d", human_cutoff)
 
     censored_detections = []
     for detection in detections:
+        if not detection:
+            log.debug('Empty detection encountered; substituting placeholder result.')
+            detection = [('No_Detections', 0.0)]
+
         p = detection[:human_cutoff]
         human_detected = False
         # Catch if Human is recognized in any of the predictions
