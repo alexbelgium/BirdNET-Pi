@@ -44,12 +44,12 @@ def notify(body, title, attached=""):
         )
 
 
-def sendAppriseNotifications(species, confidence, confidencepct, path,
+def sendAppriseNotifications(sci_name, com_name, confidence, confidencepct, path,
                              date, time, week, latitude, longitude, cutoff,
                              sens, overlap, settings_dict, db_path=DB_PATH):
     def render_template(template, reason=""):
-        ret = template.replace("$sciname", sciName) \
-            .replace("$comname", comName) \
+        ret = template.replace("$sciname", sci_name) \
+            .replace("$comname", com_name) \
             .replace("$confidencepct", str(confidencepct)) \
             .replace("$confidence", str(confidence)) \
             .replace("$listenurl", listenurl) \
@@ -74,23 +74,21 @@ def sendAppriseNotifications(species, confidence, confidencepct, path,
         f = open(APPRISE_BODY, 'r')
         body = f.read()
 
-        sciName, comName = species.split("_")
-
         APPRISE_ONLY_NOTIFY_SPECIES_NAMES = settings_dict.get('APPRISE_ONLY_NOTIFY_SPECIES_NAMES')
         if APPRISE_ONLY_NOTIFY_SPECIES_NAMES is not None and APPRISE_ONLY_NOTIFY_SPECIES_NAMES.strip() != "":
-            if any(bird.lower().replace(" ", "") in comName.lower().replace(" ", "") for bird in APPRISE_ONLY_NOTIFY_SPECIES_NAMES.split(",")):
+            if any(bird.lower().replace(" ", "") in com_name.lower().replace(" ", "") for bird in APPRISE_ONLY_NOTIFY_SPECIES_NAMES.split(",")):
                 return
 
         APPRISE_ONLY_NOTIFY_SPECIES_NAMES_2 = settings_dict.get('APPRISE_ONLY_NOTIFY_SPECIES_NAMES_2')
         if APPRISE_ONLY_NOTIFY_SPECIES_NAMES_2 is not None and APPRISE_ONLY_NOTIFY_SPECIES_NAMES_2.strip() != "":
-            if not any(bird.lower().replace(" ", "") in comName.lower().replace(" ", "") for bird in APPRISE_ONLY_NOTIFY_SPECIES_NAMES_2.split(",")):
+            if not any(bird.lower().replace(" ", "") in com_name.lower().replace(" ", "") for bird in APPRISE_ONLY_NOTIFY_SPECIES_NAMES_2.split(",")):
                 return
 
         APPRISE_MINIMUM_SECONDS_BETWEEN_NOTIFICATIONS_PER_SPECIES = settings_dict.get('APPRISE_MINIMUM_SECONDS_BETWEEN_NOTIFICATIONS_PER_SPECIES')
         if APPRISE_MINIMUM_SECONDS_BETWEEN_NOTIFICATIONS_PER_SPECIES != "0":
-            if species_last_notified.get(comName) is not None:
+            if species_last_notified.get(com_name) is not None:
                 try:
-                    if int(timeim.time()) - species_last_notified[comName] < int(APPRISE_MINIMUM_SECONDS_BETWEEN_NOTIFICATIONS_PER_SPECIES):
+                    if int(timeim.time()) - species_last_notified[com_name] < int(APPRISE_MINIMUM_SECONDS_BETWEEN_NOTIFICATIONS_PER_SPECIES):
                         return
                 except Exception as e:
                     print("APPRISE NOTIFICATION EXCEPTION: "+str(e))
@@ -109,66 +107,67 @@ def sendAppriseNotifications(species, confidence, confidencepct, path,
         image_url = ""
 
         if "$flickrimage" in body or "$image" in body:
-            if comName not in images:
+            if com_name not in images:
                 try:
-                    url = f"http://localhost/api/v1/image/{sciName}"
+                    url = f"http://localhost/api/v1/image/{sci_name}"
                     resp = requests.get(url=url, timeout=10).json()
-                    images[comName] = resp['data']['image_url']
+                    images[com_name] = resp['data']['image_url']
                 except Exception as e:
                     print("IMAGE API ERROR: "+str(e))
-            image_url = images.get(comName, "")
+            image_url = images.get(com_name, "")
 
         if settings_dict.get('APPRISE_NOTIFY_EACH_DETECTION') == "1":
             notify_body = render_template(body, "detection")
             notify_title = render_template(title, "detection")
             notify(notify_body, notify_title, image_url)
-            species_last_notified[comName] = int(timeim.time())
+            species_last_notified[com_name] = int(timeim.time())
 
         APPRISE_NOTIFICATION_NEW_SPECIES_DAILY_COUNT_LIMIT = 1  # Notifies the first N per day.
         if settings_dict.get('APPRISE_NOTIFY_NEW_SPECIES_EACH_DAY') == "1":
-            try:
-                con = sqlite3.connect(db_path)
-                cur = con.cursor()
-                today = datetime.now().strftime("%Y-%m-%d")
-                cur.execute(f"SELECT DISTINCT(Com_Name), COUNT(Com_Name) FROM detections WHERE Date = DATE('{today}') GROUP BY Com_Name")
-                known_species = cur.fetchall()
-                detections = [d[1] for d in known_species if d[0] == comName]
-                numberDetections = 0
-                if len(detections):
-                    numberDetections = detections[0]
-                if numberDetections > 0 and numberDetections <= APPRISE_NOTIFICATION_NEW_SPECIES_DAILY_COUNT_LIMIT:
-                    print("send the notification")
-                    notify_body = render_template(body, "first time today")
-                    notify_title = render_template(title, "first time today")
-                    notify(notify_body, notify_title, image_url)
-                    species_last_notified[comName] = int(timeim.time())
-                con.close()
-            except sqlite3.Error as e:
-                print(e)
-                print("Database busy")
-                timeim.sleep(2)
+            numberDetections = get_todays_count_for(db_path, sci_name)
+            if 0 < numberDetections <= APPRISE_NOTIFICATION_NEW_SPECIES_DAILY_COUNT_LIMIT:
+                print("send the notification")
+                notify_body = render_template(body, "first time today")
+                notify_title = render_template(title, "first time today")
+                notify(notify_body, notify_title, image_url)
+                species_last_notified[com_name] = int(timeim.time())
 
         if settings_dict.get('APPRISE_NOTIFY_NEW_SPECIES') == "1":
-            try:
-                con = sqlite3.connect(db_path)
-                cur = con.cursor()
-                today = datetime.now().strftime("%Y-%m-%d")
-                cur.execute(f"SELECT DISTINCT(Com_Name), COUNT(Com_Name) FROM detections WHERE Date >= DATE('{today}', '-7 day') GROUP BY Com_Name")
-                known_species = cur.fetchall()
-                detections = [d[1] for d in known_species if d[0] == comName]
-                numberDetections = 0
-                if len(detections):
-                    numberDetections = detections[0]
-                if numberDetections > 0 and numberDetections <= 5:
-                    reason = f"only seen {numberDetections} times in last 7d"
-                    notify_body = render_template(body, reason)
-                    notify_title = render_template(title, reason)
-                    notify(notify_body, notify_title, image_url)
-                    species_last_notified[comName] = int(timeim.time())
-                con.close()
-            except sqlite3.Error:
-                print("Database busy")
-                timeim.sleep(2)
+            numberDetections = get_this_weeks_count_for(db_path, sci_name)
+            if 0 < numberDetections <= 5:
+                reason = f"only seen {numberDetections} times in last 7d"
+                notify_body = render_template(body, reason)
+                notify_title = render_template(title, reason)
+                notify(notify_body, notify_title, image_url)
+                species_last_notified[com_name] = int(timeim.time())
+
+
+def get_todays_count_for(db_path, sci_name):
+    today = datetime.now().strftime("%Y-%m-%d")
+    select_sql = f"SELECT COUNT(*) FROM detections WHERE Date = DATE('{today}') AND Sci_Name = '{sci_name}'"
+    records = get_records(db_path, select_sql)
+    return records[0][0] if records else 0
+
+
+def get_this_weeks_count_for(db_path, sci_name):
+    today = datetime.now().strftime("%Y-%m-%d")
+    select_sql = f"SELECT COUNT(*) FROM detections WHERE Date >= DATE('{today}', '-7 day') AND Sci_Name = '{sci_name}'"
+    records = get_records(db_path, select_sql)
+    return records[0][0] if records else 0
+
+
+def get_records(db_path, select_sql):
+    try:
+        con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        cur = con.cursor()
+        cur.execute(select_sql)
+        records = cur.fetchall()
+        con.close()
+    except sqlite3.Error as e:
+        print(f"Database busy: {e}")
+        timeim.sleep(2)
+        records = []
+    return records
 
 
 if __name__ == "__main__":

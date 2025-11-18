@@ -238,16 +238,16 @@ if(isset($_GET['ajax_detections']) && $_GET['ajax_detections'] == "true"  ) {
             <div>
             <form action="" method="GET">
                     <input type="hidden" name="view" value="Species Stats">
-		    <button class="a2" type="submit" name="species" value="<?php echo $todaytable['Com_Name'];?>"><?php echo $todaytable['Com_Name'];?></button>
+          <button class="a2" type="submit" name="species" value="<?php echo $todaytable['Com_Name'];?>"><?php echo $todaytable['Com_Name'];?></button>
 	            <br><i>
-		    <?php echo $todaytable['Sci_Name'];?>
+          <?php echo $todaytable['Sci_Name'];?>
 	                <br>
 	                    <a href="<?php echo $url;?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title=<?php echo $url_title;?> src="images/info.png" width="25"></a>
-			    <?php if($_GET['kiosk'] == false){?>
-	    		    <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="25"></a>
+      	    <?php if($_GET['kiosk'] == false){?>
+	              <a href="https://wikipedia.org/wiki/<?php echo $sciname;?>" target="_blank"><img style="height: 1em;cursor:pointer;float:unset;display:inline" title="Wikipedia" src="images/wiki.png" width="25"></a>
 	                    <img style="height: 1em;cursor:pointer;float:unset;display:inline" title="View species stats" onclick="generateMiniGraph(this, '<?php echo $comnamegraph; ?>')" width=25 src="images/chart.svg">
 	                    <a target="_blank" href="index.php?filename=<?php echo $todaytable['File_Name']; ?>"><img style="height: 1em;cursor:pointer;float:unset;display:inline" class="copyimage-mobile" title="Open in new tab" width=16 src="images/copy.png"></a>
-		    	    <?php } ?></i>
+          	    <?php } ?></i>
 	                <br>
 	            </div>
             </form>
@@ -287,18 +287,21 @@ if(isset($_GET['today_stats'])) {
   <th>Species Total</th>
   <th>Species Today</th>
       </tr>
-      <tr>
-      <td><?php echo $totalcount;?></td>
-      <form action="" method="GET">
-      <td><input type="hidden" name="view" value="Recordings"><?php if($kiosk == false){?><button type="submit" name="date" value="<?php echo date('Y-m-d');?>"><?php echo $todaycount;?></button><?php } else { echo $todaycount; }?></td>
-      </form>
-      <td><?php echo $hourcount;?></td>
-      <form action="" method="GET">
-      <td><?php if($kiosk == false){?><button type="submit" name="view" value="Species Stats"><?php echo $totalspeciestally;?></button><?php }else { echo $totalspeciestally; }?></td>
-      </form>
-      <form action="" method="GET">
-      <td><input type="hidden" name="view" value="Recordings"><?php if($kiosk == false){?><button type="submit" name="date" value="<?php echo date('Y-m-d');?>"><?php echo $todayspeciestally;?></button><?php } else { echo $todayspeciestally; }?></td>
-      </form>
+      <tr><td><?php echo $totalcount;?></td>
+	      <td><form action="" method="GET"><input type="hidden" name="view" value="Recordings">
+            <?php if($kiosk == false){?><button type="submit" name="date" value="<?php echo date('Y-m-d');?>"><?php echo $todaycount;?></button>
+            <?php } else { echo $todaycount; } ?>
+          </form></td>
+        <td><?php echo $hourcount;?></td>
+        <td><form action="" method="GET">
+            <?php if($kiosk == false){?><button type="submit" name="view" value="Species Stats"><?php echo $totalspeciestally;?></button>
+            <?php } else { echo $totalspeciestally; } ?>
+          </form></td>
+        <td><form action="" method="GET">
+            <input type="hidden" name="view" value="Recordings">
+            <?php if($kiosk == false){?><button type="submit" name="date" value="<?php echo date('Y-m-d');?>"><?php echo $todayspeciestally;?></button>
+            <?php } else { echo $todayspeciestally; } ?>
+          </form></td>
       </tr>
     </table>
 <?php   
