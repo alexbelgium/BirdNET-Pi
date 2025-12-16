@@ -114,6 +114,22 @@ if ! grep -E '^MAX_FILES_SPECIES=' /etc/birdnet/birdnet.conf &>/dev/null;then
   echo "MAX_FILES_SPECIES=\"0\"" >> /etc/birdnet/birdnet.conf
 fi
 
+if ! grep -E '^HIGHPASS_FILTER_ENABLED=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo "HIGHPASS_FILTER_ENABLED=0" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^HIGHPASS_FILTER_VALUE=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo "HIGHPASS_FILTER_VALUE=" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^LOWPASS_FILTER_ENABLED=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo "LOWPASS_FILTER_ENABLED=0" >> /etc/birdnet/birdnet.conf
+fi
+
+if ! grep -E '^LOWPASS_FILTER_VALUE=' /etc/birdnet/birdnet.conf &>/dev/null;then
+  echo "LOWPASS_FILTER_VALUE=" >> /etc/birdnet/birdnet.conf
+fi
+
 if ! grep -E '^AUTOMATIC_UPDATE=' /etc/birdnet/birdnet.conf &>/dev/null;then
   echo "AUTOMATIC_UPDATE=0" >> /etc/birdnet/birdnet.conf
 fi

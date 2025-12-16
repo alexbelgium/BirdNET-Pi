@@ -4,7 +4,7 @@ source /etc/birdnet/birdnet.conf
 
 loop_ffmpeg(){
   while true;do
-    if ! ffmpeg -hide_banner -xerror -loglevel $LOGGING_LEVEL -nostdin ${1} -i ${2} -vn -map a:0 -acodec pcm_s16le -ac 2 -ar 48000 -f segment -segment_format wav -segment_time ${RECORDING_LENGTH} -strftime 1 ${RECS_DIR}/StreamData/%F-birdnet-RTSP_${3}-%H:%M:%S.wav
+    if ! ffmpeg -hide_banner -xerror -loglevel $LOGGING_LEVEL -nostdin ${1} -i ${2} -vn ${AUDIO_FILTER_ARG} -map a:0 -acodec pcm_s16le -ac 2 -ar 48000 -f segment -segment_format wav -segment_time ${RECORDING_LENGTH} -strftime 1 ${RECS_DIR}/StreamData/%F-birdnet-RTSP_${3}-%H:%M:%S.wav
     then
       sleep 1
     fi
@@ -23,6 +23,11 @@ fi
 
 [ -z $RECORDING_LENGTH ] && RECORDING_LENGTH=15
 [ -d $RECS_DIR/StreamData ] || mkdir -p $RECS_DIR/StreamData
+
+AUDIO_FILTERS=()
+[ "$HIGHPASS_FILTER_ENABLED" == "1" ] && [ -n "$HIGHPASS_FILTER_VALUE" ] && AUDIO_FILTERS+=("highpass=f=${HIGHPASS_FILTER_VALUE}")
+[ "$LOWPASS_FILTER_ENABLED" == "1" ] && [ -n "$LOWPASS_FILTER_VALUE" ] && AUDIO_FILTERS+=("lowpass=f=${LOWPASS_FILTER_VALUE}")
+[ ${#AUDIO_FILTERS[@]} -gt 0 ] && AUDIO_FILTER_ARG="-af $(IFS=','; echo "${AUDIO_FILTERS[*]}")"
 
 if [ -n "${RTSP_STREAM}" ];then
   # Explode the RTSP steam setting into an array so we can count the number we have
@@ -51,11 +56,13 @@ else
     echo "Recording"
   else
     if [ -z ${REC_CARD} ];then
-      arecord -f S16_LE -c${CHANNELS} -r48000 -t wav --max-file-time ${RECORDING_LENGTH}\
-	      	      	       --use-strftime ${RECS_DIR}/StreamData/%F-birdnet-%H:%M:%S.wav
+      arecord -f S16_LE -c${CHANNELS} -r48000 -t raw \
+        | ffmpeg -hide_banner -xerror -loglevel $LOGGING_LEVEL -f s16le -ac ${CHANNELS} -ar 48000 -i - -vn ${AUDIO_FILTER_ARG} \
+            -acodec pcm_s16le -ac ${CHANNELS} -ar 48000 -f segment -segment_format wav -segment_time ${RECORDING_LENGTH} -strftime 1 ${RECS_DIR}/StreamData/%F-birdnet-%H:%M:%S.wav
     else
-      arecord -f S16_LE -c${CHANNELS} -r48000 -t wav --max-file-time ${RECORDING_LENGTH}\
-        -D "${REC_CARD}" --use-strftime ${RECS_DIR}/StreamData/%F-birdnet-%H:%M:%S.wav
+      arecord -f S16_LE -c${CHANNELS} -r48000 -t raw -D "${REC_CARD}" \
+        | ffmpeg -hide_banner -xerror -loglevel $LOGGING_LEVEL -f s16le -ac ${CHANNELS} -ar 48000 -i - -vn ${AUDIO_FILTER_ARG} \
+            -acodec pcm_s16le -ac ${CHANNELS} -ar 48000 -f segment -segment_format wav -segment_time ${RECORDING_LENGTH} -strftime 1 ${RECS_DIR}/StreamData/%F-birdnet-%H:%M:%S.wav
     fi
   fi
 fi

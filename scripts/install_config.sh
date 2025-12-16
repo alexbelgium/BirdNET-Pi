@@ -239,6 +239,16 @@ RECORDING_LENGTH=15
 
 EXTRACTION_LENGTH=
 
+## HIGHPASS_FILTER_ENABLED toggles applying a high pass filter to recorded audio.
+HIGHPASS_FILTER_ENABLED=0
+## HIGHPASS_FILTER_VALUE sets the cutoff frequency in Hz when the high pass filter is enabled.
+HIGHPASS_FILTER_VALUE=
+
+## LOWPASS_FILTER_ENABLED toggles applying a low pass filter to recorded audio.
+LOWPASS_FILTER_ENABLED=0
+## LOWPASS_FILTER_VALUE sets the cutoff frequency in Hz when the low pass filter is enabled.
+LOWPASS_FILTER_VALUE=
+
 ## AUDIOFMT set the audio format that sox should use for the extractions.
 ## The default is mp3. Available formats are: 8svx aif aifc aiff aiffc al amb
 ## amr-nb amr-wb anb au avr awb caf cdda cdr cvs cvsd cvu dat dvms f32 f4 f64 f8

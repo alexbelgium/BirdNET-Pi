@@ -181,6 +181,36 @@ if (isset($_GET["max_files_species"])) {
     }
   }
 
+  if(isset($_GET["highpass_filter_enabled"])) {
+    if(strcmp("1", isset($config['HIGHPASS_FILTER_ENABLED']) ? $config['HIGHPASS_FILTER_ENABLED'] : "0") !== 0) {
+      $contents = preg_replace("/HIGHPASS_FILTER_ENABLED=.*/", "HIGHPASS_FILTER_ENABLED=1", $contents);
+    }
+  } else {
+    $contents = preg_replace("/HIGHPASS_FILTER_ENABLED=.*/", "HIGHPASS_FILTER_ENABLED=0", $contents);
+  }
+
+  if(isset($_GET["highpass_filter_value"]) && is_numeric($_GET['highpass_filter_value'])) {
+    $highpass_filter_value = $_GET["highpass_filter_value"];
+    if(strcmp($highpass_filter_value, isset($config['HIGHPASS_FILTER_VALUE']) ? $config['HIGHPASS_FILTER_VALUE'] : "") !== 0) {
+      $contents = preg_replace("/HIGHPASS_FILTER_VALUE=.*/", "HIGHPASS_FILTER_VALUE=$highpass_filter_value", $contents);
+    }
+  }
+
+  if(isset($_GET["lowpass_filter_enabled"])) {
+    if(strcmp("1", isset($config['LOWPASS_FILTER_ENABLED']) ? $config['LOWPASS_FILTER_ENABLED'] : "0") !== 0) {
+      $contents = preg_replace("/LOWPASS_FILTER_ENABLED=.*/", "LOWPASS_FILTER_ENABLED=1", $contents);
+    }
+  } else {
+    $contents = preg_replace("/LOWPASS_FILTER_ENABLED=.*/", "LOWPASS_FILTER_ENABLED=0", $contents);
+  }
+
+  if(isset($_GET["lowpass_filter_value"]) && is_numeric($_GET['lowpass_filter_value'])) {
+    $lowpass_filter_value = $_GET["lowpass_filter_value"];
+    if(strcmp($lowpass_filter_value, isset($config['LOWPASS_FILTER_VALUE']) ? $config['LOWPASS_FILTER_VALUE'] : "") !== 0) {
+      $contents = preg_replace("/LOWPASS_FILTER_VALUE=.*/", "LOWPASS_FILTER_VALUE=$lowpass_filter_value", $contents);
+    }
+  }
+
   if(isset($_GET["extraction_length"])) {
     $extraction_length = $_GET["extraction_length"];
     if(strcmp($extraction_length,$config['EXTRACTION_LENGTH']) !== 0) {
@@ -349,6 +379,16 @@ $newconfig = get_config();
       <label for="extraction_length">Extraction Length: </label>
       <input name="extraction_length" oninput="this.setAttribute('max', document.getElementsByName('recording_length')[0].value);" type="number" style="width:3em;" min="3" value="<?php print($newconfig['EXTRACTION_LENGTH']);?>" /><br>
       Set Extraction Length to something less than your Recording Length. Min=3 Max=Recording Length<br><br>
+      <label for="highpass_filter_value">High Pass Filter: </label>
+      <?php $highpass_filter_enabled = isset($newconfig['HIGHPASS_FILTER_ENABLED']) ? $newconfig['HIGHPASS_FILTER_ENABLED'] : 0; ?>
+      <input type="checkbox" name="highpass_filter_enabled" <?php if($highpass_filter_enabled == 1) { echo "checked"; };?>>
+      <input name="highpass_filter_value" type="number" style="width:5em;" min="0" max="20000" step="1" value="<?php echo isset($newconfig['HIGHPASS_FILTER_VALUE']) ? $newconfig['HIGHPASS_FILTER_VALUE'] : ""; ?>" /><br>
+      <label for="lowpass_filter_value">Low Pass Filter: </label>
+      <?php $lowpass_filter_enabled = isset($newconfig['LOWPASS_FILTER_ENABLED']) ? $newconfig['LOWPASS_FILTER_ENABLED'] : 0; ?>
+      <input type="checkbox" name="lowpass_filter_enabled" <?php if($lowpass_filter_enabled == 1) { echo "checked"; };?>>
+      <input name="lowpass_filter_value" type="number" style="width:5em;" min="0" max="20000" step="1" value="<?php echo isset($newconfig['LOWPASS_FILTER_VALUE']) ? $newconfig['LOWPASS_FILTER_VALUE'] : ""; ?>" />
+      <p>The BirdNET model is trained and analyzes only the 0-15 kHz band; enabling filters can either improve or decrease the quality of analysis depending on your setup.</p>
+      <br>
       <label for="audiofmt">Extractions Audio Format</label>
       <select name="audiofmt" class="testbtn">
       <option selected="<?php print($newconfig['AUDIOFMT']);?>"><?php print($newconfig['AUDIOFMT']);?></option>
